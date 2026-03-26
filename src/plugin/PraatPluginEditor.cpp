@@ -247,9 +247,10 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     //──────────────────────────────────────────────────────────────────────────
     for (juce::Component* c : std::initializer_list<juce::Component*>{
                      &pluginTitleLabel_,
-                     &loadAudioButton_,  &recordButton_,
+                     &loadAudioButton_,      &recordButton_,
                      &waveformDisplay_,
-                     &playButton_,       &stopButton_,
+                     &processedWaveformDisplay_,
+                     &playOriginalButton_,   &playProcessedButton_,  &stopButton_,
                      &scriptSectionLabel_,
                      &scriptSelectorDropdown_,
                      &loadScriptsDirButton_,
@@ -262,8 +263,9 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     // Listeners
     //──────────────────────────────────────────────────────────────────────────
     scriptSelectorDropdown_.addListener (this);
-    for (auto* b : { &loadAudioButton_, &recordButton_, &playButton_,
-                     &stopButton_, &loadScriptsDirButton_, &analyzeButton_ })
+    for (auto* b : { &loadAudioButton_, &recordButton_,
+                     &playOriginalButton_, &playProcessedButton_, &stopButton_,
+                     &loadScriptsDirButton_, &analyzeButton_ })
         b->addListener (this);
 
     waveformDisplay_.onSelectionChanged = [this] (juce::Range<double> sel)
@@ -286,11 +288,16 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     recordButton_.setColour (juce::TextButton::textColourOnId,  juce::Colours::white);
 
     // Secondary buttons
-    for (auto* b : { &loadAudioButton_, &playButton_, &stopButton_, &loadScriptsDirButton_ })
+    for (auto* b : { &loadAudioButton_, &playOriginalButton_,
+                     &playProcessedButton_, &stopButton_, &loadScriptsDirButton_ })
     {
         b->setColour (juce::TextButton::buttonColourId,  PraatColours::buttonDark);
         b->setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary.brighter (0.2f));
     }
+
+    // Processed waveform — green waveform colour + custom placeholder text
+    processedWaveformDisplay_.setWaveformColour  (juce::Colour (0xff22d47e));
+    processedWaveformDisplay_.setPlaceholderText ("Run a script to see the processed audio here");
 
     //──────────────────────────────────────────────────────────────────────────
     // Dropdown colours
@@ -352,8 +359,9 @@ PraatPluginEditor::~PraatPluginEditor()
     stopTimer();
     setLookAndFeel (nullptr);
     scriptSelectorDropdown_.removeListener (this);
-    for (auto* b : { &loadAudioButton_, &recordButton_, &playButton_,
-                     &stopButton_, &loadScriptsDirButton_, &analyzeButton_ })
+    for (auto* b : { &loadAudioButton_, &recordButton_,
+                     &playOriginalButton_, &playProcessedButton_, &stopButton_,
+                     &loadScriptsDirButton_, &analyzeButton_ })
         b->removeListener (this);
 }
 
@@ -381,28 +389,44 @@ void PraatPluginEditor::paint (juce::Graphics& g)
     g.fillRect (0.f, 0.f, (float)w, 2.f);
 
     // ── Horizontal dividers ───────────────────────────────────────────────────
-    // We draw these AFTER components are laid out so the coords match resized().
-    // Simple approach: recalculate the same cumulative y-positions as resized().
-    int y = kHeaderH;
+    // Recalculate the same cumulative y-positions as resized() so these line up.
     auto drawDivider = [&] (int divY)
     {
         g.setColour (PraatColours::divider);
         g.fillRect (0, divY, w, kDivider);
     };
 
-    drawDivider (y);                              // below header
-    y += kDivider + kWaveformH;
-    drawDivider (y);                              // below waveform
-    y += kDivider + kTransportH;
-    drawDivider (y);                              // below transport
-    y += kDivider + kScriptRowH;
-    drawDivider (y);                              // below script row
+    // The two waveform sections sit between the header divider and transport.
+    //   header → divider(50) → BEFORE label(16) → waveform(90) →
+    //   gap(6) → AFTER label(16) → processed waveform(90) → divider → transport
+    drawDivider (kHeaderH);                           // below header
+    {
+        const int afterWaveforms = kHeaderH + kDivider
+            + kWaveformLabelH + kWaveformH
+            + kWaveformGap
+            + kWaveformLabelH + kWaveformH;
+        drawDivider (afterWaveforms);                 // below processed waveform
+        const int afterTransport = afterWaveforms + kDivider + kTransportH;
+        drawDivider (afterTransport);                 // below transport
+        drawDivider (afterTransport + kDivider + kScriptRowH);  // below script row
+    }
 
     // ── Status bar background ─────────────────────────────────────────────────
     g.setColour (PraatColours::statusBg);
     g.fillRect (0, h - kStatusH, w, kStatusH);
     g.setColour (PraatColours::divider);
     g.fillRect (0, h - kStatusH, w, kDivider);
+
+    // ── BEFORE / AFTER section labels ─────────────────────────────────────────
+    {
+        const int beforeY = kHeaderH + kDivider;
+        paintSectionLabel (g, "CLEAN",
+            { kPadH, beforeY, w - kPadH * 2, kWaveformLabelH });
+
+        const int afterY = beforeY + kWaveformLabelH + kWaveformH + kWaveformGap;
+        paintSectionLabel (g, "MORPHED",
+            { kPadH, afterY, w - kPadH * 2, kWaveformLabelH });
+    }
 
     // ── "RESULTS ─────────" section label ─────────────────────────────────────
     {
@@ -464,26 +488,36 @@ void PraatPluginEditor::resized()
     int y = 0;
 
     // ── Header ───────────────────────────────────────────────────────────────
+    // Inset 9px top/bottom so buttons don't press against the header border.
     {
-        juce::Rectangle<int> row (kPadH, y, getWidth() - kPadH * 2, kHeaderH);
-        recordButton_.setBounds    (row.removeFromRight (52));
-        row.removeFromRight (6);
-        loadAudioButton_.setBounds (row.removeFromRight (90));
+        juce::Rectangle<int> row = juce::Rectangle<int> (0, y, getWidth(), kHeaderH)
+                                       .reduced (kPadH, 9);
+        recordButton_.setBounds    (row.removeFromRight (40));
+        row.removeFromRight (5);
+        loadAudioButton_.setBounds (row.removeFromRight (68));
         row.removeFromRight (8);
         pluginTitleLabel_.setBounds (row);
     }
     y += kHeaderH + kDivider;
 
-    // ── Waveform ─────────────────────────────────────────────────────────────
+    // ── BEFORE label (drawn in paint(), not a component) + original waveform ─
+    y += kWaveformLabelH;
     waveformDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2, kWaveformH);
+    y += kWaveformH + kWaveformGap;
+
+    // ── AFTER label (drawn in paint(), not a component) + processed waveform ─
+    y += kWaveformLabelH;
+    processedWaveformDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2, kWaveformH);
     y += kWaveformH + kDivider;
 
-    // ── Transport: PLAY  STOP ────────────────────────────────────────────────
+    // ── Transport: PLAY A  PLAY B  STOP ─────────────────────────────────────
     {
         juce::Rectangle<int> row (kPadH, y, getWidth() - kPadH * 2, kTransportH);
-        playButton_.setBounds (row.removeFromLeft (82));
+        playOriginalButton_.setBounds  (row.removeFromLeft (82));
         row.removeFromLeft (6);
-        stopButton_.setBounds (row.removeFromLeft (82));
+        playProcessedButton_.setBounds (row.removeFromLeft (82));
+        row.removeFromLeft (6);
+        stopButton_.setBounds          (row.removeFromLeft (82));
     }
     y += kTransportH + kDivider;
 
@@ -498,7 +532,7 @@ void PraatPluginEditor::resized()
     }
     y += kScriptRowH + kDivider;
 
-    // ── Content below the last divider ───────────────────────────────────────
+    // ── Content below the last divider (Analyze + Results) ───────────────────
     const int contentBottom = getHeight() - kStatusH - kDivider;
     juce::Rectangle<int> content (kPadH, y, getWidth() - kPadH * 2,
                                    contentBottom - y);
@@ -507,7 +541,7 @@ void PraatPluginEditor::resized()
     analyzeButton_.setBounds (content.removeFromTop (kAnalyzeH));
     content.removeFromTop (8);
 
-    // "RESULTS ─────" label is drawn in paint() — just reserve the space here.
+    // "RESULTS ─────" label is drawn in paint() — reserve space only.
     const auto resultsLabelArea = content.removeFromTop (kResultsLabelH);
     juce::ignoreUnused (resultsLabelArea);
     content.removeFromTop (4);
@@ -548,15 +582,14 @@ void PraatPluginEditor::timerCallback()
     refreshAnalyzeButtonEnabledState();
     refreshStatusBar();
 
-    // ── Live recording: grow the waveform display and update the VU meter ──────
+    // ── Live recording: grow the ORIGINAL waveform + VU meter ───────────────
     if (praatProcessor_.isCapturing())
     {
         praatProcessor_.copyLiveCaptureSnapshotTo (liveSnapshotBuffer_);
 
         if (liveSnapshotBuffer_.getNumSamples() > 0)
         {
-            // displayAudioBuffer with clearSelection=false so any existing drag
-            // selection is preserved during recording.
+            // clearSelection=false so any existing selection is preserved.
             waveformDisplay_.displayAudioBuffer (&liveSnapshotBuffer_,
                                                   praatProcessor_.captureSampleRate(),
                                                   false /* clearSelection */);
@@ -569,6 +602,27 @@ void PraatPluginEditor::timerCallback()
     {
         // Ensure recording overlay is always dismissed when not capturing.
         waveformDisplay_.setRecordingMode (false);
+    }
+
+    // ── Playhead position ─────────────────────────────────────────────────────
+    if (praatProcessor_.isPlayingBack())
+    {
+        const double pos = praatProcessor_.currentPlaybackPosition();
+        if (praatProcessor_.isPlayingOriginal())
+        {
+            waveformDisplay_.setPlayheadPosition (pos);
+            processedWaveformDisplay_.setPlayheadPosition (-1.0);
+        }
+        else
+        {
+            waveformDisplay_.setPlayheadPosition (-1.0);
+            processedWaveformDisplay_.setPlayheadPosition (pos);
+        }
+    }
+    else
+    {
+        waveformDisplay_.setPlayheadPosition (-1.0);
+        processedWaveformDisplay_.setPlayheadPosition (-1.0);
     }
 
     // ── Waveform refresh after a script produced audio output ─────────────────
@@ -591,11 +645,12 @@ void PraatPluginEditor::timerCallback()
 
 void PraatPluginEditor::buttonClicked (juce::Button* b)
 {
-    if (b == &loadAudioButton_)     onLoadAudioButtonClicked();
-    if (b == &recordButton_)        onRecordButtonClicked();
-    if (b == &playButton_)          onPlayButtonClicked();
-    if (b == &stopButton_)          onStopButtonClicked();
-    if (b == &analyzeButton_)       onAnalyzeButtonClicked();
+    if (b == &loadAudioButton_)      onLoadAudioButtonClicked();
+    if (b == &recordButton_)         onRecordButtonClicked();
+    if (b == &playOriginalButton_)   onPlayOriginalButtonClicked();
+    if (b == &playProcessedButton_)  onPlayProcessedButtonClicked();
+    if (b == &stopButton_)           onStopButtonClicked();
+    if (b == &analyzeButton_)        onAnalyzeButtonClicked();
     if (b == &loadScriptsDirButton_) onLoadScriptsDirButtonClicked();
 }
 
@@ -650,9 +705,16 @@ void PraatPluginEditor::onRecordButtonClicked()
     refreshStatusBar();
 }
 
-void PraatPluginEditor::onPlayButtonClicked()
+void PraatPluginEditor::onPlayOriginalButtonClicked()
 {
-    praatProcessor_.startPlaybackOfSelectedRegion();
+    praatProcessor_.startPlaybackOfOriginalRegion();
+    refreshTransportButtonStates();
+    refreshStatusBar();
+}
+
+void PraatPluginEditor::onPlayProcessedButtonClicked()
+{
+    praatProcessor_.startPlaybackOfProcessedOutput();
     refreshTransportButtonStates();
     refreshStatusBar();
 }
@@ -718,9 +780,12 @@ void PraatPluginEditor::onWaveformSelectionChanged (juce::Range<double> sel)
 
 void PraatPluginEditor::refreshWaveformDisplay()
 {
-    // Always dismiss the recording overlay when showing a finalised buffer.
+    // Always dismiss the recording overlay and playhead when showing a new buffer.
     waveformDisplay_.setRecordingMode (false);
+    waveformDisplay_.setPlayheadPosition (-1.0);
+    processedWaveformDisplay_.setPlayheadPosition (-1.0);
 
+    // ── Original waveform ─────────────────────────────────────────────────────
     if (praatProcessor_.hasAudioLoaded())
     {
         waveformDisplay_.displayAudioBuffer (&praatProcessor_.loadedAudioBuffer(),
@@ -731,6 +796,18 @@ void PraatPluginEditor::refreshWaveformDisplay()
     else
     {
         waveformDisplay_.displayAudioBuffer (nullptr, 44100.0);
+    }
+
+    // ── Processed waveform ────────────────────────────────────────────────────
+    if (praatProcessor_.hasProcessedAudio())
+    {
+        processedWaveformDisplay_.displayAudioBuffer (
+            &praatProcessor_.processedAudioBuffer(),
+            praatProcessor_.processedAudioSampleRate());
+    }
+    else
+    {
+        processedWaveformDisplay_.displayAudioBuffer (nullptr, 44100.0);
     }
 }
 
@@ -802,11 +879,13 @@ void PraatPluginEditor::refreshStatusBar()
 void PraatPluginEditor::refreshTransportButtonStates()
 {
     const bool loaded    = praatProcessor_.hasAudioLoaded();
+    const bool processed = praatProcessor_.hasProcessedAudio();
     const bool playing   = praatProcessor_.isPlayingBack();
     const bool capturing = praatProcessor_.isCapturing();
 
-    playButton_.setEnabled  (loaded && ! playing && ! capturing);
-    stopButton_.setEnabled  (playing || capturing);
+    playOriginalButton_.setEnabled  (loaded    && ! playing && ! capturing);
+    playProcessedButton_.setEnabled (processed && ! playing && ! capturing);
+    stopButton_.setEnabled          (playing || capturing);
 
     // Keep record button toggle state in sync with the processor.
     if (recordButton_.getToggleState() != capturing)

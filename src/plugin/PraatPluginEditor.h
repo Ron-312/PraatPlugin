@@ -10,20 +10,23 @@ class PraatLookAndFeel;
 
 // The plugin's user interface.
 //
-// Layout (520 x 580):
+// Layout (520 x 620):
 //
 //   ┌────────────────────────────────────────────────────────┐
 //   │ [2px accent stripe]                                    │
 //   │  PRAAT PLUGIN            [LOAD FILE]  [REC]           │  50px header
 //   ├────────────────────────────────────────────────────────┤  1px divider
-//   │ waveform (drag to select)                              │  120px
+//   │ CLEAN ─────────────────────────────────────────────    │  16px label
+//   │ [original waveform — drag to select]                   │  90px
+//   │ MORPHED ───────────────────────────────────────────    │  16px label (6px gap above)
+//   │ [processed waveform — view only]                       │  90px
 //   ├────────────────────────────────────────────────────────┤  1px divider
-//   │  [PLAY]  [STOP]                                        │  36px transport
+//   │  [PLAY A]  [PLAY B]  [STOP]                            │  36px transport
 //   ├────────────────────────────────────────────────────────┤  1px divider
 //   │  SCRIPT  [dropdown ─────────────────]  [LOAD DIR]     │  36px
 //   ├────────────────────────────────────────────────────────┤  1px divider
 //   │  [              ANALYZE                           ]    │  44px
-//   │  RESULTS ──────────────────────────────────────────    │  18px label
+//   │  RESULTS ──────────────────────────────────────────    │  16px label
 //   │ ┌──────────────────────────────────────────────────┐   │
 //   │ │ mean_pitch: 220.5 Hz                             │   │  results panel
 //   │ └──────────────────────────────────────────────────┘   │
@@ -52,7 +55,8 @@ private:
 
     void onLoadAudioButtonClicked ();
     void onRecordButtonClicked ();
-    void onPlayButtonClicked ();
+    void onPlayOriginalButtonClicked ();
+    void onPlayProcessedButtonClicked ();
     void onStopButtonClicked ();
     void onAnalyzeButtonClicked ();
     void onLoadScriptsDirButtonClicked ();
@@ -90,12 +94,15 @@ private:
     juce::TextButton loadAudioButton_    { "LOAD FILE" };
     juce::TextButton recordButton_       { "REC" };
 
-    // Waveform
+    // Waveform — original (drag to select)
     WaveformDisplay  waveformDisplay_;
+    // Waveform — processed output (view only)
+    WaveformDisplay  processedWaveformDisplay_;
 
     // Transport
-    juce::TextButton playButton_         { "PLAY" };
-    juce::TextButton stopButton_         { "STOP" };
+    juce::TextButton playOriginalButton_  { "PLAY A" };
+    juce::TextButton playProcessedButton_ { "PLAY B" };
+    juce::TextButton stopButton_          { "STOP" };
 
     // Script
     juce::Label      scriptSectionLabel_;
@@ -103,7 +110,7 @@ private:
     juce::TextButton loadScriptsDirButton_ { "..." };
 
     // Analysis
-    juce::TextButton analyzeButton_      { "ANALYZE" };
+    juce::TextButton analyzeButton_      { "MORPH" };
 
     // Results
     juce::TextEditor resultsTextDisplay_;
@@ -121,17 +128,19 @@ private:
     //──────────────────────────────────────────────────────────────────────────
     // Layout constants
     //──────────────────────────────────────────────────────────────────────────
-    static constexpr int kWidth         { 520 };
-    static constexpr int kHeight        { 580 };
-    static constexpr int kHeaderH       { 50 };
-    static constexpr int kWaveformH     { 120 };
-    static constexpr int kTransportH    { 36 };
-    static constexpr int kScriptRowH    { 36 };
-    static constexpr int kAnalyzeH      { 44 };
-    static constexpr int kResultsLabelH { 18 };
-    static constexpr int kStatusH       { 26 };
-    static constexpr int kDivider       { 1 };
-    static constexpr int kPadH          { 10 };   // horizontal outer margin
+    static constexpr int kWidth          { 520 };
+    static constexpr int kHeight         { 620 };
+    static constexpr int kHeaderH        { 50 };
+    static constexpr int kWaveformLabelH { 16 };   // "BEFORE" / "AFTER" labels
+    static constexpr int kWaveformH      { 90 };   // height of each waveform display
+    static constexpr int kWaveformGap    { 6 };    // gap between the two waveform sections
+    static constexpr int kTransportH     { 36 };
+    static constexpr int kScriptRowH     { 36 };
+    static constexpr int kAnalyzeH       { 44 };
+    static constexpr int kResultsLabelH  { 16 };
+    static constexpr int kStatusH        { 26 };
+    static constexpr int kDivider        { 1 };
+    static constexpr int kPadH           { 10 };   // horizontal outer margin
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PraatPluginEditor)
 };

@@ -27,6 +27,10 @@ PraatPluginProcessor::~PraatPluginProcessor()
 {
     jobDispatcher_.stopAndWaitForCurrentJobToFinish();
     transportSource_.setSource (nullptr);
+
+    // Clean up stable processed-audio temp file (kept alive for playback).
+    if (processedAudioFile_.existsAsFile())
+        processedAudioFile_.deleteFile();
 }
 
 //==============================================================================
@@ -198,6 +202,14 @@ bool PraatPluginProcessor::loadAudioFromFile (const juce::File& audioFile)
     transportSource_.stop();
     transportSource_.setSource (nullptr);
     audioReaderSource_.reset();
+    processedReaderSource_.reset();
+
+    // Clear the processed slot — it belongs to the previous original file.
+    if (processedAudioFile_.existsAsFile())
+        processedAudioFile_.deleteFile();
+    processedAudioFile_ = juce::File();
+    processedAudioBuffer_.setSize (0, 0, false, true, false);
+    hasProcessedAudio_  = false;
 
     // Create a format reader for the file.
     std::unique_ptr<juce::AudioFormatReader> reader (
@@ -259,6 +271,61 @@ juce::File PraatPluginProcessor::loadedAudioFile() const noexcept
 }
 
 //==============================================================================
+// Processed audio
+
+bool PraatPluginProcessor::loadProcessedAudioFromFile (const juce::File& audioFile)
+{
+    // Read the processed audio into an in-memory buffer for waveform display.
+    std::unique_ptr<juce::AudioFormatReader> reader (
+        audioFormatManager_.createReaderFor (audioFile));
+
+    if (reader == nullptr)
+        return false;
+
+    const int numChannels = static_cast<int> (reader->numChannels);
+    const int numSamples  = static_cast<int> (reader->lengthInSamples);
+
+    processedAudioBuffer_.setSize (numChannels, numSamples, false, true, false);
+    reader->read (&processedAudioBuffer_, 0, numSamples, 0, true, true);
+    processedAudioSampleRate_ = reader->sampleRate;
+
+    // Replace the stable processed file (delete the old one first).
+    if (processedAudioFile_.existsAsFile())
+        processedAudioFile_.deleteFile();
+    processedAudioFile_ = audioFile;   // take ownership of the stable temp path
+
+    // Create a fresh reader for the transport source (the buffer read above
+    // may have advanced the first reader's internal position).
+    std::unique_ptr<juce::AudioFormatReader> playbackReader (
+        audioFormatManager_.createReaderFor (audioFile));
+
+    processedReaderSource_.reset();
+    if (playbackReader != nullptr)
+    {
+        processedReaderSource_ = std::make_unique<juce::AudioFormatReaderSource> (
+            playbackReader.release(), true);
+    }
+
+    hasProcessedAudio_ = true;
+    return true;
+}
+
+bool PraatPluginProcessor::hasProcessedAudio() const noexcept
+{
+    return hasProcessedAudio_.load();
+}
+
+const juce::AudioBuffer<float>& PraatPluginProcessor::processedAudioBuffer() const noexcept
+{
+    return processedAudioBuffer_;
+}
+
+double PraatPluginProcessor::processedAudioSampleRate() const noexcept
+{
+    return processedAudioSampleRate_;
+}
+
+//==============================================================================
 // Region selection
 
 void PraatPluginProcessor::setAnalysisRegionInSeconds (juce::Range<double> regionInSeconds)
@@ -274,28 +341,47 @@ juce::Range<double> PraatPluginProcessor::selectedRegionInSeconds() const noexce
 //==============================================================================
 // Playback
 
-void PraatPluginProcessor::startPlaybackOfSelectedRegion()
+void PraatPluginProcessor::startPlaybackOfOriginalRegion()
 {
-    if (! hasAudioLoaded())
+    if (! hasAudioLoaded() || audioReaderSource_ == nullptr)
         return;
+
+    // Reconnect the transport to the original reader in case it was last pointing
+    // at the processed source after a startPlaybackOfProcessedOutput() call.
+    transportSource_.stop();
+    transportSource_.setSource (audioReaderSource_.get(), 0, nullptr, loadedAudioSampleRate_);
 
     const double totalDuration = loadedAudioSampleRate_ > 0.0
         ? static_cast<double> (loadedAudioBuffer_.getNumSamples()) / loadedAudioSampleRate_
         : 0.0;
 
-    // If no region is selected, play the full file.
     const double startSec = selectedRegionSeconds_.getLength() > 0.0
-        ? selectedRegionSeconds_.getStart()
+        ? selectedRegionSeconds_.getStart() : 0.0;
+    const double endSec   = selectedRegionSeconds_.getLength() > 0.0
+        ? selectedRegionSeconds_.getEnd()   : totalDuration;
+
+    isPlayingOriginal_.store (true, std::memory_order_relaxed);
+    playbackRegionEndSeconds_.store (endSec, std::memory_order_relaxed);
+    transportSource_.setPosition (startSec);
+    transportSource_.start();
+}
+
+void PraatPluginProcessor::startPlaybackOfProcessedOutput()
+{
+    if (! hasProcessedAudio_.load() || processedReaderSource_ == nullptr)
+        return;
+
+    // Switch the transport source to the processed reader.
+    transportSource_.stop();
+    transportSource_.setSource (processedReaderSource_.get(), 0, nullptr, processedAudioSampleRate_);
+
+    const double duration = processedAudioSampleRate_ > 0.0
+        ? static_cast<double> (processedAudioBuffer_.getNumSamples()) / processedAudioSampleRate_
         : 0.0;
 
-    const double endSec   = selectedRegionSeconds_.getLength() > 0.0
-        ? selectedRegionSeconds_.getEnd()
-        : totalDuration;
-
-    // Write the end boundary atomically so the audio thread can read it safely.
-    playbackRegionEndSeconds_.store (endSec, std::memory_order_relaxed);
-
-    transportSource_.setPosition (startSec);
+    isPlayingOriginal_.store (false, std::memory_order_relaxed);
+    playbackRegionEndSeconds_.store (duration, std::memory_order_relaxed);
+    transportSource_.setPosition (0.0);
     transportSource_.start();
 }
 
@@ -307,6 +393,16 @@ void PraatPluginProcessor::stopPlayback()
 bool PraatPluginProcessor::isPlayingBack() const noexcept
 {
     return transportSource_.isPlaying();
+}
+
+double PraatPluginProcessor::currentPlaybackPosition() const noexcept
+{
+    return transportSource_.getCurrentPosition();
+}
+
+bool PraatPluginProcessor::isPlayingOriginal() const noexcept
+{
+    return isPlayingOriginal_.load (std::memory_order_relaxed);
 }
 
 //==============================================================================
@@ -423,12 +519,14 @@ void PraatPluginProcessor::receiveCompletedJob (AnalysisJob completedJob)
     }
     analysisIsInProgress_ = false;
 
-    // If the script produced an audio output file, load it as the new working
-    // buffer so the waveform display shows the processed audio.
+    // If the script produced audio output, load it into the PROCESSED slot.
+    // The original stays intact so the user can A/B compare.
+    // NOTE: do NOT delete the file here — it stays on disk for the transport
+    //       reader.  It will be cleaned up when a new script runs, a new
+    //       original is loaded, or the processor is destroyed.
     if (completedJob.outputAudioWavFile.existsAsFile())
     {
-        loadAudioFromFile (completedJob.outputAudioWavFile);
-        completedJob.outputAudioWavFile.deleteFile();   // consumed — clean up stable temp
+        loadProcessedAudioFromFile (completedJob.outputAudioWavFile);
         audioOutputWasReceived_ = true;
     }
 

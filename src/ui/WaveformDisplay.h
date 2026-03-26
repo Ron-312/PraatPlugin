@@ -44,6 +44,10 @@ public:
     // peakLevel must be in [0, 1].  Call with isRecording = false to dismiss.
     void setRecordingMode (bool isRecording, float peakLevel = 0.0f);
 
+    // Moves the playhead to positionInSeconds.  Pass a negative value to hide.
+    // Triggers a repaint only when the position actually changes.
+    void setPlayheadPosition (double positionInSeconds);
+
     // Overwrites the visible selection without firing onSelectionChanged.
     // Used by the processor to restore persisted state.
     void setSelectedRegionInSeconds (juce::Range<double> regionInSeconds);
@@ -54,6 +58,12 @@ public:
 
     // Returns true if any audio buffer is currently set.
     bool hasAudioLoaded() const noexcept { return audioBuffer_ != nullptr; }
+
+    // Overrides the waveform peak colour (default: cyan 0xff00b4cc).
+    void setWaveformColour (juce::Colour colour);
+
+    // Overrides the placeholder text shown when no audio is loaded.
+    void setPlaceholderText (const juce::String& text);
 
     //──────────────────────────────────────────────────────────────────────────
     // Callback
@@ -92,6 +102,9 @@ private:
 
     bool                            isRecordingMode_ { false };
     float                           recordingPeak_   { 0.0f };
+    juce::Colour                    waveformColour_  { 0xff00b4cc };
+    juce::String                    placeholderText_ { "Load an audio file to see the waveform" };
+    double                          playheadSeconds_ { -1.0 };   // < 0 = hidden
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WaveformDisplay)
 };

@@ -19,6 +19,27 @@ void WaveformDisplay::displayAudioBuffer (const juce::AudioBuffer<float>* buffer
     repaint();
 }
 
+void WaveformDisplay::setPlayheadPosition (double positionInSeconds)
+{
+    if (positionInSeconds != playheadSeconds_)
+    {
+        playheadSeconds_ = positionInSeconds;
+        repaint();
+    }
+}
+
+void WaveformDisplay::setWaveformColour (juce::Colour colour)
+{
+    waveformColour_ = colour;
+    repaint();
+}
+
+void WaveformDisplay::setPlaceholderText (const juce::String& text)
+{
+    placeholderText_ = text;
+    repaint();
+}
+
 void WaveformDisplay::setRecordingMode (bool isRecording, float peakLevel)
 {
     isRecordingMode_ = isRecording;
@@ -86,7 +107,7 @@ void WaveformDisplay::paint (juce::Graphics& g)
         // Empty state placeholder
         g.setColour (juce::Colour (0xff3a3a5a));
         g.setFont (juce::Font (juce::FontOptions (12.0f)));
-        g.drawText ("Load an audio file to see the waveform",
+        g.drawText (placeholderText_,
                     bounds.toNearestInt(), juce::Justification::centred, true);
         return;
     }
@@ -101,6 +122,33 @@ void WaveformDisplay::paint (juce::Graphics& g)
 
     // ── Waveform ─────────────────────────────────────────────────────────────
     paintWaveform (g, bounds);
+
+    // ── Playhead ──────────────────────────────────────────────────────────────
+    if (playheadSeconds_ >= 0.0)
+    {
+        const float px = secondsToPixelX (playheadSeconds_) + bounds.getX();
+
+        if (px >= bounds.getX() && px <= bounds.getRight())
+        {
+            // Subtle glow
+            g.setGradientFill (juce::ColourGradient (
+                juce::Colours::white.withAlpha (0.25f), px, bounds.getY(),
+                juce::Colours::transparentWhite,        px + 6.0f, bounds.getY(), false));
+            g.fillRect (px, bounds.getY(), 6.0f, bounds.getHeight());
+
+            // Crisp white line
+            g.setColour (juce::Colours::white.withAlpha (0.90f));
+            g.fillRect (px, bounds.getY(), 1.5f, bounds.getHeight());
+
+            // Triangle cap at top
+            juce::Path cap;
+            cap.addTriangle (px - 4.5f, bounds.getY(),
+                             px + 4.5f, bounds.getY(),
+                             px,        bounds.getY() + 9.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.85f));
+            g.fillPath (cap);
+        }
+    }
 
     // ── Recording VU meter overlay ────────────────────────────────────────────
     if (isRecordingMode_)
@@ -157,8 +205,8 @@ void WaveformDisplay::paintWaveform (juce::Graphics& g,
     const float halfHeight = bounds.getHeight() * 0.42f;  // use 84% of height
     const float originX    = bounds.getX();
 
-    // Waveform colour: cyan matching the accent theme
-    g.setColour (juce::Colour (0xff00b4cc).withAlpha (0.80f));
+    // Waveform colour: set per-instance via setWaveformColour()
+    g.setColour (waveformColour_.withAlpha (0.80f));
 
     for (int x = 0; x < w; ++x)
     {

@@ -116,6 +116,23 @@ public:
     juce::File loadedAudioFile() const noexcept;
 
     //──────────────────────────────────────────────────────────────────────────
+    // Processed audio  (set by a Praat script that wrote audio output)
+    //──────────────────────────────────────────────────────────────────────────
+
+    // Loads a script's audio output into the processed slot WITHOUT replacing
+    // the original.  Called by receiveCompletedJob on the message thread.
+    bool loadProcessedAudioFromFile (const juce::File& audioFile);
+
+    // True if a script has produced audio output since the last loadAudioFromFile().
+    bool hasProcessedAudio() const noexcept;
+
+    // In-memory buffer of the processed audio (message-thread only).
+    const juce::AudioBuffer<float>& processedAudioBuffer() const noexcept;
+
+    // Sample rate of the processed audio (0.0 if none available).
+    double processedAudioSampleRate() const noexcept;
+
+    //──────────────────────────────────────────────────────────────────────────
     // Region selection
     //──────────────────────────────────────────────────────────────────────────
 
@@ -130,9 +147,13 @@ public:
     // Playback  (audio thread safe via AudioTransportSource)
     //──────────────────────────────────────────────────────────────────────────
 
-    // Starts playing the selected region through the plugin's audio output.
-    // Does nothing if no audio is loaded.
-    void startPlaybackOfSelectedRegion();
+    // Plays the original audio from the currently selected region (or the full
+    // file if nothing is selected).  Does nothing if no audio is loaded.
+    void startPlaybackOfOriginalRegion();
+
+    // Plays the processed output from the beginning (full clip).
+    // Does nothing if no processed audio is available yet.
+    void startPlaybackOfProcessedOutput();
 
     // Stops playback immediately.
     void stopPlayback();
@@ -140,6 +161,13 @@ public:
     // True if the transport source is currently playing.
     // Safe to call from any thread.
     bool isPlayingBack() const noexcept;
+
+    // Current playback head position in seconds.  0.0 when stopped.
+    double currentPlaybackPosition() const noexcept;
+
+    // True when the transport is playing the ORIGINAL (A) source.
+    // False when playing the PROCESSED (B) source.
+    bool isPlayingOriginal() const noexcept;
 
     //──────────────────────────────────────────────────────────────────────────
     // Analysis
@@ -205,15 +233,26 @@ private:
     std::atomic<bool>         audioIsLoaded_ { false };
 
     //──────────────────────────────────────────────────────────────────────────
+    // Processed audio state  (message-thread only)
+    //──────────────────────────────────────────────────────────────────────────
+    juce::AudioBuffer<float>  processedAudioBuffer_;
+    double                    processedAudioSampleRate_ { 0.0 };
+    juce::File                processedAudioFile_;        // kept on disk while in use
+    std::atomic<bool>         hasProcessedAudio_  { false };
+
+    //──────────────────────────────────────────────────────────────────────────
     // Playback (AudioTransportSource owns thread safety internally)
     //──────────────────────────────────────────────────────────────────────────
     juce::AudioFormatManager                          audioFormatManager_;
     std::unique_ptr<juce::AudioFormatReaderSource>    audioReaderSource_;
+    std::unique_ptr<juce::AudioFormatReaderSource>    processedReaderSource_;
     juce::AudioTransportSource                        transportSource_;
 
     // The end position of the currently playing region.
     // Written on the message thread before start(); read on the audio thread.
     std::atomic<double>                               playbackRegionEndSeconds_ { 0.0 };
+    // Which source (A=true / B=false) the transport is currently playing.
+    std::atomic<bool>                                 isPlayingOriginal_ { true };
 
     //──────────────────────────────────────────────────────────────────────────
     // Subsystems
