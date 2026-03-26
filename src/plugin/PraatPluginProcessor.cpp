@@ -1,0 +1,503 @@
+#include "plugin/PraatPluginProcessor.h"
+#include "plugin/PraatPluginEditor.h"
+#include <BinaryData.h>
+
+PraatPluginProcessor::PraatPluginProcessor()
+    : AudioProcessor (BusesProperties()
+                          .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      jobDispatcher_ (jobQueue_, praatLocator_)
+{
+    audioFormatManager_.registerBasicFormats();   // WAV, AIFF, FLAC, etc.
+
+    // Wire up the job completion callback.
+    // JobDispatcher delivers this on the message thread when each job finishes.
+    jobDispatcher_.onJobCompleted ([this] (AnalysisJob completedJob)
+    {
+        receiveCompletedJob (std::move (completedJob));
+    });
+
+    jobDispatcher_.startDispatchingJobs();
+
+    // Write bundled .praat scripts to app-support folder and auto-load them.
+    installBundledScriptsIfNeeded();
+}
+
+PraatPluginProcessor::~PraatPluginProcessor()
+{
+    jobDispatcher_.stopAndWaitForCurrentJobToFinish();
+    transportSource_.setSource (nullptr);
+}
+
+//==============================================================================
+// AudioProcessor
+
+void PraatPluginProcessor::prepareToPlay (double sampleRate, int maximumExpectedBlockSize)
+{
+    transportSource_.prepareToPlay (maximumExpectedBlockSize, sampleRate);
+
+    captureSampleRate_ = sampleRate;
+    audioCapture_.prepareForCapture (sampleRate,
+                                     juce::jmax (1, getTotalNumInputChannels()));
+}
+
+void PraatPluginProcessor::releaseResources()
+{
+    transportSource_.releaseResources();
+    audioCapture_.clearCaptureBuffer();
+}
+
+void PraatPluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
+                                          juce::MidiBuffer& /*midiMessages*/)
+{
+    // Capture the incoming track audio FIRST, before renderNextAudioBlock()
+    // clears the buffer.  AUDIO-THREAD SAFE: lock-free AbstractFifo.  See ADR-003.
+    if (isCapturing_.load (std::memory_order_relaxed))
+        audioCapture_.appendSamplesFromProcessBlock (buffer);
+
+    // Then fill the output with playback audio (or silence).
+    renderNextAudioBlock (buffer);
+}
+
+void PraatPluginProcessor::renderNextAudioBlock (juce::AudioBuffer<float>& buffer)
+{
+    // During live capture the input buffer already holds the track audio.
+    // Returning without clearing it passes audio through transparently so the
+    // user can hear what is being recorded in real time.
+    if (isCapturing_.load (std::memory_order_relaxed))
+        return;
+
+    buffer.clear();
+
+    if (! transportSource_.isPlaying())
+        return;
+
+    // Stop automatically when we reach the end of the selected region.
+    if (transportSource_.getCurrentPosition() >= playbackRegionEndSeconds_.load (std::memory_order_relaxed))
+    {
+        transportSource_.stop();
+        return;
+    }
+
+    juce::AudioSourceChannelInfo info (&buffer, 0, buffer.getNumSamples());
+    transportSource_.getNextAudioBlock (info);
+}
+
+//==============================================================================
+// Bundled scripts
+
+void PraatPluginProcessor::installBundledScriptsIfNeeded()
+{
+    // Scripts are embedded as BinaryData and extracted to a user-accessible
+    // folder on first run.  Users can edit the files in that folder; we only
+    // write a file if it does not already exist so edits are never overwritten.
+    const auto scriptsDir = juce::File::getSpecialLocation (
+                                juce::File::userApplicationDataDirectory)
+                                .getChildFile ("PraatPlugin")
+                                .getChildFile ("scripts");
+
+    scriptsDir.createDirectory();
+
+    // Helper: write bundled data to disk only when the file is absent.
+    auto extractIfMissing = [&] (const char* data, int size, const juce::String& filename)
+    {
+        const auto dest = scriptsDir.getChildFile (filename);
+        if (! dest.existsAsFile())
+            dest.replaceWithData (data, static_cast<size_t> (size));
+    };
+
+    extractIfMissing (BinaryData::pitch_analysis_praat,
+                      BinaryData::pitch_analysis_praatSize,
+                      "pitch_analysis.praat");
+
+    extractIfMissing (BinaryData::formant_analysis_praat,
+                      BinaryData::formant_analysis_praatSize,
+                      "formant_analysis.praat");
+
+    extractIfMissing (BinaryData::fuzz_distortion_praat,
+                      BinaryData::fuzz_distortion_praatSize,
+                      "fuzz_distortion.praat");
+
+    extractIfMissing (BinaryData::robot_voice_praat,
+                      BinaryData::robot_voice_praatSize,
+                      "robot_voice.praat");
+
+    extractIfMissing (BinaryData::pitch_shift_praat,
+                      BinaryData::pitch_shift_praatSize,
+                      "pitch_shift.praat");
+
+    // Auto-load so the UI shows scripts immediately without the user
+    // having to click "Load Scripts...".
+    scriptManager_.loadScriptsFromDirectory (scriptsDir);
+}
+
+//==============================================================================
+// Live capture
+
+void PraatPluginProcessor::startLiveCapture()
+{
+    audioCapture_.clearCaptureBuffer();
+    isCapturing_ = true;
+}
+
+void PraatPluginProcessor::stopLiveCapture()
+{
+    isCapturing_ = false;
+
+    if (! audioCapture_.hasAudioReadyForAnalysis())
+        return;
+
+    // Write the ring buffer to a temp WAV on a background thread (blocking I/O),
+    // then load it on the message thread so the waveform display updates.
+    const auto captureFile = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                 .getChildFile ("PraatPlugin")
+                                 .getChildFile ("live_capture.wav");
+
+    captureFile.getParentDirectory().createDirectory();
+
+    juce::Thread::launch ([this, captureFile] () mutable
+    {
+        audioCapture_.writeCapturedAudioToWavFile (captureFile);
+
+        juce::MessageManager::callAsync ([this, captureFile] ()
+        {
+            loadAudioFromFile (captureFile);
+            captureFile.deleteFile();
+            audioCapture_.clearCaptureBuffer();
+            audioOutputWasReceived_ = true;   // triggers waveform refresh in editor
+        });
+    });
+}
+
+bool PraatPluginProcessor::isCapturing() const noexcept
+{
+    return isCapturing_.load();
+}
+
+float PraatPluginProcessor::captureInputPeakLevel() const noexcept
+{
+    return audioCapture_.latestPeakLevel();
+}
+
+void PraatPluginProcessor::copyLiveCaptureSnapshotTo (juce::AudioBuffer<float>& dest) const
+{
+    audioCapture_.copyCurrentContentsTo (dest);
+}
+
+double PraatPluginProcessor::captureSampleRate() const noexcept
+{
+    return captureSampleRate_;
+}
+
+//==============================================================================
+// File-based audio workflow (ADR-008)
+
+bool PraatPluginProcessor::loadAudioFromFile (const juce::File& audioFile)
+{
+    // Stop any current playback before replacing the source.
+    transportSource_.stop();
+    transportSource_.setSource (nullptr);
+    audioReaderSource_.reset();
+
+    // Create a format reader for the file.
+    std::unique_ptr<juce::AudioFormatReader> reader (
+        audioFormatManager_.createReaderFor (audioFile));
+
+    if (reader == nullptr)
+        return false;
+
+    // Read the entire file into the in-memory buffer (for waveform display and
+    // region extraction at analysis time).
+    const int numChannels = static_cast<int> (reader->numChannels);
+    const int numSamples  = static_cast<int> (reader->lengthInSamples);
+
+    loadedAudioBuffer_.setSize (numChannels, numSamples, false, true, false);
+    reader->read (&loadedAudioBuffer_, 0, numSamples, 0, true, true);
+
+    loadedAudioSampleRate_ = reader->sampleRate;
+    loadedAudioFile_       = audioFile;
+    selectedRegionSeconds_ = {};   // clear old selection
+
+    // Set up the transport source with a fresh reader for playback.
+    // (We create a new reader here because the first one may have its position
+    // advanced after the read() call above.)
+    std::unique_ptr<juce::AudioFormatReader> playbackReader (
+        audioFormatManager_.createReaderFor (audioFile));
+
+    if (playbackReader != nullptr)
+    {
+        audioReaderSource_ = std::make_unique<juce::AudioFormatReaderSource> (
+            playbackReader.release(), true /* takes ownership */);
+
+        transportSource_.setSource (audioReaderSource_.get(),
+                                    0, nullptr,
+                                    loadedAudioSampleRate_);
+    }
+
+    audioIsLoaded_ = true;
+    return true;
+}
+
+bool PraatPluginProcessor::hasAudioLoaded() const noexcept
+{
+    return audioIsLoaded_.load();
+}
+
+const juce::AudioBuffer<float>& PraatPluginProcessor::loadedAudioBuffer() const noexcept
+{
+    return loadedAudioBuffer_;
+}
+
+double PraatPluginProcessor::loadedAudioSampleRate() const noexcept
+{
+    return loadedAudioSampleRate_;
+}
+
+juce::File PraatPluginProcessor::loadedAudioFile() const noexcept
+{
+    return loadedAudioFile_;
+}
+
+//==============================================================================
+// Region selection
+
+void PraatPluginProcessor::setAnalysisRegionInSeconds (juce::Range<double> regionInSeconds)
+{
+    selectedRegionSeconds_ = regionInSeconds;
+}
+
+juce::Range<double> PraatPluginProcessor::selectedRegionInSeconds() const noexcept
+{
+    return selectedRegionSeconds_;
+}
+
+//==============================================================================
+// Playback
+
+void PraatPluginProcessor::startPlaybackOfSelectedRegion()
+{
+    if (! hasAudioLoaded())
+        return;
+
+    const double totalDuration = loadedAudioSampleRate_ > 0.0
+        ? static_cast<double> (loadedAudioBuffer_.getNumSamples()) / loadedAudioSampleRate_
+        : 0.0;
+
+    // If no region is selected, play the full file.
+    const double startSec = selectedRegionSeconds_.getLength() > 0.0
+        ? selectedRegionSeconds_.getStart()
+        : 0.0;
+
+    const double endSec   = selectedRegionSeconds_.getLength() > 0.0
+        ? selectedRegionSeconds_.getEnd()
+        : totalDuration;
+
+    // Write the end boundary atomically so the audio thread can read it safely.
+    playbackRegionEndSeconds_.store (endSec, std::memory_order_relaxed);
+
+    transportSource_.setPosition (startSec);
+    transportSource_.start();
+}
+
+void PraatPluginProcessor::stopPlayback()
+{
+    transportSource_.stop();
+}
+
+bool PraatPluginProcessor::isPlayingBack() const noexcept
+{
+    return transportSource_.isPlaying();
+}
+
+//==============================================================================
+// Analysis
+
+void PraatPluginProcessor::beginAnalysisOfSelectedRegion()
+{
+    if (! isPraatAvailable())
+        return;
+
+    if (! hasAudioLoaded())
+        return;
+
+    if (! scriptManager_.hasActiveScriptSelected())
+        return;
+
+    // Determine which samples to analyse.
+    const double totalDuration = loadedAudioSampleRate_ > 0.0
+        ? static_cast<double> (loadedAudioBuffer_.getNumSamples()) / loadedAudioSampleRate_
+        : 0.0;
+
+    const double startSec = selectedRegionSeconds_.getLength() > 0.0
+        ? selectedRegionSeconds_.getStart()
+        : 0.0;
+
+    const double endSec   = selectedRegionSeconds_.getLength() > 0.0
+        ? selectedRegionSeconds_.getEnd()
+        : totalDuration;
+
+    const int startSample = static_cast<int> (startSec * loadedAudioSampleRate_);
+    const int numSamples  = static_cast<int> ((endSec - startSec) * loadedAudioSampleRate_);
+
+    if (numSamples <= 0)
+        return;
+
+    // Copy selected region into the job (message-thread to worker-thread hand-off).
+    AnalysisJob job;
+    job.jobIdentifier     = juce::Uuid();
+    job.praatScriptFile   = scriptManager_.activeScript();
+    job.praatExecutableFile = praatLocator_.locatePraatExecutable();
+    job.audioSampleRate   = loadedAudioSampleRate_;
+    job.audioToAnalyze.setSize (loadedAudioBuffer_.getNumChannels(), numSamples, false, true, false);
+
+    for (int ch = 0; ch < loadedAudioBuffer_.getNumChannels(); ++ch)
+    {
+        job.audioToAnalyze.copyFrom (ch, 0,
+                                     loadedAudioBuffer_, ch,
+                                     juce::jmin (startSample, loadedAudioBuffer_.getNumSamples() - 1),
+                                     numSamples);
+    }
+
+    job.currentState = JobState::Pending;
+
+    analysisIsInProgress_ = true;
+    jobQueue_.enqueueAnalysisJob (std::move (job));
+}
+
+//==============================================================================
+// State queries
+
+bool PraatPluginProcessor::isPraatAvailable() const noexcept
+{
+    return praatLocator_.isPraatInstalled();
+}
+
+bool PraatPluginProcessor::isAnalysisInProgress() const noexcept
+{
+    return analysisIsInProgress_.load();
+}
+
+AnalysisResult PraatPluginProcessor::mostRecentAnalysisResult() const
+{
+    std::lock_guard<std::mutex> lock (latestResultMutex_);
+    return latestResult_;
+}
+
+juce::String PraatPluginProcessor::currentStatusMessage() const
+{
+    if (! isPraatAvailable())
+        return praatLocator_.describeSearchResult();
+
+    if (isCapturing())
+        return "Recording from track — press Stop Rec when done";
+
+    if (isPlayingBack())
+        return "Playing...";
+
+    if (isAnalysisInProgress())
+        return "Analyzing...";
+
+    const auto result = mostRecentAnalysisResult();
+
+    if (result.failureReason.isNotEmpty())
+        return "Error: " + result.failureReason;
+
+    if (result.parsedSuccessfully)
+        return "Analysis complete";
+
+    if (! hasAudioLoaded())
+        return "Load an audio file to begin";
+
+    return "Ready \xe2\x80\x94 select a region and press Analyze";
+}
+
+//==============================================================================
+// Async result delivery
+
+void PraatPluginProcessor::receiveCompletedJob (AnalysisJob completedJob)
+{
+    // Called on the message thread via MessageManager::callAsync (see JobDispatcher).
+    {
+        std::lock_guard<std::mutex> lock (latestResultMutex_);
+        latestResult_ = completedJob.result;
+    }
+    analysisIsInProgress_ = false;
+
+    // If the script produced an audio output file, load it as the new working
+    // buffer so the waveform display shows the processed audio.
+    if (completedJob.outputAudioWavFile.existsAsFile())
+    {
+        loadAudioFromFile (completedJob.outputAudioWavFile);
+        completedJob.outputAudioWavFile.deleteFile();   // consumed — clean up stable temp
+        audioOutputWasReceived_ = true;
+    }
+
+    // Notify the editor (if open) via AsyncUpdater.
+    triggerAsyncUpdate();
+}
+
+bool PraatPluginProcessor::consumeAudioOutputNotification() noexcept
+{
+    return audioOutputWasReceived_.exchange (false);
+}
+
+void PraatPluginProcessor::handleAsyncUpdate()
+{
+    // Message thread: editor polls via Timer, so this is a no-op hook point
+    // for future expansion.
+}
+
+juce::AudioProcessorEditor* PraatPluginProcessor::createEditor()
+{
+    return new PraatPluginEditor (*this);
+}
+
+//==============================================================================
+// State persistence
+
+void PraatPluginProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    juce::ValueTree state ("PraatPluginState");
+
+    state.setProperty ("activeScriptPath",
+                        scriptManager_.activeScript().getFullPathName(), nullptr);
+
+    state.setProperty ("praatExecutableOverride",
+                        praatLocator_.userOverriddenExecutablePath().getFullPathName(), nullptr);
+
+    // Persist the last loaded audio file so we can restore the waveform display.
+    state.setProperty ("lastLoadedAudioFile",
+                        loadedAudioFile_.getFullPathName(), nullptr);
+
+    juce::MemoryOutputStream stream (destData, false);
+    state.writeToStream (stream);
+}
+
+void PraatPluginProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    const auto state = juce::ValueTree::readFromData (data, static_cast<size_t> (sizeInBytes));
+    if (! state.isValid()) return;
+
+    const auto scriptPath = state.getProperty ("activeScriptPath").toString();
+    if (scriptPath.isNotEmpty())
+        scriptManager_.setActiveScript (juce::File (scriptPath));
+
+    const auto praatOverride = state.getProperty ("praatExecutableOverride").toString();
+    if (praatOverride.isNotEmpty())
+        praatLocator_.overrideExecutablePathWithUserChoice (juce::File (praatOverride));
+
+    const auto lastAudioPath = state.getProperty ("lastLoadedAudioFile").toString();
+    if (lastAudioPath.isNotEmpty())
+    {
+        const juce::File lastAudioFile (lastAudioPath);
+        if (lastAudioFile.existsAsFile())
+            loadAudioFromFile (lastAudioFile);
+    }
+}
+
+//==============================================================================
+// Required by JUCE to instantiate the plugin.
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new PraatPluginProcessor();
+}
