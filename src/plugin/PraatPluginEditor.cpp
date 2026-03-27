@@ -232,6 +232,173 @@ public:
 };
 
 //==============================================================================
+// ScriptParameterPanel
+//
+// A scrollable panel of labeled sliders/toggles, one per controllable
+// parameter in the active script's form block.  Rebuilt each time the
+// script selection changes.  Empty (zero height) when the script has no
+// user-controllable parameters.
+//==============================================================================
+class ScriptParameterPanel : public juce::Component
+{
+public:
+    // Fired when the user changes any control; value is the new numeric value.
+    std::function<void (const juce::String& parameterName, double value)> onParameterChanged;
+
+    ScriptParameterPanel()
+    {
+        viewport_.setScrollBarsShown (true, false);
+        viewport_.setScrollBarThickness (6);
+        viewport_.getVerticalScrollBar().setColour (juce::ScrollBar::thumbColourId,
+                                                    juce::Colour (0xff303068));
+        viewport_.setViewedComponent (&content_, false);  // content_ is owned here, not by viewport
+        addAndMakeVisible (viewport_);
+    }
+
+    // Replace all controls with those derived from params and currentValues.
+    void rebuild (const juce::Array<ScriptParameter>& params,
+                  const juce::StringPairArray&        currentValues)
+    {
+        content_.removeAllChildren();
+        rows_.clear();
+
+        for (const auto& param : params)
+        {
+            auto& row = rows_.emplace_back();
+            row.name = param.name;
+
+            row.label = std::make_unique<juce::Label>();
+            row.label->setText (
+                param.name.replaceCharacter ('_', ' ').toLowerCase(),
+                juce::dontSendNotification);
+            row.label->setFont (juce::Font (juce::FontOptions (11.0f)));
+            row.label->setColour (juce::Label::textColourId, PraatColours::textSecondary);
+            row.label->setJustificationType (juce::Justification::centredLeft);
+            content_.addAndMakeVisible (row.label.get());
+
+            const juce::String storedStr = currentValues.getValue (param.name, {});
+            const double initialValue    = storedStr.isNotEmpty()
+                                               ? storedStr.getDoubleValue()
+                                               : param.defaultValue;
+
+            if (param.type == ScriptParameter::Type::Boolean)
+            {
+                row.toggle = std::make_unique<juce::ToggleButton>();
+                row.toggle->setToggleState (initialValue >= 0.5,
+                                            juce::dontSendNotification);
+                row.toggle->setColour (juce::ToggleButton::textColourId,
+                                       PraatColours::textSecondary);
+                row.toggle->onClick = [this, paramName = param.name,
+                                        btn = row.toggle.get()]
+                {
+                    if (onParameterChanged)
+                        onParameterChanged (paramName, btn->getToggleState() ? 1.0 : 0.0);
+                };
+                content_.addAndMakeVisible (row.toggle.get());
+            }
+            else
+            {
+                row.slider = std::make_unique<juce::Slider>();
+                row.slider->setSliderStyle (juce::Slider::LinearBar);
+                row.slider->setTextBoxStyle (juce::Slider::TextBoxLeft, false, 72, 20);
+
+                double lo, hi, interval;
+                if (param.type == ScriptParameter::Type::Integer)
+                {
+                    lo       = 0.0;
+                    hi       = juce::jmax (20.0, 5.0 * std::abs (param.defaultValue));
+                    interval = 1.0;
+                }
+                else if (param.type == ScriptParameter::Type::Positive)
+                {
+                    // Positive fields must be > 0 — clamp lo so the slider
+                    // can never produce a zero/negative value.
+                    const double mag = std::abs (param.defaultValue);
+                    lo               = juce::jmax (0.001, mag / 20.0);
+                    hi               = juce::jmax (mag * 10.0, mag + 5.0);
+                    interval         = 0.001;
+                }
+                else
+                {
+                    const double mag = std::abs (param.defaultValue);
+                    lo               = juce::jmin (-100.0, -5.0 * mag);
+                    hi               = juce::jmax ( 100.0,  5.0 * mag);
+                    interval         = 0.001;
+                }
+
+                row.slider->setRange (lo, hi, interval);
+                row.slider->setValue (initialValue, juce::dontSendNotification);
+                row.slider->setColour (juce::Slider::backgroundColourId,
+                                       PraatColours::buttonDark);
+                row.slider->setColour (juce::Slider::trackColourId,
+                                       PraatColours::accentCyan.withAlpha (0.4f));
+                row.slider->setColour (juce::Slider::textBoxTextColourId,
+                                       PraatColours::textPrimary);
+                row.slider->setColour (juce::Slider::textBoxBackgroundColourId,
+                                       juce::Colours::transparentBlack);
+                row.slider->setColour (juce::Slider::textBoxOutlineColourId,
+                                       juce::Colours::transparentBlack);
+                row.slider->onValueChange = [this, paramName = param.name,
+                                              sl = row.slider.get()]
+                {
+                    if (onParameterChanged)
+                        onParameterChanged (paramName, sl->getValue());
+                };
+                content_.addAndMakeVisible (row.slider.get());
+            }
+        }
+
+        resized();
+    }
+
+    // Height this panel wants to occupy (capped so the panel scrolls rather
+    // than pushing other components off screen).
+    int preferredHeight() const noexcept
+    {
+        if (rows_.empty()) return 0;
+        return juce::jmin ((int) rows_.size() * kRowH + 4, kMaxH);
+    }
+
+    void resized() override
+    {
+        viewport_.setBounds (getLocalBounds());
+
+        constexpr int kLabelW   = 150;
+        constexpr int kControlX = kLabelW + 6;
+        const int     kControlW = juce::jmax (1, getWidth() - kControlX - 4);
+        const int     totalH    = juce::jmax (1, (int) rows_.size() * kRowH + 4);
+
+        content_.setSize (juce::jmax (1, getWidth()), totalH);
+
+        int y = 2;
+        for (auto& row : rows_)
+        {
+            const int rowH = kRowH - 4;
+            if (row.label)  row.label->setBounds (4, y, kLabelW, rowH);
+            if (row.slider) row.slider->setBounds (kControlX, y, kControlW, rowH);
+            if (row.toggle) row.toggle->setBounds (kControlX, y, kControlW, rowH);
+            y += kRowH;
+        }
+    }
+
+private:
+    static constexpr int kRowH = 28;
+    static constexpr int kMaxH = 120;  // ~4 rows before scrolling
+
+    struct ParameterRow
+    {
+        juce::String                        name;
+        std::unique_ptr<juce::Label>        label;
+        std::unique_ptr<juce::Slider>       slider;
+        std::unique_ptr<juce::ToggleButton> toggle;
+    };
+
+    juce::Viewport               viewport_;
+    juce::Component              content_;
+    std::vector<ParameterRow>    rows_;
+};
+
+//==============================================================================
 // PraatPluginEditor
 //==============================================================================
 
@@ -251,6 +418,7 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
                      &waveformDisplay_,
                      &processedWaveformDisplay_,
                      &playOriginalButton_,   &playProcessedButton_,  &stopButton_,
+                     &exportButton_,
                      &scriptSectionLabel_,
                      &scriptSelectorDropdown_,
                      &loadScriptsDirButton_,
@@ -265,6 +433,7 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     scriptSelectorDropdown_.addListener (this);
     for (auto* b : { &loadAudioButton_, &recordButton_,
                      &playOriginalButton_, &playProcessedButton_, &stopButton_,
+                     &exportButton_,
                      &loadScriptsDirButton_, &analyzeButton_ })
         b->addListener (this);
 
@@ -289,7 +458,8 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
 
     // Secondary buttons
     for (auto* b : { &loadAudioButton_, &playOriginalButton_,
-                     &playProcessedButton_, &stopButton_, &loadScriptsDirButton_ })
+                     &playProcessedButton_, &stopButton_, &loadScriptsDirButton_,
+                     &exportButton_ })
     {
         b->setColour (juce::TextButton::buttonColourId,  PraatColours::buttonDark);
         b->setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary.brighter (0.2f));
@@ -341,9 +511,20 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     statusBarLabel_.setJustificationType (juce::Justification::centredLeft);
 
     //──────────────────────────────────────────────────────────────────────────
+    // Parameter panel
+    //──────────────────────────────────────────────────────────────────────────
+    parameterPanel_ = std::make_unique<ScriptParameterPanel>();
+    parameterPanel_->onParameterChanged = [this] (const juce::String& name, double value)
+    {
+        praatProcessor_.setScriptParameter (name, juce::String (value));
+    };
+    addAndMakeVisible (parameterPanel_.get());
+
+    //──────────────────────────────────────────────────────────────────────────
     // Initial state
     //──────────────────────────────────────────────────────────────────────────
     refreshScriptSelectorContents();
+    rebuildParameterPanel();
     refreshWaveformDisplay();
     refreshTransportButtonStates();
     refreshAnalyzeButtonEnabledState();
@@ -361,6 +542,7 @@ PraatPluginEditor::~PraatPluginEditor()
     scriptSelectorDropdown_.removeListener (this);
     for (auto* b : { &loadAudioButton_, &recordButton_,
                      &playOriginalButton_, &playProcessedButton_, &stopButton_,
+                     &exportButton_,
                      &loadScriptsDirButton_, &analyzeButton_ })
         b->removeListener (this);
 }
@@ -409,6 +591,13 @@ void PraatPluginEditor::paint (juce::Graphics& g)
         const int afterTransport = afterWaveforms + kDivider + kTransportH;
         drawDivider (afterTransport);                 // below transport
         drawDivider (afterTransport + kDivider + kScriptRowH);  // below script row
+
+        // Draw a divider below the parameter panel if it is visible.
+        if (parameterPanel_ != nullptr && parameterPanel_->isVisible())
+        {
+            const int panelBottom = parameterPanel_->getBottom();
+            drawDivider (panelBottom);
+        }
     }
 
     // ── Status bar background ─────────────────────────────────────────────────
@@ -510,7 +699,7 @@ void PraatPluginEditor::resized()
     processedWaveformDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2, kWaveformH);
     y += kWaveformH + kDivider;
 
-    // ── Transport: PLAY A  PLAY B  STOP ─────────────────────────────────────
+    // ── Transport: PLAY A  PLAY B  STOP  [space]  EXPORT ────────────────────
     {
         juce::Rectangle<int> row (kPadH, y, getWidth() - kPadH * 2, kTransportH);
         playOriginalButton_.setBounds  (row.removeFromLeft (82));
@@ -518,6 +707,7 @@ void PraatPluginEditor::resized()
         playProcessedButton_.setBounds (row.removeFromLeft (82));
         row.removeFromLeft (6);
         stopButton_.setBounds          (row.removeFromLeft (82));
+        exportButton_.setBounds        (row.removeFromRight (82));
     }
     y += kTransportH + kDivider;
 
@@ -531,6 +721,21 @@ void PraatPluginEditor::resized()
         scriptSectionLabel_.setBounds (row);
     }
     y += kScriptRowH + kDivider;
+
+    // ── Parameter panel (dynamic — 0 height if script has no parameters) ─────
+    if (parameterPanel_ != nullptr)
+    {
+        const int panelH = parameterPanel_->preferredHeight();
+        if (panelH > 0)
+        {
+            parameterPanel_->setBounds (kPadH, y, getWidth() - kPadH * 2, panelH);
+            y += panelH + kDivider;
+        }
+        else
+        {
+            parameterPanel_->setBounds (0, y, 0, 0);  // hidden, no space
+        }
+    }
 
     // ── Content below the last divider (Analyze + Results) ───────────────────
     const int contentBottom = getHeight() - kStatusH - kDivider;
@@ -650,6 +855,7 @@ void PraatPluginEditor::buttonClicked (juce::Button* b)
     if (b == &playOriginalButton_)   onPlayOriginalButtonClicked();
     if (b == &playProcessedButton_)  onPlayProcessedButtonClicked();
     if (b == &stopButton_)           onStopButtonClicked();
+    if (b == &exportButton_)         onExportButtonClicked();
     if (b == &analyzeButton_)        onAnalyzeButtonClicked();
     if (b == &loadScriptsDirButton_) onLoadScriptsDirButtonClicked();
 }
@@ -734,6 +940,35 @@ void PraatPluginEditor::onStopButtonClicked()
     refreshStatusBar();
 }
 
+void PraatPluginEditor::onExportButtonClicked()
+{
+    if (! praatProcessor_.hasProcessedAudio())
+        return;
+
+    // Suggest a filename based on the original file (or a generic name).
+    const auto originalFile = praatProcessor_.loadedAudioFile();
+    const auto suggestedName = originalFile.existsAsFile()
+        ? originalFile.getFileNameWithoutExtension() + "_morphed.wav"
+        : "morphed_output.wav";
+
+    activeFileChooser_ = std::make_unique<juce::FileChooser> (
+        "Export processed audio",
+        juce::File::getSpecialLocation (juce::File::userDesktopDirectory)
+            .getChildFile (suggestedName),
+        "*.wav");
+
+    activeFileChooser_->launchAsync (
+        juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+        [this] (const juce::FileChooser& fc)
+        {
+            const auto dest = fc.getResult();
+            if (dest != juce::File{})
+                praatProcessor_.exportProcessedAudioToFile (dest);
+
+            activeFileChooser_.reset();
+        });
+}
+
 void PraatPluginEditor::onAnalyzeButtonClicked()
 {
     praatProcessor_.beginAnalysisOfSelectedRegion();
@@ -766,6 +1001,7 @@ void PraatPluginEditor::onScriptSelectionChanged()
     const int idx  = scriptSelectorDropdown_.getSelectedItemIndex();
     const auto scr = praatProcessor_.scriptManager().scriptAtIndex (idx);
     praatProcessor_.scriptManager().setActiveScript (scr);
+    rebuildParameterPanel();
     refreshAnalyzeButtonEnabledState();
 }
 
@@ -777,6 +1013,23 @@ void PraatPluginEditor::onWaveformSelectionChanged (juce::Range<double> sel)
 
 //==============================================================================
 // Refresh helpers
+
+void PraatPluginEditor::rebuildParameterPanel()
+{
+    const juce::File activeScript = praatProcessor_.scriptManager().activeScript();
+    const auto params             = ScriptParameterParser::parse (activeScript);
+    const auto currentValues      = praatProcessor_.currentScriptParameters();
+
+    parameterPanel_->rebuild (params, currentValues);
+
+    // Recalculate our overall size — may grow or shrink depending on how many
+    // parameters the new script exposes.
+    const int panelH = parameterPanel_->preferredHeight();
+    parameterPanel_->setVisible (panelH > 0);
+
+    resized();
+    repaint();
+}
 
 void PraatPluginEditor::refreshWaveformDisplay()
 {
@@ -886,6 +1139,7 @@ void PraatPluginEditor::refreshTransportButtonStates()
     playOriginalButton_.setEnabled  (loaded    && ! playing && ! capturing);
     playProcessedButton_.setEnabled (processed && ! playing && ! capturing);
     stopButton_.setEnabled          (playing || capturing);
+    exportButton_.setEnabled        (processed && ! capturing);
 
     // Keep record button toggle state in sync with the processor.
     if (recordButton_.getToggleState() != capturing)

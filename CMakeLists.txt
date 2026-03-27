@@ -52,6 +52,10 @@ juce_add_binary_data(PraatPlugin_BinaryData SOURCES
     scripts/examples/fuzz_distortion.praat
     scripts/examples/robot_voice.praat
     scripts/examples/pitch_shift.praat
+    scripts/examples/wavefolder.praat
+    scripts/examples/stereo_phaser.praat
+    scripts/examples/spectral_reverb.praat
+    scripts/examples/paulstretch.praat
 )
 
 # ─── Source files ─────────────────────────────────────────────────────────────
@@ -68,6 +72,7 @@ target_sources(PraatPlugin PRIVATE
     src/jobs/JobQueue.cpp
     src/jobs/JobDispatcher.cpp
     src/scripts/ScriptManager.cpp
+    src/scripts/ScriptParameterParser.cpp
     src/results/ResultParser.cpp
 )
 

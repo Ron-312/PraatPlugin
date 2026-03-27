@@ -100,13 +100,17 @@ void JobDispatcher::runPraatScript (AnalysisJob& job)
     PraatRunner praatRunner (job.praatExecutableFile);
     ResultParser resultParser;
 
-    // Pass inputFile as arg 1 and outputFile as arg 2.
-    // Analysis scripts accept (but ignore) outputFile.
-    // Manipulation scripts write a processed WAV to outputFile.
+    // Build the argument list: inputFile and outputFile are always first,
+    // followed by any user-controlled script parameters in form-block order.
+    // Praat reads all arguments positionally, so order must match exactly.
+    juce::StringArray scriptArgs;
+    scriptArgs.add (job.capturedAudioWavFile.getFullPathName());
+    scriptArgs.add (job.outputAudioWavFile.getFullPathName());
+    for (int i = 0; i < job.scriptParameters.size(); ++i)
+        scriptArgs.add (job.scriptParameters.getAllValues()[i]);
+
     const auto runOutcome = praatRunner.launchPraatWithScript (
-        job.praatScriptFile,
-        { job.capturedAudioWavFile.getFullPathName(),
-          job.outputAudioWavFile.getFullPathName() });
+        job.praatScriptFile, scriptArgs);
 
     if (runOutcome.exitedSuccessfully)
     {
