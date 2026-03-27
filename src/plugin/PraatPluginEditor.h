@@ -139,19 +139,16 @@ private:
     //──────────────────────────────────────────────────────────────────────────
     // Layout constants
     //──────────────────────────────────────────────────────────────────────────
-    static constexpr int kWidth          { 520 };
-    static constexpr int kHeight         { 620 };
-    static constexpr int kHeaderH        { 50 };
-    static constexpr int kWaveformLabelH { 16 };   // "BEFORE" / "AFTER" labels
-    static constexpr int kWaveformH      { 90 };   // height of each waveform display
-    static constexpr int kWaveformGap    { 6 };    // gap between the two waveform sections
-    static constexpr int kTransportH     { 36 };
-    static constexpr int kScriptRowH     { 36 };
-    static constexpr int kAnalyzeH       { 44 };
-    static constexpr int kResultsLabelH  { 16 };
-    static constexpr int kStatusH        { 26 };
-    static constexpr int kDivider        { 1 };
-    static constexpr int kPadH           { 10 };   // horizontal outer margin
+    static constexpr int kWidth       { 520 };
+    static constexpr int kHeight      { 580 };
+    static constexpr int kHeaderH     { 36 };
+    static constexpr int kWaveformH   { 130 };   // each waveform, edge-to-edge
+    static constexpr int kWaveformGap { 3 };     // gap between clean/morphed
+    static constexpr int kTransportH  { 30 };
+    static constexpr int kScriptRowH  { 30 };
+    static constexpr int kMorphH      { 38 };    // was kAnalyzeH
+    static constexpr int kStatusH     { 22 };
+    static constexpr int kPadH        { 14 };    // horizontal padding for controls only
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PraatPluginEditor)
 };
