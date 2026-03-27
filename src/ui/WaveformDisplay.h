@@ -62,6 +62,9 @@ public:
     // Overrides the waveform peak colour (default: cyan 0xff00b4cc).
     void setWaveformColour (juce::Colour colour);
 
+    // Overrides the selection highlight colour (default: cyan 0xff00b4cc).
+    void setSelectionColour (juce::Colour colour);
+
     // Overrides the placeholder text shown when no audio is loaded.
     void setPlaceholderText (const juce::String& text);
 
@@ -87,8 +90,11 @@ private:
     double pixelXToSeconds (float pixelX) const noexcept;
     float  secondsToPixelX (double seconds) const noexcept;
 
+    // Draws subtle amplitude guide lines (±50 % of full scale).
+    void paintGrid      (juce::Graphics& g, const juce::Rectangle<float>& bounds) const;
+
     // Draws the waveform peaks into the current Graphics context.
-    void paintWaveform (juce::Graphics& g, const juce::Rectangle<float>& bounds) const;
+    void paintWaveform  (juce::Graphics& g, const juce::Rectangle<float>& bounds) const;
 
     // Draws the selection highlight and handles.
     void paintSelection (juce::Graphics& g, const juce::Rectangle<float>& bounds) const;
@@ -103,6 +109,7 @@ private:
     bool                            isRecordingMode_ { false };
     float                           recordingPeak_   { 0.0f };
     juce::Colour                    waveformColour_  { 0xff00b4cc };
+    juce::Colour                    selectionColour_ { 0xff00b4cc };
     juce::String                    placeholderText_ { "Load an audio file to see the waveform" };
     double                          playheadSeconds_ { -1.0 };   // < 0 = hidden
 
