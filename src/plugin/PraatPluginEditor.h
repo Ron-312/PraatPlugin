@@ -3,14 +3,16 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "plugin/PraatPluginProcessor.h"
+#include "scripts/ScriptParameterParser.h"
 #include "ui/WaveformDisplay.h"
 
 // Defined in PraatPluginEditor.cpp before the editor methods.
 class PraatLookAndFeel;
+class ScriptParameterPanel;
 
 // The plugin's user interface.
 //
-// Layout (520 x 620):
+// Layout (520 x 620, or taller when parameter panel is visible):
 //
 //   ┌────────────────────────────────────────────────────────┐
 //   │ [2px accent stripe]                                    │
@@ -58,6 +60,7 @@ private:
     void onPlayOriginalButtonClicked ();
     void onPlayProcessedButtonClicked ();
     void onStopButtonClicked ();
+    void onExportButtonClicked ();
     void onAnalyzeButtonClicked ();
     void onLoadScriptsDirButtonClicked ();
     void onScriptSelectionChanged ();
@@ -69,6 +72,10 @@ private:
     void refreshStatusBar ();
     void refreshTransportButtonStates ();
     void refreshAnalyzeButtonEnabledState ();
+
+    // Rebuilds the parameter panel for the currently active script.
+    // Called whenever the script selection changes.
+    void rebuildParameterPanel ();
 
     // Draws a section header line: "LABEL ──────────────────"
     void paintSectionLabel (juce::Graphics& g,
@@ -103,11 +110,15 @@ private:
     juce::TextButton playOriginalButton_  { "PLAY A" };
     juce::TextButton playProcessedButton_ { "PLAY B" };
     juce::TextButton stopButton_          { "STOP" };
+    juce::TextButton exportButton_        { "EXPORT" };
 
     // Script
     juce::Label      scriptSectionLabel_;
     juce::ComboBox   scriptSelectorDropdown_;
     juce::TextButton loadScriptsDirButton_ { "..." };
+
+    // Script parameters — rebuilt each time the script selection changes
+    std::unique_ptr<ScriptParameterPanel> parameterPanel_;
 
     // Analysis
     juce::TextButton analyzeButton_      { "MORPH" };
