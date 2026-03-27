@@ -4,35 +4,30 @@
 // Colour palette — defined once here so every part of the UI stays consistent.
 namespace PraatColours
 {
-    // Backgrounds
-    static const juce::Colour background    { 0xff0d0d1f };
-    static const juce::Colour headerBg      { 0xff111128 };
-    static const juce::Colour cardBg        { 0xff080814 };
-    static const juce::Colour statusBg      { 0xff0a0a1a };
+    // Near-black with a very slight cold-blue cast (matches FabFilter display bg).
+    static const juce::Colour background    { 0xff0d0f14 };
+    // Panel strips: header + controls area — just one shade lighter.
+    static const juce::Colour surface       { 0xff131620 };
+    static const juce::Colour elevated      { 0xff191d28 };
+    static const juce::Colour border        { 0xff252830 };
+    static const juce::Colour borderSubtle  { 0xff161920 };
 
-    // Borders & separators
-    static const juce::Colour divider       { 0xff1c1c38 };
-    static const juce::Colour cardBorder    { 0xff1e1e40 };
+    static const juce::Colour textPrimary   { 0xfff0f0f0 };
+    // Medium grey — not near-white, keeps label text from competing with waveforms.
+    static const juce::Colour textSecondary { 0xff8a8f99 };
+    static const juce::Colour textMuted     { 0xff404550 };
 
-    // Text
-    static const juce::Colour textPrimary   { 0xffe8e8f4 };
-    static const juce::Colour textSecondary { 0xff6060a8 };
-    static const juce::Colour textMuted     { 0xff3a3a68 };
+    static const juce::Colour buttonBg      { 0xff161920 };
+    static const juce::Colour buttonBorder  { 0xff252830 };
 
-    // Buttons
-    static const juce::Colour buttonDark    { 0xff141430 };
-    static const juce::Colour buttonBorder  { 0xff252550 };
+    // FabFilter's signature saturated yellow (not pure #FFD700).
+    static const juce::Colour accentGold    { 0xffe8c840 };
 
-    // Accent
-    static const juce::Colour accentCyan    { 0xff00c8e0 };
-    static const juce::Colour accentBlue    { 0xff0058c0 };
-
-    // State colours
-    static const juce::Colour statusGreen   { 0xff22d47e };
-    static const juce::Colour statusAmber   { 0xfffbbf24 };
-    static const juce::Colour statusRed     { 0xffee4466 };
-    static const juce::Colour statusBlue    { 0xff4488ff };
-    static const juce::Colour recordRed     { 0xffff2244 };
+    static const juce::Colour statusGreen   { 0xff4caf50 };
+    static const juce::Colour statusAmber   { 0xffe8c840 };
+    static const juce::Colour statusRed     { 0xffe53935 };
+    static const juce::Colour statusBlue    { 0xff5588ff };
+    static const juce::Colour recordRed     { 0xffe53935 };
 }
 
 //==============================================================================
@@ -44,100 +39,84 @@ public:
     PraatLookAndFeel()
     {
         setColour (juce::PopupMenu::backgroundColourId,
-                   juce::Colour (0xff0f0f28));
+                   PraatColours::surface);
         setColour (juce::PopupMenu::textColourId,
                    PraatColours::textPrimary);
         setColour (juce::PopupMenu::highlightedBackgroundColourId,
-                   PraatColours::accentCyan.withAlpha (0.2f));
+                   PraatColours::elevated);
         setColour (juce::PopupMenu::highlightedTextColourId,
                    PraatColours::textPrimary);
     }
 
-    //--------------------------------------------------------------------------
-    // Classify buttons by their registered colour hue so we can style them
-    // differently without needing subclasses.
-    //
-    //  Cyan hue  (0.48-0.60) → primary ANALYZE-style accent
-    //  Red  hue  (0.93-1.00 or 0.00-0.07) → record button
-    //  Anything else          → secondary (dark outline)
-    //--------------------------------------------------------------------------
+    // Buttons are classified by their registered buttonColourId saturation + hue.
+    //   Achromatic (sat < 0.1) → Secondary (flat dark)
+    //   Gold hue (0.08–0.20)   → Primary   (gold fill, only MORPH uses this)
+    //   Red hue  (sat >= 0.1, outside gold) → Record
     enum class ButtonRole { Primary, Record, Secondary };
 
     static ButtonRole roleOf (juce::Button& btn)
     {
-        const float h = btn.findColour (juce::TextButton::buttonColourId).getHue();
-        if (h > 0.48f && h < 0.60f) return ButtonRole::Primary;
-        if (h > 0.93f || h < 0.07f) return ButtonRole::Record;
-        return ButtonRole::Secondary;
+        const auto c = btn.findColour (juce::TextButton::buttonColourId);
+        if (c.getSaturation() < 0.10f) return ButtonRole::Secondary;
+        const float h = c.getHue();
+        if (h > 0.08f && h < 0.20f)   return ButtonRole::Primary;
+        return ButtonRole::Record;
     }
 
-    void drawButtonBackground (juce::Graphics& g,
-                               juce::Button&   btn,
-                               const juce::Colour& /*bg*/,
-                               bool isMouseOver, bool isDown) override
+    void drawButtonBackground (juce::Graphics& g, juce::Button& btn,
+                               const juce::Colour&, bool isMouseOver, bool isDown) override
     {
-        const auto  b = btn.getLocalBounds().toFloat().reduced (0.5f);
-        constexpr float r = 5.0f;
-        const bool  on  = btn.getToggleState();
+        const auto  b   = btn.getLocalBounds().toFloat().reduced (0.5f);
+        const float r   = b.getHeight() * 0.30f;
+        const bool  on  = btn.getClickingTogglesState() && btn.getToggleState();
+        const bool  ena = btn.isEnabled();
 
         switch (roleOf (btn))
         {
             case ButtonRole::Primary:
             {
-                auto c1 = PraatColours::accentCyan;
-                auto c2 = PraatColours::accentBlue;
-                if (! btn.isEnabled())    { c1 = c1.withAlpha (0.3f); c2 = c2.withAlpha (0.3f); }
-                else if (isDown || on)    { c1 = c1.darker (0.15f);   c2 = c2.darker (0.15f);   }
-                else if (isMouseOver)     { c1 = c1.brighter (0.1f);  c2 = c2.brighter (0.1f);  }
+                auto fill = PraatColours::accentGold;
+                if (! ena)          fill = fill.withAlpha (0.25f);
+                else if (isDown)    fill = fill.darker (0.15f);
+                else if (isMouseOver) fill = fill.brighter (0.08f);
 
-                g.setGradientFill (juce::ColourGradient (c1, b.getX(), b.getCentreY(),
-                                                         c2, b.getRight(), b.getCentreY(), false));
+                g.setColour (fill);
                 g.fillRoundedRectangle (b, r);
-
-                // Specular highlight
-                g.setColour (juce::Colours::white.withAlpha (0.07f));
-                g.fillRoundedRectangle (b.withHeight (b.getHeight() * 0.45f), r);
                 break;
             }
 
             case ButtonRole::Record:
             {
-                const bool recording = on;
-                auto base = recording ? PraatColours::recordRed
-                                      : PraatColours::buttonDark;
+                auto fill = on ? PraatColours::recordRed
+                               : PraatColours::buttonBg;
+                if (! ena)          fill = fill.withAlpha (0.35f);
+                else if (isDown)    fill = fill.darker (0.15f);
+                else if (isMouseOver) fill = fill.brighter (0.10f);
 
-                if (! btn.isEnabled())    base = base.withAlpha (0.4f);
-                else if (isDown)          base = base.darker (0.2f);
-                else if (isMouseOver)     base = base.brighter (0.12f);
-
-                g.setColour (base);
+                g.setColour (fill);
                 g.fillRoundedRectangle (b, r);
 
-                // Border — brighter red when recording
-                g.setColour (recording ? PraatColours::recordRed.brighter (0.3f)
-                                       : PraatColours::buttonBorder);
+                g.setColour (on ? PraatColours::recordRed.brighter (0.3f)
+                                : PraatColours::buttonBorder);
                 g.drawRoundedRectangle (b, r, 1.0f);
 
-                // Pulsing dot when recording
-                if (recording)
+                if (on)
                 {
-                    constexpr float dotR = 4.0f;
-                    const float cx = b.getX() + 12.0f;
-                    const float cy = b.getCentreY();
+                    constexpr float d = 5.0f;
                     g.setColour (juce::Colours::white.withAlpha (0.9f));
-                    g.fillEllipse (cx - dotR, cy - dotR, dotR * 2.0f, dotR * 2.0f);
+                    g.fillEllipse (b.getX() + 6.0f, b.getCentreY() - d * 0.5f, d, d);
                 }
                 break;
             }
 
             case ButtonRole::Secondary:
             {
-                auto base = PraatColours::buttonDark;
-                if (! btn.isEnabled())  base = base.withAlpha (0.4f);
-                else if (isDown)        base = base.darker (0.15f);
-                else if (isMouseOver)   base = base.brighter (0.1f);
+                auto fill = PraatColours::buttonBg;
+                if (! ena)          fill = fill.withAlpha (0.35f);
+                else if (isDown)    fill = fill.darker (0.12f);
+                else if (isMouseOver) fill = fill.brighter (0.10f);
 
-                g.setColour (base);
+                g.setColour (fill);
                 g.fillRoundedRectangle (b, r);
                 g.setColour (PraatColours::buttonBorder);
                 g.drawRoundedRectangle (b, r, 1.0f);
@@ -146,88 +125,69 @@ public:
         }
     }
 
-    void drawButtonText (juce::Graphics& g,
-                         juce::TextButton& btn,
-                         bool /*isMouseOver*/, bool /*isDown*/) override
+    void drawButtonText (juce::Graphics& g, juce::TextButton& btn,
+                         bool, bool) override
     {
-        const float alpha = btn.isEnabled() ? 1.0f : 0.35f;
-        const bool  on    = btn.getToggleState();
+        const float alpha = btn.isEnabled() ? 1.0f : 0.30f;
+        const bool  on    = btn.getClickingTogglesState() && btn.getToggleState();
 
         switch (roleOf (btn))
         {
             case ButtonRole::Primary:
-                g.setFont (juce::Font (juce::FontOptions (12.5f, juce::Font::bold)));
-                g.setColour (juce::Colours::white.withAlpha (alpha));
-                break;
-
-            case ButtonRole::Record:
                 g.setFont (juce::Font (juce::FontOptions (11.5f, juce::Font::bold)));
+                g.setColour (juce::Colour (0xff1a1200).withAlpha (alpha));  // dark on gold
+                break;
+            case ButtonRole::Record:
+                g.setFont (juce::Font (juce::FontOptions (10.0f, juce::Font::bold)));
                 g.setColour ((on ? juce::Colours::white
                                  : PraatColours::textSecondary).withAlpha (alpha));
                 break;
-
             case ButtonRole::Secondary:
-                g.setFont (juce::Font (juce::FontOptions (11.5f)));
-                g.setColour (PraatColours::textSecondary.brighter (0.2f).withAlpha (alpha));
+                g.setFont (juce::Font (juce::FontOptions (10.0f)));
+                g.setColour (PraatColours::textSecondary.withAlpha (alpha));
                 break;
         }
 
         g.drawFittedText (btn.getButtonText(),
-                          btn.getLocalBounds(),
-                          juce::Justification::centred, 1);
+                          btn.getLocalBounds(), juce::Justification::centred, 1);
     }
 
-    //--------------------------------------------------------------------------
-    // ComboBox — dark rounded box with minimal chevron
-    //--------------------------------------------------------------------------
-    void drawComboBox (juce::Graphics& g,
-                       int w, int h, bool /*isDown*/,
+    void drawComboBox (juce::Graphics& g, int w, int h, bool,
                        int arrowX, int arrowY, int arrowW, int arrowH,
                        juce::ComboBox& box) override
     {
-        const auto b = juce::Rectangle<float> (0, 0, (float)w, (float)h);
+        const auto b = juce::Rectangle<float> (0.f, 0.f, (float)w, (float)h);
         g.setColour (box.findColour (juce::ComboBox::backgroundColourId));
-        g.fillRoundedRectangle (b, 5.0f);
+        g.fillRoundedRectangle (b, 4.0f);
         g.setColour (PraatColours::buttonBorder);
-        g.drawRoundedRectangle (b.reduced (0.5f), 5.0f, 1.0f);
+        g.drawRoundedRectangle (b.reduced (0.5f), 4.0f, 1.0f);
 
-        // Chevron
         const float cx = arrowX + arrowW * 0.5f;
         const float cy = arrowY + arrowH * 0.5f;
-        juce::Path p;
-        p.startNewSubPath (cx - 4.5f, cy - 2.0f);
-        p.lineTo (cx,         cy + 2.5f);
-        p.lineTo (cx + 4.5f,  cy - 2.0f);
-        g.setColour (box.findColour (juce::ComboBox::arrowColourId));
-        g.strokePath (p, juce::PathStrokeType (1.5f,
-                         juce::PathStrokeType::curved,
-                         juce::PathStrokeType::rounded));
+        juce::Path chevron;
+        chevron.startNewSubPath (cx - 4.0f, cy - 1.5f);
+        chevron.lineTo (cx, cy + 2.5f);
+        chevron.lineTo (cx + 4.0f, cy - 1.5f);
+        g.setColour (PraatColours::textSecondary);
+        g.strokePath (chevron, juce::PathStrokeType (1.4f,
+                      juce::PathStrokeType::curved,
+                      juce::PathStrokeType::rounded));
     }
 
-    //--------------------------------------------------------------------------
-    // Scrollbar — 4px thumb, invisible track
-    //--------------------------------------------------------------------------
     int  getScrollbarButtonSize (juce::ScrollBar&) override { return 0; }
 
     void drawScrollbar (juce::Graphics& g, juce::ScrollBar& sb,
                         int x, int y, int w, int h, bool isVertical,
-                        int thumbStart, int thumbSize,
-                        bool /*hover*/, bool /*down*/) override
+                        int thumbStart, int thumbSize, bool, bool) override
     {
-        constexpr float t = 4.0f;
         juce::Rectangle<float> thumb;
+        constexpr float t = 3.0f;
         if (isVertical)
-        {
-            const float cx = x + w * 0.5f;
-            thumb = { cx - t * 0.5f, (float)(y + thumbStart), t, (float)thumbSize };
-        }
+            thumb = { x + (w - t) * 0.5f, (float)(y + thumbStart), t, (float)thumbSize };
         else
-        {
-            const float cy = y + h * 0.5f;
-            thumb = { (float)(x + thumbStart), cy - t * 0.5f, (float)thumbSize, t };
-        }
-        g.setColour (sb.findColour (juce::ScrollBar::thumbColourId).withAlpha (0.6f));
-        g.fillRoundedRectangle (thumb, 2.0f);
+            thumb = { (float)(x + thumbStart), y + (h - t) * 0.5f, (float)thumbSize, t };
+        g.setColour (sb.findColour (juce::ScrollBar::thumbColourId));
+        g.fillRoundedRectangle (thumb, t * 0.5f);
     }
 };
 
@@ -443,39 +403,44 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     };
 
     //──────────────────────────────────────────────────────────────────────────
-    // Button colours — sets the hue that PraatLookAndFeel uses for role detection
+    // Button colours — drive PraatLookAndFeel role detection
     //──────────────────────────────────────────────────────────────────────────
 
-    // ANALYZE: cyan hue → Primary role
-    analyzeButton_.setColour (juce::TextButton::buttonColourId,  juce::Colour (0xff009ab0));
-    analyzeButton_.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
+    // MORPH: gold hue → Primary role
+    analyzeButton_.setColour (juce::TextButton::buttonColourId,  PraatColours::accentGold);
+    analyzeButton_.setColour (juce::TextButton::textColourOffId, juce::Colour (0xff1a1200));
 
     // REC: red hue → Record role; toggleable
     recordButton_.setClickingTogglesState (true);
-    recordButton_.setColour (juce::TextButton::buttonColourId,  juce::Colour (0xffcc1133));
+    recordButton_.setColour (juce::TextButton::buttonColourId,  PraatColours::recordRed);
     recordButton_.setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary);
     recordButton_.setColour (juce::TextButton::textColourOnId,  juce::Colours::white);
 
-    // Secondary buttons
+    // All other buttons: achromatic → Secondary role
     for (auto* b : { &loadAudioButton_, &playOriginalButton_,
                      &playProcessedButton_, &stopButton_, &loadScriptsDirButton_,
                      &exportButton_ })
     {
-        b->setColour (juce::TextButton::buttonColourId,  PraatColours::buttonDark);
-        b->setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary.brighter (0.2f));
+        b->setColour (juce::TextButton::buttonColourId,  PraatColours::buttonBg);
+        b->setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary);
     }
 
-    // Processed waveform — green waveform colour + custom placeholder text
-    processedWaveformDisplay_.setWaveformColour  (juce::Colour (0xff22d47e));
-    processedWaveformDisplay_.setPlaceholderText ("Run a script to see the processed audio here");
+    // Waveform colours — FabFilter-style: CLEAN = bright white edges,
+    // MORPHED = saturated gold edges (matches the accent colour).
+    waveformDisplay_.setWaveformColour  (juce::Colours::white.withAlpha (0.80f));
+    waveformDisplay_.setSelectionColour (PraatColours::accentGold);
+
+    processedWaveformDisplay_.setWaveformColour  (PraatColours::accentGold.withAlpha (0.88f));
+    processedWaveformDisplay_.setSelectionColour (juce::Colours::white);
+    processedWaveformDisplay_.setPlaceholderText ("Morph audio to see the result here");
 
     //──────────────────────────────────────────────────────────────────────────
     // Dropdown colours
     //──────────────────────────────────────────────────────────────────────────
-    scriptSelectorDropdown_.setColour (juce::ComboBox::backgroundColourId, PraatColours::buttonDark);
+    scriptSelectorDropdown_.setColour (juce::ComboBox::backgroundColourId, PraatColours::buttonBg);
     scriptSelectorDropdown_.setColour (juce::ComboBox::textColourId,       PraatColours::textPrimary);
     scriptSelectorDropdown_.setColour (juce::ComboBox::outlineColourId,    PraatColours::buttonBorder);
-    scriptSelectorDropdown_.setColour (juce::ComboBox::arrowColourId,      PraatColours::accentCyan);
+    scriptSelectorDropdown_.setColour (juce::ComboBox::arrowColourId,      PraatColours::textSecondary);
 
     //──────────────────────────────────────────────────────────────────────────
     // Results text display
@@ -486,27 +451,27 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
     resultsTextDisplay_.setFont (juce::Font (juce::FontOptions (
         juce::Font::getDefaultMonospacedFontName(), 12.5f, juce::Font::plain)));
 
-    resultsTextDisplay_.setColour (juce::TextEditor::backgroundColourId,     PraatColours::cardBg);
-    resultsTextDisplay_.setColour (juce::TextEditor::textColourId,           juce::Colour (0xff88f0b0));
+    resultsTextDisplay_.setColour (juce::TextEditor::backgroundColourId,     juce::Colour (0xff0d0f14));
+    resultsTextDisplay_.setColour (juce::TextEditor::textColourId,           PraatColours::textPrimary);
     resultsTextDisplay_.setColour (juce::TextEditor::outlineColourId,        juce::Colours::transparentBlack);
     resultsTextDisplay_.setColour (juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
-    resultsTextDisplay_.setColour (juce::TextEditor::highlightColourId,      PraatColours::accentCyan.withAlpha (0.25f));
-    resultsTextDisplay_.setColour (juce::ScrollBar::thumbColourId,           juce::Colour (0xff303068));
+    resultsTextDisplay_.setColour (juce::TextEditor::highlightColourId,      PraatColours::accentGold.withAlpha (0.20f));
+    resultsTextDisplay_.setColour (juce::ScrollBar::thumbColourId,           juce::Colour (0xff333333));
 
     //──────────────────────────────────────────────────────────────────────────
     // Labels
     //──────────────────────────────────────────────────────────────────────────
     pluginTitleLabel_.setText ("PRAAT PLUGIN", juce::dontSendNotification);
-    pluginTitleLabel_.setFont (juce::Font (juce::FontOptions (15.0f, juce::Font::bold)));
-    pluginTitleLabel_.setColour (juce::Label::textColourId, PraatColours::accentCyan);
+    pluginTitleLabel_.setFont (juce::Font (juce::FontOptions (12.0f, juce::Font::bold)));
+    pluginTitleLabel_.setColour (juce::Label::textColourId, PraatColours::textPrimary);
     pluginTitleLabel_.setJustificationType (juce::Justification::centredLeft);
 
     scriptSectionLabel_.setText ("SCRIPT", juce::dontSendNotification);
-    scriptSectionLabel_.setFont (juce::Font (juce::FontOptions (9.5f, juce::Font::bold)));
-    scriptSectionLabel_.setColour (juce::Label::textColourId, PraatColours::textMuted.brighter (0.5f));
+    scriptSectionLabel_.setFont (juce::Font (juce::FontOptions (9.0f, juce::Font::bold)));
+    scriptSectionLabel_.setColour (juce::Label::textColourId, PraatColours::textMuted);
     scriptSectionLabel_.setJustificationType (juce::Justification::centredLeft);
 
-    statusBarLabel_.setFont (juce::Font (juce::FontOptions (11.5f)));
+    statusBarLabel_.setFont (juce::Font (juce::FontOptions (10.5f)));
     statusBarLabel_.setColour (juce::Label::textColourId, PraatColours::textSecondary);
     statusBarLabel_.setJustificationType (juce::Justification::centredLeft);
 
@@ -555,33 +520,23 @@ void PraatPluginEditor::paint (juce::Graphics& g)
     const int w = getWidth();
     const int h = getHeight();
 
-    // ── Main background ──────────────────────────────────────────────────────
+    // ── Main background (the display "viewport" area) ─────────────────────────
     g.fillAll (PraatColours::background);
 
-    // ── Header band ──────────────────────────────────────────────────────────
-    g.setGradientFill (juce::ColourGradient (
-        PraatColours::headerBg, 0.f, 0.f,
-        PraatColours::background.brighter (0.03f), (float)w, 0.f, false));
+    // ── Header panel strip — slightly lighter than the display area ───────────
+    g.setColour (PraatColours::surface);
     g.fillRect (0, 0, w, kHeaderH);
 
-    // ── 2-px accent stripe at very top ───────────────────────────────────────
-    g.setGradientFill (juce::ColourGradient (
-        PraatColours::accentCyan, 0.f, 0.f,
-        PraatColours::accentBlue, (float)w, 0.f, false));
-    g.fillRect (0.f, 0.f, (float)w, 2.f);
+    // ── 2px gold accent stripe — the only decorative element ─────────────────
+    g.setColour (PraatColours::accentGold);
+    g.fillRect (0, 0, w, 2);
 
-    // ── Horizontal dividers ───────────────────────────────────────────────────
-    // Recalculate the same cumulative y-positions as resized() so these line up.
-    auto drawDivider = [&] (int divY)
-    {
-        g.setColour (PraatColours::divider);
-        g.fillRect (0, divY, w, kDivider);
-    };
+    // ── Hair-line divider between header and waveform area ────────────────────
+    g.setColour (PraatColours::border);
+    g.fillRect (0, kHeaderH, w, 1);
 
-    // The two waveform sections sit between the header divider and transport.
-    //   header → divider(50) → BEFORE label(16) → waveform(90) →
-    //   gap(6) → AFTER label(16) → processed waveform(90) → divider → transport
-    drawDivider (kHeaderH);                           // below header
+    // ── Controls panel strip (transport + script + morph + results + status) ──
+    // Starts right after the two waveforms.
     {
         const int afterWaveforms = kHeaderH + kDivider
             + kWaveformLabelH + kWaveformH
@@ -606,66 +561,62 @@ void PraatPluginEditor::paint (juce::Graphics& g)
     g.setColour (PraatColours::divider);
     g.fillRect (0, h - kStatusH, w, kDivider);
 
-    // ── BEFORE / AFTER section labels ─────────────────────────────────────────
-    {
-        const int beforeY = kHeaderH + kDivider;
-        paintSectionLabel (g, "CLEAN",
-            { kPadH, beforeY, w - kPadH * 2, kWaveformLabelH });
-
-        const int afterY = beforeY + kWaveformLabelH + kWaveformH + kWaveformGap;
-        paintSectionLabel (g, "MORPHED",
-            { kPadH, afterY, w - kPadH * 2, kWaveformLabelH });
+        // Hair-line divider between display area and controls
+        g.setColour (PraatColours::border);
+        g.fillRect (0, controlsY, w, 1);
     }
 
-    // ── "RESULTS ─────────" section label ─────────────────────────────────────
+    // ── "CLEAN" label — top-left corner of the original waveform ─────────────
     {
-        const auto resultsLabel = juce::Rectangle<int> (
-            kPadH,
-            resultsTextDisplay_.getY() - kResultsLabelH - 4,
-            getWidth() - kPadH * 2,
-            kResultsLabelH);
-        paintSectionLabel (g, "RESULTS", resultsLabel);
+        const int waveAY = kHeaderH + 1 + 4;
+        g.setFont (juce::Font (juce::FontOptions (8.0f, juce::Font::bold)));
+        g.setColour (PraatColours::textMuted.brighter (0.5f));
+        g.drawText ("CLEAN",
+                    kPadH + 6, waveAY + 5, 60, 12,
+                    juce::Justification::centredLeft, false);
     }
 
-    // ── Card border + soft glow around results panel ──────────────────────────
+    // ── "MORPHED" label — top-left corner of the processed waveform ──────────
     {
-        const auto panel = resultsTextDisplay_.getBounds().toFloat();
-        const auto card  = panel.expanded (1.0f);
-        constexpr float cr = 4.0f;
-
-        for (int i = 3; i >= 1; --i)
-        {
-            g.setColour (PraatColours::accentCyan.withAlpha (0.025f * (float)i));
-            g.drawRoundedRectangle (card.expanded ((float)(i + 1)),
-                                    cr + (float)i, 1.0f);
-        }
-        g.setColour (PraatColours::cardBorder);
-        g.drawRoundedRectangle (card, cr, 1.0f);
+        const int waveBY = kHeaderH + 1 + 4 + kWaveformH + kWaveformGap;
+        g.setFont (juce::Font (juce::FontOptions (8.0f, juce::Font::bold)));
+        g.setColour (PraatColours::accentGold.withAlpha (0.65f));
+        g.drawText ("MORPHED",
+                    kPadH + 6, waveBY + 5, 70, 12,
+                    juce::Justification::centredLeft, false);
     }
+
+    // ── Status bar (bottom strip of the controls panel) ───────────────────────
+    g.setColour (PraatColours::background);
+    g.fillRect (0, h - kStatusH, w, kStatusH);
+    g.setColour (PraatColours::borderSubtle);
+    g.fillRect (0, h - kStatusH, w, 1);
 
     // ── Glowing status dot ────────────────────────────────────────────────────
     {
-        constexpr float dotD  = 9.0f;
-        constexpr float glowD = 20.0f;
+        constexpr float dotD  = 7.0f;
+        constexpr float glowD = 16.0f;
         const float dotX = (float)kPadH;
         const float dotY = (float)(h - kStatusH) + ((float)kStatusH - dotD) * 0.5f;
         const float cx   = dotX + dotD * 0.5f;
         const float cy   = dotY + dotD * 0.5f;
 
-        // Radial glow
         g.setGradientFill (juce::ColourGradient (
-            statusDotColour_.withAlpha (0.4f), cx, cy,
-            statusDotColour_.withAlpha (0.0f), cx + glowD * 0.5f, cy, true));
+            statusDotColour_.withAlpha (0.35f), cx, cy,
+            statusDotColour_.withAlpha (0.0f),  cx + glowD * 0.5f, cy, true));
         const float go = (glowD - dotD) * 0.5f;
         g.fillEllipse (dotX - go, dotY - go, glowD, glowD);
-
-        // Solid dot
         g.setColour (statusDotColour_);
         g.fillEllipse (dotX, dotY, dotD, dotD);
+        g.setColour (juce::Colours::white.withAlpha (0.25f));
+        g.fillEllipse (dotX + 1.5f, dotY + 1.0f, 2.5f, 2.0f);
+    }
 
-        // Specular highlight
-        g.setColour (juce::Colours::white.withAlpha (0.40f));
-        g.fillEllipse (dotX + 1.8f, dotY + 1.2f, 3.2f, 2.6f);
+    // ── Results area: subtle card border ─────────────────────────────────────
+    {
+        const auto panel = resultsTextDisplay_.getBounds().toFloat();
+        g.setColour (PraatColours::border.withAlpha (0.5f));
+        g.drawRoundedRectangle (panel.expanded (1.0f), 3.0f, 1.0f);
     }
 }
 
@@ -676,28 +627,29 @@ void PraatPluginEditor::resized()
 {
     int y = 0;
 
-    // ── Header ───────────────────────────────────────────────────────────────
-    // Inset 9px top/bottom so buttons don't press against the header border.
+    // ── Header: title + LOAD + REC, inset vertically ─────────────────────────
     {
         juce::Rectangle<int> row = juce::Rectangle<int> (0, y, getWidth(), kHeaderH)
-                                       .reduced (kPadH, 9);
-        recordButton_.setBounds    (row.removeFromRight (40));
+                                       .reduced (kPadH, 7);
+        recordButton_.setBounds    (row.removeFromRight (38));
         row.removeFromRight (5);
-        loadAudioButton_.setBounds (row.removeFromRight (68));
+        loadAudioButton_.setBounds (row.removeFromRight (66));
         row.removeFromRight (8);
         pluginTitleLabel_.setBounds (row);
     }
-    y += kHeaderH + kDivider;
+    y += kHeaderH + 1;  // 1px subtle separator
 
-    // ── BEFORE label (drawn in paint(), not a component) + original waveform ─
-    y += kWaveformLabelH;
-    waveformDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2, kWaveformH);
+    // ── CLEAN waveform — full width, no side padding ──────────────────────────
+    y += 4;   // small breathing gap after header
+    waveformDisplay_.setBounds (0, y, getWidth(), kWaveformH);
     y += kWaveformH + kWaveformGap;
 
-    // ── AFTER label (drawn in paint(), not a component) + processed waveform ─
-    y += kWaveformLabelH;
-    processedWaveformDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2, kWaveformH);
-    y += kWaveformH + kDivider;
+    // ── MORPHED waveform — full width, no side padding ───────────────────────
+    processedWaveformDisplay_.setBounds (0, y, getWidth(), kWaveformH);
+    y += kWaveformH + 8;
+
+    // ── Subtle separator (drawn in paint) ─────────────────────────────────────
+    y += 1;   // separator itself
 
     // ── Transport: PLAY A  PLAY B  STOP  [space]  EXPORT ────────────────────
     {
@@ -709,15 +661,15 @@ void PraatPluginEditor::resized()
         stopButton_.setBounds          (row.removeFromLeft (82));
         exportButton_.setBounds        (row.removeFromRight (82));
     }
-    y += kTransportH + kDivider;
+    y += kTransportH + 8;
 
-    // ── Script row ───────────────────────────────────────────────────────────
+    // ── Script row: SCRIPT label + dropdown + ... ────────────────────────────
     {
         juce::Rectangle<int> row (kPadH, y, getWidth() - kPadH * 2, kScriptRowH);
-        loadScriptsDirButton_.setBounds (row.removeFromRight (36));
-        row.removeFromRight (6);
-        scriptSelectorDropdown_.setBounds (row.removeFromRight (row.getWidth() - 58));
-        row.removeFromRight (6);
+        loadScriptsDirButton_.setBounds (row.removeFromRight (32));
+        row.removeFromRight (5);
+        scriptSelectorDropdown_.setBounds (row.removeFromRight (row.getWidth() - 52));
+        row.removeFromRight (5);
         scriptSectionLabel_.setBounds (row);
     }
     y += kScriptRowH + kDivider;
@@ -742,16 +694,22 @@ void PraatPluginEditor::resized()
     juce::Rectangle<int> content (kPadH, y, getWidth() - kPadH * 2,
                                    contentBottom - y);
 
-    content.removeFromTop (6);
-    analyzeButton_.setBounds (content.removeFromTop (kAnalyzeH));
-    content.removeFromTop (8);
+    // ── MORPH button — full available width ──────────────────────────────────
+    analyzeButton_.setBounds (kPadH, y, getWidth() - kPadH * 2, kMorphH);
+    y += kMorphH + 8;
 
-    // "RESULTS ─────" label is drawn in paint() — reserve space only.
-    const auto resultsLabelArea = content.removeFromTop (kResultsLabelH);
-    juce::ignoreUnused (resultsLabelArea);
-    content.removeFromTop (4);
+    // ── Results panel — fills remaining space above status bar ───────────────
+    const int resultsBottom = getHeight() - kStatusH - 1;
+    if (resultsBottom > y)
+        resultsTextDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2,
+                                        resultsBottom - y);
 
-    resultsTextDisplay_.setBounds (content);
+    // ── Status bar: dot is drawn in paint(), label positioned here ───────────
+    {
+        const int dotSpace = 20;
+        statusBarLabel_.setBounds (kPadH + dotSpace, getHeight() - kStatusH,
+                                    getWidth() - kPadH * 2 - dotSpace, kStatusH);
+    }
 }
 
 void PraatPluginEditor::paintSectionLabel (juce::Graphics& g,
@@ -761,21 +719,20 @@ void PraatPluginEditor::paintSectionLabel (juce::Graphics& g,
     if (area.isEmpty()) return;
 
     juce::GlyphArrangement ga;
-    ga.addLineOfText (juce::Font (juce::FontOptions (9.5f, juce::Font::bold)),
+    ga.addLineOfText (juce::Font (juce::FontOptions (8.5f, juce::Font::bold)),
                       labelText, 0.0f, 0.0f);
-    const float labelW = ga.getBoundingBox (0, -1, true).getWidth() + 8.0f;
+    const float labelW = ga.getBoundingBox (0, -1, true).getWidth() + 6.0f;
     const float lineY  = area.getCentreY();
 
-    g.setFont (juce::Font (juce::FontOptions (9.5f, juce::Font::bold)));
-    g.setColour (PraatColours::textMuted.brighter (0.5f));
+    g.setFont (juce::Font (juce::FontOptions (8.5f, juce::Font::bold)));
+    g.setColour (PraatColours::textMuted.brighter (0.3f));
     g.drawText (labelText,
                 area.getX(), area.getY(), (int)labelW, area.getHeight(),
                 juce::Justification::centredLeft);
 
-    // Trailing line
-    g.setColour (PraatColours::divider.brighter (0.3f));
-    g.fillRect ((float)area.getX() + labelW + 4.0f, lineY,
-                (float)area.getWidth() - labelW - 4.0f, 1.0f);
+    g.setColour (PraatColours::borderSubtle.brighter (0.1f));
+    g.fillRect ((float)area.getX() + labelW + 3.0f, lineY,
+                (float)area.getWidth() - labelW - 3.0f, 1.0f);
 }
 
 //==============================================================================

@@ -34,6 +34,12 @@ void WaveformDisplay::setWaveformColour (juce::Colour colour)
     repaint();
 }
 
+void WaveformDisplay::setSelectionColour (juce::Colour colour)
+{
+    selectionColour_ = colour;
+    repaint();
+}
+
 void WaveformDisplay::setPlaceholderText (const juce::String& text)
 {
     placeholderText_ = text;
@@ -95,29 +101,33 @@ void WaveformDisplay::paint (juce::Graphics& g)
     const auto bounds = getLocalBounds().toFloat();
 
     // ── Background ──────────────────────────────────────────────────────────
-    g.setColour (juce::Colour (0xff0d0d1a));
+    // Deep near-black with a cold blue cast — matches the FabFilter display bg.
+    g.setColour (juce::Colour (0xff0d0f14));
     g.fillRoundedRectangle (bounds, 4.0f);
 
     // ── Border ───────────────────────────────────────────────────────────────
-    g.setColour (juce::Colour (0xff2a2a4a));
+    g.setColour (juce::Colour (0xff1e2028));
     g.drawRoundedRectangle (bounds.reduced (0.5f), 4.0f, 1.0f);
 
     if (audioBuffer_ == nullptr || audioBuffer_->getNumSamples() == 0)
     {
         // Empty state placeholder
-        g.setColour (juce::Colour (0xff3a3a5a));
-        g.setFont (juce::Font (juce::FontOptions (12.0f)));
+        g.setColour (juce::Colour (0xff404550));
+        g.setFont (juce::Font (juce::FontOptions (11.0f)));
         g.drawText (placeholderText_,
                     bounds.toNearestInt(), juce::Justification::centred, true);
         return;
     }
+
+    // ── Amplitude grid (drawn first, behind everything) ──────────────────────
+    paintGrid (g, bounds);
 
     // ── Selection highlight (drawn behind the waveform) ──────────────────────
     paintSelection (g, bounds);
 
     // ── Zero line ────────────────────────────────────────────────────────────
     const float centreY = bounds.getCentreY();
-    g.setColour (juce::Colour (0xff2a2a4a));
+    g.setColour (juce::Colour (0xff1a1d26));
     g.fillRect (bounds.getX(), centreY - 0.5f, bounds.getWidth(), 1.0f);
 
     // ── Waveform ─────────────────────────────────────────────────────────────
@@ -194,23 +204,43 @@ void WaveformDisplay::paint (juce::Graphics& g)
     }
 }
 
+void WaveformDisplay::paintGrid (juce::Graphics& g,
+                                  const juce::Rectangle<float>& bounds) const
+{
+    // Draws very subtle amplitude guide lines at ±50 % of full scale.
+    // These mirror the faint grid lines in FabFilter's spectrum display —
+    // just enough structure to read amplitude without visual clutter.
+    const float halfH   = bounds.getHeight() * 0.42f;
+    const float centreY = bounds.getCentreY();
+
+    // 3 % white — barely visible against the #0d0f14 background.
+    g.setColour (juce::Colour (0x08ffffff));
+
+    const float plus50Y  = centreY - halfH * 0.5f;
+    const float minus50Y = centreY + halfH * 0.5f;
+
+    g.fillRect (bounds.getX(), plus50Y,  bounds.getWidth(), 1.0f);
+    g.fillRect (bounds.getX(), minus50Y, bounds.getWidth(), 1.0f);
+}
+
 void WaveformDisplay::paintWaveform (juce::Graphics& g,
                                       const juce::Rectangle<float>& bounds) const
 {
     const int totalSamples = audioBuffer_->getNumSamples();
     const int numChannels  = juce::jmin (audioBuffer_->getNumChannels(), 2);
     const int w            = static_cast<int> (bounds.getWidth());
-    const int h            = static_cast<int> (bounds.getHeight());
     const float centreY    = bounds.getCentreY();
-    const float halfHeight = bounds.getHeight() * 0.42f;  // use 84% of height
+    const float halfHeight = bounds.getHeight() * 0.42f;
     const float originX    = bounds.getX();
 
-    // Waveform colour: set per-instance via setWaveformColour()
-    g.setColour (waveformColour_.withAlpha (0.80f));
+    // FabFilter-style rendering: four layers built as paths, then filled in
+    // a single pass each — outer glow, translucent body, bright top edge,
+    // bright bottom edge.  The result is a luminous waveform with a
+    // transparent interior, matching the "analytical display" aesthetic.
+    juce::Path glowPath, bodyPath, topEdgePath, bottomEdgePath;
 
     for (int x = 0; x < w; ++x)
     {
-        // Map this pixel column to a contiguous block of samples.
         const int startSample = static_cast<int> (
             (static_cast<float> (x)     / static_cast<float> (w)) * static_cast<float> (totalSamples));
         const int endSample   = juce::jmin (
@@ -226,7 +256,6 @@ void WaveformDisplay::paintWaveform (juce::Graphics& g,
         for (int ch = 0; ch < numChannels; ++ch)
         {
             const float* samples = audioBuffer_->getReadPointer (ch);
-
             for (int s = startSample; s <= endSample; ++s)
             {
                 const float v = samples[s];
@@ -235,18 +264,45 @@ void WaveformDisplay::paintWaveform (juce::Graphics& g,
             }
         }
 
-        // Clamp to [-1, 1] to handle files with slight clipping.
         peakMin = juce::jlimit (-1.0f, 1.0f, peakMin);
         peakMax = juce::jlimit (-1.0f, 1.0f, peakMax);
 
         const float top    = centreY - peakMax * halfHeight;
         const float bottom = centreY - peakMin * halfHeight;
         const float height = juce::jmax (1.0f, bottom - top);
+        const float px     = originX + static_cast<float> (x);
 
-        g.fillRect (originX + static_cast<float> (x), top, 1.0f, height);
+        // Outer glow — 2px wider top and bottom
+        glowPath.addRectangle (px, top - 2.0f, 1.0f, height + 4.0f);
+
+        // Translucent body interior
+        bodyPath.addRectangle (px, top, 1.0f, height);
+
+        // Bright top edge (2.5px tall maximum)
+        const float edgeH = juce::jmin (2.5f, height * 0.35f);
+        topEdgePath.addRectangle (px, top, 1.0f, edgeH);
+
+        // Bright bottom edge
+        if (height > 3.0f)
+            bottomEdgePath.addRectangle (px, bottom - edgeH, 1.0f, edgeH);
     }
 
-    juce::ignoreUnused (h);
+    // Get the pure-colour version (strip baked-in alpha) so each layer uses
+    // its own intended opacity.
+    const juce::Colour base = waveformColour_.withAlpha (1.0f);
+
+    // Layer 1: outer glow (~4 % opacity)
+    g.setColour (base.withAlpha (0.04f));
+    g.fillPath (glowPath);
+
+    // Layer 2: translucent body (~11 % opacity)
+    g.setColour (base.withAlpha (0.11f));
+    g.fillPath (bodyPath);
+
+    // Layer 3 + 4: bright edges (full colour alpha as configured)
+    g.setColour (waveformColour_);
+    g.fillPath (topEdgePath);
+    g.fillPath (bottomEdgePath);
 }
 
 void WaveformDisplay::paintSelection (juce::Graphics& g,
@@ -263,11 +319,11 @@ void WaveformDisplay::paintSelection (juce::Graphics& g,
         return;
 
     // Semi-transparent fill
-    g.setColour (juce::Colour (0xff00b4cc).withAlpha (0.18f));
+    g.setColour (selectionColour_.withAlpha (0.15f));
     g.fillRect (selStartX, bounds.getY(), selWidth, bounds.getHeight());
 
     // Left handle
-    g.setColour (juce::Colour (0xff00b4cc).withAlpha (0.85f));
+    g.setColour (selectionColour_.withAlpha (0.85f));
     g.fillRect (selStartX, bounds.getY(), 2.0f, bounds.getHeight());
 
     // Right handle
