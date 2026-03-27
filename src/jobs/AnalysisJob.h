@@ -49,6 +49,14 @@ struct AnalysisJob
     // The .praat script to run against capturedAudioWavFile.
     juce::File praatScriptFile;
 
+    // User-controlled parameter values for the script, in the same order as
+    // the fields appear in the script's form block (after inputFile/outputFile).
+    // Values are passed as additional positional CLI arguments to Praat after
+    // the two mandatory WAV file paths.
+    // Example: if the form block has "real Threshold 0.3", this holds
+    // {"Threshold", "0.45"} when the user has moved the slider to 0.45.
+    juce::StringPairArray scriptParameters;
+
     // Path to the Praat executable, resolved by PraatInstallationLocator.
     juce::File praatExecutableFile;
 
