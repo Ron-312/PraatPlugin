@@ -1,5 +1,6 @@
 #include "plugin/PraatPluginProcessor.h"
 #include "plugin/PraatPluginEditor.h"
+#include "audio/WavFileWriter.h"
 #include <BinaryData.h>
 
 PraatPluginProcessor::PraatPluginProcessor()
@@ -131,6 +132,22 @@ void PraatPluginProcessor::installBundledScriptsIfNeeded()
     extractIfMissing (BinaryData::pitch_shift_praat,
                       BinaryData::pitch_shift_praatSize,
                       "pitch_shift.praat");
+
+    extractIfMissing (BinaryData::wavefolder_praat,
+                      BinaryData::wavefolder_praatSize,
+                      "wavefolder.praat");
+
+    extractIfMissing (BinaryData::stereo_phaser_praat,
+                      BinaryData::stereo_phaser_praatSize,
+                      "stereo_phaser.praat");
+
+    extractIfMissing (BinaryData::spectral_reverb_praat,
+                      BinaryData::spectral_reverb_praatSize,
+                      "spectral_reverb.praat");
+
+    extractIfMissing (BinaryData::paulstretch_praat,
+                      BinaryData::paulstretch_praatSize,
+                      "paulstretch.praat");
 
     // Auto-load so the UI shows scripts immediately without the user
     // having to click "Load Scripts...".
@@ -291,6 +308,16 @@ uint32_t PraatPluginProcessor::loadedAudioVersion() const noexcept
 
 bool PraatPluginProcessor::loadProcessedAudioFromFile (const juce::File& audioFile)
 {
+    // If a previous processed source exists the transport may still be pointing
+    // at it (e.g. the user played it and stopped, but never switched back to
+    // the original).  Destroy the old reader source only AFTER disconnecting
+    // the transport so the audio thread cannot read from the freed memory.
+    if (processedReaderSource_ != nullptr)
+    {
+        transportSource_.stop();
+        transportSource_.setSource (nullptr);
+    }
+
     // Read the processed audio into an in-memory buffer for waveform display.
     std::unique_ptr<juce::AudioFormatReader> reader (
         audioFormatManager_.createReaderFor (audioFile));
@@ -483,6 +510,59 @@ void PraatPluginProcessor::beginAnalysisOfSelectedRegion (const juce::StringArra
 }
 
 //==============================================================================
+// Script parameters
+
+juce::StringPairArray PraatPluginProcessor::currentScriptParameters() const
+{
+    const juce::File activeScript = scriptManager_.activeScript();
+    if (! activeScript.existsAsFile())
+        return {};
+
+    // Parse the form block to get the canonical parameter list (names + defaults).
+    const auto parameterDefinitions = ScriptParameterParser::parse (activeScript);
+    if (parameterDefinitions.isEmpty())
+        return {};
+
+    // Build a StringPairArray ordered to match the form block.
+    // Use stored user values where available; fall back to defaults otherwise.
+    juce::StringPairArray result;
+    result.setIgnoresCase (false);
+
+    const auto storedIt = scriptParameterValues_.find (activeScript.getFullPathName());
+    const bool hasStoredValues = (storedIt != scriptParameterValues_.end());
+
+    for (const auto& paramDef : parameterDefinitions)
+    {
+        juce::String value;
+
+        if (hasStoredValues)
+        {
+            const juce::String storedValue = storedIt->second.getValue (paramDef.name, {});
+            value = storedValue.isNotEmpty() ? storedValue
+                                             : juce::String (paramDef.defaultValue);
+        }
+        else
+        {
+            value = juce::String (paramDef.defaultValue);
+        }
+
+        result.set (paramDef.name, value);
+    }
+
+    return result;
+}
+
+void PraatPluginProcessor::setScriptParameter (const juce::String& parameterName,
+                                                const juce::String& value)
+{
+    const juce::File activeScript = scriptManager_.activeScript();
+    if (! activeScript.existsAsFile())
+        return;
+
+    scriptParameterValues_[activeScript.getFullPathName()].set (parameterName, value);
+}
+
+//==============================================================================
 // State queries
 
 bool PraatPluginProcessor::isPraatAvailable() const noexcept
@@ -589,6 +669,23 @@ void PraatPluginProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("lastLoadedAudioFile",
                         loadedAudioFile_.getFullPathName(), nullptr);
 
+    // Persist per-script parameter values so sliders survive session reloads.
+    // Each script gets a child node identified by its file path.
+    for (const auto& [scriptPath, paramValues] : scriptParameterValues_)
+    {
+        if (paramValues.size() == 0)
+            continue;
+
+        juce::ValueTree scriptNode ("ScriptParams");
+        scriptNode.setProperty ("scriptPath", scriptPath, nullptr);
+
+        for (int i = 0; i < paramValues.size(); ++i)
+            scriptNode.setProperty (paramValues.getAllKeys()[i],
+                                    paramValues.getAllValues()[i], nullptr);
+
+        state.appendChild (scriptNode, nullptr);
+    }
+
     juce::MemoryOutputStream stream (destData, false);
     state.writeToStream (stream);
 }
@@ -612,6 +709,30 @@ void PraatPluginProcessor::setStateInformation (const void* data, int sizeInByte
         const juce::File lastAudioFile (lastAudioPath);
         if (lastAudioFile.existsAsFile())
             loadAudioFromFile (lastAudioFile);
+    }
+
+    // Restore per-script parameter values from child nodes.
+    for (int i = 0; i < state.getNumChildren(); ++i)
+    {
+        const auto child = state.getChild (i);
+        if (! child.hasType ("ScriptParams"))
+            continue;
+
+        const auto childScriptPath = child.getProperty ("scriptPath").toString();
+        if (childScriptPath.isEmpty())
+            continue;
+
+        juce::StringPairArray paramValues;
+        for (int p = 0; p < child.getNumProperties(); ++p)
+        {
+            const auto propName = child.getPropertyName (p).toString();
+            if (propName == "scriptPath")
+                continue;
+            paramValues.set (propName, child.getProperty (child.getPropertyName (p)).toString());
+        }
+
+        if (paramValues.size() > 0)
+            scriptParameterValues_[childScriptPath] = std::move (paramValues);
     }
 }
 
