@@ -34,3 +34,6 @@ DerivedData/
 
 #claude
 .claude/
+
+node_modules/
+ui/dist/

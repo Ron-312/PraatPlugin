@@ -1,0 +1,47 @@
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 22px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+/* Square LED — more hardware-like than a circle */
+.status-bar__led {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.status-bar__led--idle      { background: var(--color-ok); }
+.status-bar__led--playing   { background: var(--color-active); }
+.status-bar__led--error     { background: var(--color-recording); }
+
+.status-bar__led--recording {
+  background: var(--color-recording);
+  animation: led-blink 0.6s ease-in-out infinite;
+}
+
+.status-bar__led--analyzing {
+  background: var(--color-signal);
+  animation: led-blink 1s ease-in-out infinite;
+}
+
+@keyframes led-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+
+.status-bar__message {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

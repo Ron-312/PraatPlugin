@@ -1,0 +1,24 @@
+.waveform {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.waveform__label {
+  /* inherits .section-label from global.css */
+  padding-left: 1px;
+}
+
+/* The "screen" — inset border gives the LCD-inside-hardware feel */
+.waveform__screen {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #111111;
+}
+
+.waveform__canvas {
+  display: block;
+  width: 100%;
+  /* height is set via the style prop on the wrapper — canvas height is set in JS */
+}
