@@ -30,7 +30,7 @@ juce_add_plugin(PraatPlugin
     PLUGIN_MANUFACTURER_CODE    Prat
     PLUGIN_CODE                 Prt1
 
-    FORMATS                     VST3 AU
+    FORMATS                     VST3 $<$<PLATFORM_ID:Darwin>:AU>
     PRODUCT_NAME                "PraatPlugin"
 
     IS_SYNTH                    FALSE
@@ -105,11 +105,13 @@ target_compile_definitions(PraatPlugin
 # JUCE's initial ad-hoc signature can be incomplete. This post-build step
 # strips it and applies a clean one so Ableton's scanner accepts the bundle.
 # See docs/adr/ADR-007 for context.
-add_custom_command(TARGET PraatPlugin_VST3 POST_BUILD
-    COMMAND codesign --force --deep --sign -
-            "$<TARGET_BUNDLE_DIR:PraatPlugin_VST3>"
-    COMMENT "Re-applying clean ad-hoc signature to VST3 bundle"
-)
+if(APPLE)
+    add_custom_command(TARGET PraatPlugin_VST3 POST_BUILD
+        COMMAND codesign --force --deep --sign -
+                "$<TARGET_BUNDLE_DIR:PraatPlugin_VST3>"
+        COMMENT "Re-applying clean ad-hoc signature to VST3 bundle"
+    )
+endif()
 
 # ─── Optional test suite ──────────────────────────────────────────────────────
 option(BUILD_TESTS "Build unit tests (requires Catch2)" OFF)

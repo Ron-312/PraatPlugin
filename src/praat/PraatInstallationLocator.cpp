@@ -56,20 +56,34 @@ juce::String PraatInstallationLocator::describeSearchResult() const
 
 juce::File PraatInstallationLocator::tryFindingPraatInSystemApplicationsFolder() const
 {
+#if JUCE_WINDOWS
+    const auto programFiles = juce::File (juce::SystemStats::getEnvironmentVariable ("ProgramFiles", "C:\\Program Files"));
+    return programFiles.getChildFile ("Praat\\Praat.exe");
+#else
     return juce::File ("/Applications/Praat.app/Contents/MacOS/Praat");
+#endif
 }
 
 juce::File PraatInstallationLocator::tryFindingPraatInUserApplicationsFolder() const
 {
+#if JUCE_WINDOWS
+    const auto programFilesX86 = juce::File (juce::SystemStats::getEnvironmentVariable ("ProgramFiles(x86)", "C:\\Program Files (x86)"));
+    return programFilesX86.getChildFile ("Praat\\Praat.exe");
+#else
     return juce::File::getSpecialLocation (juce::File::userHomeDirectory)
                .getChildFile ("Applications/Praat.app/Contents/MacOS/Praat");
+#endif
 }
 
 juce::File PraatInstallationLocator::tryFindingPraatOnSystemPath() const
 {
-    // Use `which praat` to locate Praat if it's on PATH.
+    // Use `which` (macOS/Linux) or `where` (Windows) to locate Praat if it's on PATH.
     juce::ChildProcess whichProcess;
+#if JUCE_WINDOWS
+    if (whichProcess.start ("where praat"))
+#else
     if (whichProcess.start ("which praat"))
+#endif
     {
         whichProcess.waitForProcessToFinish (3000);
         const auto result = whichProcess.readAllProcessOutput().trim();
