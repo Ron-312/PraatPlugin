@@ -30,7 +30,7 @@ juce_add_plugin(PraatPlugin
     PLUGIN_MANUFACTURER_CODE    Prat
     PLUGIN_CODE                 Prt1
 
-    FORMATS                     VST3 AU
+    FORMATS                     VST3 $<$<PLATFORM_ID:Darwin>:AU>
     PRODUCT_NAME                "PraatPlugin"
 
     IS_SYNTH                    FALSE
@@ -38,6 +38,7 @@ juce_add_plugin(PraatPlugin
     NEEDS_MIDI_OUTPUT           FALSE
     IS_MIDI_EFFECT              FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+    NEEDS_WEBVIEW2              TRUE    # enables WebView2 backend on Windows
 
     VST3_CATEGORIES             "Analyzer"
     AU_MAIN_TYPE                kAudioUnitType_Effect
@@ -45,17 +46,48 @@ juce_add_plugin(PraatPlugin
     BUNDLE_ID                   com.praatplugin.plugin
 )
 
-# ─── Bundled Praat scripts (embedded as BinaryData, extracted to app-support on first run) ──
+# ─── React UI — build ui/ with npm before running cmake ──────────────────────
+# The built output (ui/dist/index.html) is a single self-contained HTML file
+# with all CSS and JS inlined via vite-plugin-singlefile.
+# It is embedded as BinaryData and served by PraatPluginEditor's ResourceProvider.
+#
+# If the dist file is missing, cmake will try to build it automatically.
+# You can also build it manually: cd ui && npm install && npm run build
+find_program(NPM npm)
+if(NPM AND NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ui/dist/index.html")
+    message(STATUS "ui/dist/index.html not found — running npm build...")
+    execute_process(
+        COMMAND ${NPM} install
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ui"
+        RESULT_VARIABLE NPM_INSTALL_RESULT
+    )
+    execute_process(
+        COMMAND ${NPM} run build
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ui"
+        RESULT_VARIABLE NPM_BUILD_RESULT
+    )
+    if(NOT NPM_BUILD_RESULT EQUAL 0)
+        message(WARNING "npm build failed. UI will be missing. Run: cd ui && npm install && npm run build")
+    endif()
+endif()
+
+# Touch ui/dist/index.html at cmake-configure time so ninja/make always sees
+# it as newer than the stale BinaryData objects and recompiles them.
+# Without this, juce_add_binary_data does not notice when the HTML changes
+# between cmake runs (the file timestamp is older than the .o file).
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ui/dist/index.html")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E touch
+        "${CMAKE_CURRENT_SOURCE_DIR}/ui/dist/index.html")
+endif()
+
+# ─── Bundled Praat scripts + built React UI (all embedded as BinaryData) ──────
 juce_add_binary_data(PraatPlugin_BinaryData SOURCES
     scripts/examples/pitch_analysis.praat
     scripts/examples/formant_analysis.praat
     scripts/examples/fuzz_distortion.praat
     scripts/examples/robot_voice.praat
     scripts/examples/pitch_shift.praat
-    scripts/examples/wavefolder.praat
-    scripts/examples/stereo_phaser.praat
-    scripts/examples/spectral_reverb.praat
-    scripts/examples/paulstretch.praat
+    ui/dist/index.html
 )
 
 # ─── Source files ─────────────────────────────────────────────────────────────
@@ -66,6 +98,7 @@ target_sources(PraatPlugin PRIVATE
     src/audio/AudioCapture.cpp
     src/audio/WavFileWriter.cpp
     src/praat/PraatRunner.cpp
+    src/praat/PraatFormParser.cpp
     src/praat/PraatInstallationLocator.cpp
     src/praat/PraatScriptInvoker.cpp
     src/jobs/AnalysisJob.cpp
@@ -101,7 +134,8 @@ target_link_libraries(PraatPlugin
 # ─── Compile definitions ──────────────────────────────────────────────────────
 target_compile_definitions(PraatPlugin
     PUBLIC
-        JUCE_WEB_BROWSER=0
+        JUCE_WEB_BROWSER=1              # enable WebBrowserComponent
+        JUCE_USE_WIN_WEBVIEW2=1         # use WebView2 on Windows (no-op on macOS)
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
@@ -110,11 +144,13 @@ target_compile_definitions(PraatPlugin
 # JUCE's initial ad-hoc signature can be incomplete. This post-build step
 # strips it and applies a clean one so Ableton's scanner accepts the bundle.
 # See docs/adr/ADR-007 for context.
-add_custom_command(TARGET PraatPlugin_VST3 POST_BUILD
-    COMMAND codesign --force --deep --sign -
-            "$<TARGET_BUNDLE_DIR:PraatPlugin_VST3>"
-    COMMENT "Re-applying clean ad-hoc signature to VST3 bundle"
-)
+if(APPLE)
+    add_custom_command(TARGET PraatPlugin_VST3 POST_BUILD
+        COMMAND codesign --force --deep --sign -
+                "$<TARGET_BUNDLE_DIR:PraatPlugin_VST3>"
+        COMMENT "Re-applying clean ad-hoc signature to VST3 bundle"
+    )
+endif()
 
 # ─── Optional test suite ──────────────────────────────────────────────────────
 option(BUILD_TESTS "Build unit tests (requires Catch2)" OFF)

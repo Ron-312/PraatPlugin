@@ -117,6 +117,12 @@ public:
     // Path of the currently loaded file (empty if nothing loaded).
     juce::File loadedAudioFile() const noexcept;
 
+    // Monotonically increasing counter — incremented every time loadAudioFromFile()
+    // succeeds.  The editor compares this to detect when a re-recording replaces
+    // audio at the same file path (UUID filenames prevent this in practice, but
+    // the counter is a belt-and-suspenders guard).
+    uint32_t loadedAudioVersion() const noexcept;
+
     //──────────────────────────────────────────────────────────────────────────
     // Processed audio  (set by a Praat script that wrote audio output)
     //──────────────────────────────────────────────────────────────────────────
@@ -127,6 +133,9 @@ public:
 
     // True if a script has produced audio output since the last loadAudioFromFile().
     bool hasProcessedAudio() const noexcept;
+
+    // Path of the stable processed-audio WAV (empty if none produced yet).
+    juce::File processedAudioFile() const noexcept;
 
     // In-memory buffer of the processed audio (message-thread only).
     const juce::AudioBuffer<float>& processedAudioBuffer() const noexcept;
@@ -180,9 +189,9 @@ public:
     //──────────────────────────────────────────────────────────────────────────
 
     // Extracts the selected region, creates an AnalysisJob, and enqueues it.
-    // Does nothing if Praat is not installed, no audio is loaded, or no script
-    // is selected.
-    void beginAnalysisOfSelectedRegion();
+    // extraScriptArgs supplies user-edited values for any form fields beyond
+    // inputFile/outputFile; pass {} to use the script's own defaults.
+    void beginAnalysisOfSelectedRegion (const juce::StringArray& extraScriptArgs = {});
 
     //──────────────────────────────────────────────────────────────────────────
     // State queries — safe to call on the message thread
@@ -253,6 +262,11 @@ private:
     juce::File                loadedAudioFile_;
     juce::Range<double>       selectedRegionSeconds_;    // (0,0) = full file
     std::atomic<bool>         audioIsLoaded_ { false };
+    std::atomic<uint32_t>     loadedAudioVersion_ { 0 }; // bumped on every successful load
+
+    // Temp WAV written by stopLiveCapture() — kept alive so the transport reader
+    // can play it back.  Replaced (and old file deleted) on the next recording.
+    juce::File                liveCaptureFile_;
 
     //──────────────────────────────────────────────────────────────────────────
     // Processed audio state  (message-thread only)

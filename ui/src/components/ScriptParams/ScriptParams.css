@@ -1,0 +1,96 @@
+/* ─── ScriptParams ──────────────────────────────────────────────────────────── */
+
+.script-params {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.script-params__label {
+  padding-left: 1px;
+}
+
+.script-params__list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 150px;
+  overflow-y: auto;
+  /* subtle scrollbar so it doesn't dominate the UI */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-btn-border) transparent;
+  padding-right: 4px;   /* prevent content from hiding behind scrollbar */
+}
+
+/* Every row: label on the left, control(s) on the right */
+.script-params__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.script-params__name {
+  flex: 0 0 110px;
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Numeric row: slider takes remaining space, number input is fixed width */
+.script-params__row--numeric .script-params__slider {
+  flex: 1;
+  accent-color: var(--color-signal);
+  height: 3px;
+  cursor: pointer;
+}
+
+.script-params__row--numeric .script-params__number {
+  flex: 0 0 64px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border: 1px solid var(--color-btn-border);
+  border-radius: var(--radius);
+  padding: 3px 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: right;
+}
+
+/* Text input */
+.script-params__input {
+  flex: 1;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border: 1px solid var(--color-btn-border);
+  border-radius: var(--radius);
+  padding: 3px 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Select dropdown */
+.script-params__select {
+  flex: 1;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border: 1px solid var(--color-btn-border);
+  border-radius: var(--radius);
+  padding: 3px 6px;
+  font-size: var(--text-sm);
+}
+
+/* Boolean toggle */
+.script-params__toggle {
+  min-width: 48px;
+}
+
+.script-params__toggle--on {
+  background: var(--color-signal);
+  border-color: var(--color-signal);
+  color: #fff;
+}

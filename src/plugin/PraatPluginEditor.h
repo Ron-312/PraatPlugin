@@ -2,46 +2,71 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_gui_extra/juce_gui_extra.h>
 #include "plugin/PraatPluginProcessor.h"
-#include "scripts/ScriptParameterParser.h"
-#include "ui/WaveformDisplay.h"
+#include "praat/PraatFormParser.h"
 
-// Defined in PraatPluginEditor.cpp before the editor methods.
-class PraatLookAndFeel;
-class ScriptParameterPanel;
+// ─── PraatWebBrowser ──────────────────────────────────────────────────────────
+// Thin WebBrowserComponent subclass so PraatPluginEditor can react to page-load
+// events without inheriting from WebBrowserComponent itself.
+class PraatWebBrowser : public juce::WebBrowserComponent
+{
+public:
+    using juce::WebBrowserComponent::WebBrowserComponent;
 
-// The plugin's user interface.
+    // Called when a page finishes loading — used to push initial state immediately.
+    std::function<void()>              onPageLoaded;
+    // Called on network error — used to surface a readable error message.
+    std::function<void(juce::String)>  onLoadError;
+
+    void pageFinishedLoading (const juce::String&) override
+    {
+        if (onPageLoaded) onPageLoaded();
+    }
+
+    bool pageLoadHadNetworkError (const juce::String& errorInfo) override
+    {
+        if (onLoadError) onLoadError (errorInfo);
+        return false;   // false = don't show JUCE's built-in error page
+    }
+
+
+};
+
+// ─── PraatPluginEditor ────────────────────────────────────────────────────────
 //
-// Layout (520 x 620, or taller when parameter panel is visible):
+// WebView-based plugin UI.  Replaces the original JUCE-component editor with
+// the React app bundled in ui/dist/index.html (BinaryData::index_html).
 //
-//   ┌────────────────────────────────────────────────────────┐
-//   │ [2px accent stripe]                                    │
-//   │  PRAAT PLUGIN            [LOAD FILE]  [REC]           │  50px header
-//   ├────────────────────────────────────────────────────────┤  1px divider
-//   │ CLEAN ─────────────────────────────────────────────    │  16px label
-//   │ [original waveform — drag to select]                   │  90px
-//   │ MORPHED ───────────────────────────────────────────    │  16px label (6px gap above)
-//   │ [processed waveform — view only]                       │  90px
-//   ├────────────────────────────────────────────────────────┤  1px divider
-//   │  [PLAY A]  [PLAY B]  [STOP]                            │  36px transport
-//   ├────────────────────────────────────────────────────────┤  1px divider
-//   │  SCRIPT  [dropdown ─────────────────]  [LOAD DIR]     │  36px
-//   ├────────────────────────────────────────────────────────┤  1px divider
-//   │  [              ANALYZE                           ]    │  44px
-//   │  RESULTS ──────────────────────────────────────────    │  16px label
-//   │ ┌──────────────────────────────────────────────────┐   │
-//   │ │ mean_pitch: 220.5 Hz                             │   │  results panel
-//   │ └──────────────────────────────────────────────────┘   │
-//   ├────────────────────────────────────────────────────────┤  1px divider
-//   │ ●  Ready                                               │  26px status
-//   └────────────────────────────────────────────────────────┘
+// ── Communication model ───────────────────────────────────────────────────────
 //
-// Polls processor state via juce::Timer at 20fps.
-// All state lives in PraatPluginProcessor — this class is pure UI.
-class PraatPluginEditor : public juce::AudioProcessorEditor,
-                           private juce::Timer,
-                           private juce::Button::Listener,
-                           private juce::ComboBox::Listener
+//   C++ → JS : timerCallback() calls pushStateToWebView() at 20fps.
+//              State is serialised into a juce::var (JSON-like) and delivered
+//              via emitEventIfBrowserIsVisible("stateUpdate", stateVar).
+//              JS merges the incoming object into its local React state.
+//
+//   JS → C++ : Each user action in the UI calls sendToPlugin(eventId, data),
+//              which fires window.__JUCE__.backend.emitEvent().
+//              This is captured by withEventListener registrations built in
+//              buildBrowserOptions() and dispatched to handler methods here.
+//
+// ── Windows fallback ──────────────────────────────────────────────────────────
+//
+//   If WebView2 Runtime is not installed, a plain JUCE label is shown directing
+//   the user to https://microsoft.com/edge/webview2.
+//   On macOS, WebKit is always available — no fallback needed.
+//
+// ── Resource serving ──────────────────────────────────────────────────────────
+//
+//   The React bundle (BinaryData::index_html) is served via
+//   Options::withResourceProvider on the juce://juce.backend/ URL scheme.
+//   WKWebView blocks file:// URLs in plugin processes, so this is the only
+//   reliable approach on macOS.
+//
+// See docs/adr/ for design rationale.
+// ─────────────────────────────────────────────────────────────────────────────
+class PraatPluginEditor  : public juce::AudioProcessorEditor,
+                            private juce::Timer
 {
 public:
     explicit PraatPluginEditor (PraatPluginProcessor& processor);
@@ -51,104 +76,76 @@ public:
     void resized () override;
 
 private:
-    void timerCallback () override;
-    void buttonClicked (juce::Button*)   override;
-    void comboBoxChanged (juce::ComboBox*) override;
+    // ── Timer (20fps) ─────────────────────────────────────────────────────
+    void timerCallback() override;
 
-    void onLoadAudioButtonClicked ();
-    void onRecordButtonClicked ();
-    void onPlayOriginalButtonClicked ();
-    void onPlayProcessedButtonClicked ();
-    void onStopButtonClicked ();
-    void onExportButtonClicked ();
-    void onAnalyzeButtonClicked ();
-    void onLoadScriptsDirButtonClicked ();
-    void onScriptSelectionChanged ();
-    void onWaveformSelectionChanged (juce::Range<double> selectionInSeconds);
+    // ── WebView setup ─────────────────────────────────────────────────────
 
-    void refreshWaveformDisplay ();
-    void refreshScriptSelectorContents ();
-    void refreshResultsDisplay (const AnalysisResult& result);
-    void refreshStatusBar ();
-    void refreshTransportButtonStates ();
-    void refreshAnalyzeButtonEnabledState ();
+    // Builds Options with native integration, resource provider, and all
+    // event listeners registered.
+    juce::WebBrowserComponent::Options buildBrowserOptions();
 
-    // Rebuilds the parameter panel for the currently active script.
-    // Called whenever the script selection changes.
-    void rebuildParameterPanel ();
+    // ── C++ → JS : state serialisation ───────────────────────────────────
 
-    // Draws a section header line: "LABEL ──────────────────"
-    void paintSectionLabel (juce::Graphics& g,
-                             const juce::String& labelText,
-                             juce::Rectangle<int> area) const;
+    // Serialises the processor's current state and emits "stateUpdate" to JS.
+    void pushStateToWebView();
 
-    juce::Colour colourForCurrentStatus () const;
+    // Builds a juce::Array<var> of downsampled RMS values from an audio buffer.
+    // C++ target is ~512 points — enough for the 520px-wide waveform canvas.
+    juce::var buildDownsampledWaveform (const juce::AudioBuffer<float>& buffer) const;
 
-    //──────────────────────────────────────────────────────────────────────────
-    // Processor reference
-    //──────────────────────────────────────────────────────────────────────────
+    // Derives a statusType string from the processor's current mode.
+    // Maps to the LED colour logic in StatusBar.jsx.
+    juce::String deriveStatusType() const;
+
+    // ── JS → C++ : action handlers ────────────────────────────────────────
+    // All run on the message thread (dispatched via MessageManager::callAsync).
+
+    void onLoadAudioFile  ();
+    void onToggleRecord   ();
+    void onPlayOriginal   ();
+    void onPlayProcessed  ();
+    void onStopPlayback   ();
+    void onLoadScriptsDir  ();
+    void onAnalyze         ();
+    void onSelectScript    (const juce::String& scriptName);
+    void onSetRegion       (double startFraction, double endFraction);
+    void onExportProcessed ();
+    void onSetScriptParam  (const juce::String& name, const juce::String& value);
+
+    // ── Windows fallback ──────────────────────────────────────────────────
+    void showWebViewUnavailableMessage();
+
+    // ── Members ───────────────────────────────────────────────────────────
+
     PraatPluginProcessor& praatProcessor_;
+
+    // Null if WebView is unavailable (Windows without WebView2).
+    std::unique_ptr<PraatWebBrowser> browser_;
+
+    // Shown instead of the browser when WebView2 is missing on Windows.
+    juce::Label webViewUnavailableLabel_;
 
     // Kept alive across async FileChooser callbacks (JUCE 8 requires this).
     std::unique_ptr<juce::FileChooser> activeFileChooser_;
 
-    //──────────────────────────────────────────────────────────────────────────
-    // Components
-    //──────────────────────────────────────────────────────────────────────────
+    // ── Waveform cache ────────────────────────────────────────────────────
+    // Rebuilt only when audio content changes, not every timer tick.
+    // Sending 512 floats as JSON at 20fps would be wasteful.
+    juce::var  cachedOriginalWaveform_  { juce::Array<juce::var>{} };  // always [], never null
+    juce::var  cachedProcessedWaveform_ { juce::Array<juce::var>{} };
+    juce::File lastKnownAudioFile_;
+    uint32_t   lastKnownAudioVersion_ { 0xFFFFFFFFu }; // intentionally mismatches initial 0
+    bool       lastKnownHasProcessed_ { false };
 
-    // Header
-    juce::Label      pluginTitleLabel_;
-    juce::TextButton loadAudioButton_    { "LOAD FILE" };
-    juce::TextButton recordButton_       { "REC" };
+    // ── Script parameter cache ─────────────────────────────────────────────
+    // Re-parsed whenever the active script changes.
+    juce::File                    lastKnownScriptFile_;
+    juce::Array<FormParam>        currentParams_;
+    juce::StringArray             currentParamValues_;   // parallel to currentParams_
 
-    // Waveform — original (drag to select)
-    WaveformDisplay  waveformDisplay_;
-    // Waveform — processed output (view only)
-    WaveformDisplay  processedWaveformDisplay_;
-
-    // Transport
-    juce::TextButton playOriginalButton_  { "PLAY A" };
-    juce::TextButton playProcessedButton_ { "PLAY B" };
-    juce::TextButton stopButton_          { "STOP" };
-    juce::TextButton exportButton_        { "EXPORT" };
-
-    // Script
-    juce::Label      scriptSectionLabel_;
-    juce::ComboBox   scriptSelectorDropdown_;
-    juce::TextButton loadScriptsDirButton_ { "..." };
-
-    // Script parameters — rebuilt each time the script selection changes
-    std::unique_ptr<ScriptParameterPanel> parameterPanel_;
-
-    // Analysis
-    juce::TextButton analyzeButton_      { "MORPH" };
-
-    // Results
-    juce::TextEditor resultsTextDisplay_;
-
-    // Status bar
-    juce::Label      statusBarLabel_;
-    juce::Colour     statusDotColour_;
-
-    // Holds a snapshot of the ring buffer during live recording so the waveform
-    // display shows the audio growing in real time.  Updated by the 20fps timer.
-    juce::AudioBuffer<float> liveSnapshotBuffer_;
-
-    std::unique_ptr<juce::LookAndFeel_V4> lookAndFeel_;
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Layout constants
-    //──────────────────────────────────────────────────────────────────────────
-    static constexpr int kWidth       { 520 };
-    static constexpr int kHeight      { 580 };
-    static constexpr int kHeaderH     { 36 };
-    static constexpr int kWaveformH   { 130 };   // each waveform, edge-to-edge
-    static constexpr int kWaveformGap { 3 };     // gap between clean/morphed
-    static constexpr int kTransportH  { 30 };
-    static constexpr int kScriptRowH  { 30 };
-    static constexpr int kMorphH      { 38 };    // was kAnalyzeH
-    static constexpr int kStatusH     { 22 };
-    static constexpr int kPadH        { 14 };    // horizontal padding for controls only
+    static constexpr int kWidth  { 520 };
+    static constexpr int kHeight { 620 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PraatPluginEditor)
 };

@@ -1,0 +1,24 @@
+.transport {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.transport__btn {
+  flex: 1;
+  letter-spacing: 0.8px;
+}
+
+/* Active — white fill, black text (plays nicely against the dark bg) */
+.transport__btn--active {
+  background: var(--color-active);
+  color: var(--color-text-inverted);
+  border-color: var(--color-active);
+}
+
+.transport__btn--active:hover {
+  background: #eeeeee;
+  border-color: #eeeeee;
+}
