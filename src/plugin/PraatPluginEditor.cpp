@@ -1,1128 +1,560 @@
 #include "plugin/PraatPluginEditor.h"
+#include <BinaryData.h>
 
-//==============================================================================
-// Colour palette — defined once here so every part of the UI stays consistent.
-namespace PraatColours
+// ─── Constructor / Destructor ─────────────────────────────────────────────────
+
+PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& processor)
+    : juce::AudioProcessorEditor (&processor),
+      praatProcessor_ (processor)
 {
-    // Near-black with a very slight cold-blue cast (matches FabFilter display bg).
-    static const juce::Colour background    { 0xff0d0f14 };
-    // Panel strips: header + controls area — just one shade lighter.
-    static const juce::Colour surface       { 0xff131620 };
-    static const juce::Colour elevated      { 0xff191d28 };
-    static const juce::Colour border        { 0xff252830 };
-    static const juce::Colour borderSubtle  { 0xff161920 };
+    auto options = buildBrowserOptions();
 
-    static const juce::Colour textPrimary   { 0xfff0f0f0 };
-    // Medium grey — not near-white, keeps label text from competing with waveforms.
-    static const juce::Colour textSecondary { 0xff8a8f99 };
-    static const juce::Colour textMuted     { 0xff404550 };
-
-    static const juce::Colour buttonBg      { 0xff161920 };
-    static const juce::Colour buttonBorder  { 0xff252830 };
-
-    // FabFilter's signature saturated yellow (not pure #FFD700).
-    static const juce::Colour accentGold    { 0xffe8c840 };
-
-    static const juce::Colour statusGreen   { 0xff4caf50 };
-    static const juce::Colour statusAmber   { 0xffe8c840 };
-    static const juce::Colour statusRed     { 0xffe53935 };
-    static const juce::Colour statusBlue    { 0xff5588ff };
-    static const juce::Colour recordRed     { 0xffe53935 };
-}
-
-//==============================================================================
-// PraatLookAndFeel
-//==============================================================================
-class PraatLookAndFeel : public juce::LookAndFeel_V4
-{
-public:
-    PraatLookAndFeel()
+    if (juce::WebBrowserComponent::areOptionsSupported (options))
     {
-        setColour (juce::PopupMenu::backgroundColourId,
-                   PraatColours::surface);
-        setColour (juce::PopupMenu::textColourId,
-                   PraatColours::textPrimary);
-        setColour (juce::PopupMenu::highlightedBackgroundColourId,
-                   PraatColours::elevated);
-        setColour (juce::PopupMenu::highlightedTextColourId,
-                   PraatColours::textPrimary);
-    }
+        browser_ = std::make_unique<PraatWebBrowser> (options);
+        addAndMakeVisible (*browser_);
 
-    // Buttons are classified by their registered buttonColourId saturation + hue.
-    //   Achromatic (sat < 0.1) → Secondary (flat dark)
-    //   Gold hue (0.08–0.20)   → Primary   (gold fill, only MORPH uses this)
-    //   Red hue  (sat >= 0.1, outside gold) → Record
-    enum class ButtonRole { Primary, Record, Secondary };
+        // Push state immediately when the page finishes loading.
+        browser_->onPageLoaded = [this] { pushStateToWebView(); };
 
-    static ButtonRole roleOf (juce::Button& btn)
-    {
-        const auto c = btn.findColour (juce::TextButton::buttonColourId);
-        if (c.getSaturation() < 0.10f) return ButtonRole::Secondary;
-        const float h = c.getHue();
-        if (h > 0.08f && h < 0.20f)   return ButtonRole::Primary;
-        return ButtonRole::Record;
-    }
-
-    void drawButtonBackground (juce::Graphics& g, juce::Button& btn,
-                               const juce::Colour&, bool isMouseOver, bool isDown) override
-    {
-        const auto  b   = btn.getLocalBounds().toFloat().reduced (0.5f);
-        const float r   = b.getHeight() * 0.30f;
-        const bool  on  = btn.getClickingTogglesState() && btn.getToggleState();
-        const bool  ena = btn.isEnabled();
-
-        switch (roleOf (btn))
+        // Surface any load failure as a visible error message.
+        browser_->onLoadError = [this] (const juce::String& error)
         {
-            case ButtonRole::Primary:
-            {
-                auto fill = PraatColours::accentGold;
-                if (! ena)          fill = fill.withAlpha (0.25f);
-                else if (isDown)    fill = fill.darker (0.15f);
-                else if (isMouseOver) fill = fill.brighter (0.08f);
-
-                g.setColour (fill);
-                g.fillRoundedRectangle (b, r);
-                break;
-            }
-
-            case ButtonRole::Record:
-            {
-                auto fill = on ? PraatColours::recordRed
-                               : PraatColours::buttonBg;
-                if (! ena)          fill = fill.withAlpha (0.35f);
-                else if (isDown)    fill = fill.darker (0.15f);
-                else if (isMouseOver) fill = fill.brighter (0.10f);
-
-                g.setColour (fill);
-                g.fillRoundedRectangle (b, r);
-
-                g.setColour (on ? PraatColours::recordRed.brighter (0.3f)
-                                : PraatColours::buttonBorder);
-                g.drawRoundedRectangle (b, r, 1.0f);
-
-                if (on)
-                {
-                    constexpr float d = 5.0f;
-                    g.setColour (juce::Colours::white.withAlpha (0.9f));
-                    g.fillEllipse (b.getX() + 6.0f, b.getCentreY() - d * 0.5f, d, d);
-                }
-                break;
-            }
-
-            case ButtonRole::Secondary:
-            {
-                auto fill = PraatColours::buttonBg;
-                if (! ena)          fill = fill.withAlpha (0.35f);
-                else if (isDown)    fill = fill.darker (0.12f);
-                else if (isMouseOver) fill = fill.brighter (0.10f);
-
-                g.setColour (fill);
-                g.fillRoundedRectangle (b, r);
-                g.setColour (PraatColours::buttonBorder);
-                g.drawRoundedRectangle (b, r, 1.0f);
-                break;
-            }
-        }
-    }
-
-    void drawButtonText (juce::Graphics& g, juce::TextButton& btn,
-                         bool, bool) override
-    {
-        const float alpha = btn.isEnabled() ? 1.0f : 0.30f;
-        const bool  on    = btn.getClickingTogglesState() && btn.getToggleState();
-
-        switch (roleOf (btn))
-        {
-            case ButtonRole::Primary:
-                g.setFont (juce::Font (juce::FontOptions (11.5f, juce::Font::bold)));
-                g.setColour (juce::Colour (0xff1a1200).withAlpha (alpha));  // dark on gold
-                break;
-            case ButtonRole::Record:
-                g.setFont (juce::Font (juce::FontOptions (10.0f, juce::Font::bold)));
-                g.setColour ((on ? juce::Colours::white
-                                 : PraatColours::textSecondary).withAlpha (alpha));
-                break;
-            case ButtonRole::Secondary:
-                g.setFont (juce::Font (juce::FontOptions (10.0f)));
-                g.setColour (PraatColours::textSecondary.withAlpha (alpha));
-                break;
-        }
-
-        g.drawFittedText (btn.getButtonText(),
-                          btn.getLocalBounds(), juce::Justification::centred, 1);
-    }
-
-    void drawComboBox (juce::Graphics& g, int w, int h, bool,
-                       int arrowX, int arrowY, int arrowW, int arrowH,
-                       juce::ComboBox& box) override
-    {
-        const auto b = juce::Rectangle<float> (0.f, 0.f, (float)w, (float)h);
-        g.setColour (box.findColour (juce::ComboBox::backgroundColourId));
-        g.fillRoundedRectangle (b, 4.0f);
-        g.setColour (PraatColours::buttonBorder);
-        g.drawRoundedRectangle (b.reduced (0.5f), 4.0f, 1.0f);
-
-        const float cx = arrowX + arrowW * 0.5f;
-        const float cy = arrowY + arrowH * 0.5f;
-        juce::Path chevron;
-        chevron.startNewSubPath (cx - 4.0f, cy - 1.5f);
-        chevron.lineTo (cx, cy + 2.5f);
-        chevron.lineTo (cx + 4.0f, cy - 1.5f);
-        g.setColour (PraatColours::textSecondary);
-        g.strokePath (chevron, juce::PathStrokeType (1.4f,
-                      juce::PathStrokeType::curved,
-                      juce::PathStrokeType::rounded));
-    }
-
-    int  getScrollbarButtonSize (juce::ScrollBar&) override { return 0; }
-
-    void drawScrollbar (juce::Graphics& g, juce::ScrollBar& sb,
-                        int x, int y, int w, int h, bool isVertical,
-                        int thumbStart, int thumbSize, bool, bool) override
-    {
-        juce::Rectangle<float> thumb;
-        constexpr float t = 3.0f;
-        if (isVertical)
-            thumb = { x + (w - t) * 0.5f, (float)(y + thumbStart), t, (float)thumbSize };
-        else
-            thumb = { (float)(x + thumbStart), y + (h - t) * 0.5f, (float)thumbSize, t };
-        g.setColour (sb.findColour (juce::ScrollBar::thumbColourId));
-        g.fillRoundedRectangle (thumb, t * 0.5f);
-    }
-};
-
-//==============================================================================
-// ScriptParameterPanel
-//
-// A scrollable panel of labeled sliders/toggles, one per controllable
-// parameter in the active script's form block.  Rebuilt each time the
-// script selection changes.  Empty (zero height) when the script has no
-// user-controllable parameters.
-//==============================================================================
-class ScriptParameterPanel : public juce::Component
-{
-public:
-    // Fired when the user changes any control; value is the new numeric value.
-    std::function<void (const juce::String& parameterName, double value)> onParameterChanged;
-
-    ScriptParameterPanel()
-    {
-        viewport_.setScrollBarsShown (true, false);
-        viewport_.setScrollBarThickness (6);
-        viewport_.getVerticalScrollBar().setColour (juce::ScrollBar::thumbColourId,
-                                                    juce::Colour (0xff303068));
-        viewport_.setViewedComponent (&content_, false);  // content_ is owned here, not by viewport
-        addAndMakeVisible (viewport_);
-    }
-
-    // Replace all controls with those derived from params and currentValues.
-    void rebuild (const juce::Array<ScriptParameter>& params,
-                  const juce::StringPairArray&        currentValues)
-    {
-        content_.removeAllChildren();
-        rows_.clear();
-
-        for (const auto& param : params)
-        {
-            auto& row = rows_.emplace_back();
-            row.name = param.name;
-
-            row.label = std::make_unique<juce::Label>();
-            row.label->setText (
-                param.name.replaceCharacter ('_', ' ').toLowerCase(),
+            browser_->setVisible (false);
+            webViewUnavailableLabel_.setText (
+                "Failed to load plugin UI:\n" + error,
                 juce::dontSendNotification);
-            row.label->setFont (juce::Font (juce::FontOptions (11.0f)));
-            row.label->setColour (juce::Label::textColourId, PraatColours::textSecondary);
-            row.label->setJustificationType (juce::Justification::centredLeft);
-            content_.addAndMakeVisible (row.label.get());
+            showWebViewUnavailableMessage();
+        };
 
-            const juce::String storedStr = currentValues.getValue (param.name, {});
-            const double initialValue    = storedStr.isNotEmpty()
-                                               ? storedStr.getDoubleValue()
-                                               : param.defaultValue;
-
-            if (param.type == ScriptParameter::Type::Boolean)
-            {
-                row.toggle = std::make_unique<juce::ToggleButton>();
-                row.toggle->setToggleState (initialValue >= 0.5,
-                                            juce::dontSendNotification);
-                row.toggle->setColour (juce::ToggleButton::textColourId,
-                                       PraatColours::textSecondary);
-                row.toggle->onClick = [this, paramName = param.name,
-                                        btn = row.toggle.get()]
-                {
-                    if (onParameterChanged)
-                        onParameterChanged (paramName, btn->getToggleState() ? 1.0 : 0.0);
-                };
-                content_.addAndMakeVisible (row.toggle.get());
-            }
-            else
-            {
-                row.slider = std::make_unique<juce::Slider>();
-                row.slider->setSliderStyle (juce::Slider::LinearBar);
-                row.slider->setTextBoxStyle (juce::Slider::TextBoxLeft, false, 72, 20);
-
-                double lo, hi, interval;
-                if (param.type == ScriptParameter::Type::Integer)
-                {
-                    lo       = 0.0;
-                    hi       = juce::jmax (20.0, 5.0 * std::abs (param.defaultValue));
-                    interval = 1.0;
-                }
-                else if (param.type == ScriptParameter::Type::Positive)
-                {
-                    // Positive fields must be > 0 — clamp lo so the slider
-                    // can never produce a zero/negative value.
-                    const double mag = std::abs (param.defaultValue);
-                    lo               = juce::jmax (0.001, mag / 20.0);
-                    hi               = juce::jmax (mag * 10.0, mag + 5.0);
-                    interval         = 0.001;
-                }
-                else
-                {
-                    const double mag = std::abs (param.defaultValue);
-                    lo               = juce::jmin (-100.0, -5.0 * mag);
-                    hi               = juce::jmax ( 100.0,  5.0 * mag);
-                    interval         = 0.001;
-                }
-
-                row.slider->setRange (lo, hi, interval);
-                row.slider->setValue (initialValue, juce::dontSendNotification);
-                row.slider->setColour (juce::Slider::backgroundColourId,
-                                       PraatColours::buttonDark);
-                row.slider->setColour (juce::Slider::trackColourId,
-                                       PraatColours::accentCyan.withAlpha (0.4f));
-                row.slider->setColour (juce::Slider::textBoxTextColourId,
-                                       PraatColours::textPrimary);
-                row.slider->setColour (juce::Slider::textBoxBackgroundColourId,
-                                       juce::Colours::transparentBlack);
-                row.slider->setColour (juce::Slider::textBoxOutlineColourId,
-                                       juce::Colours::transparentBlack);
-                row.slider->onValueChange = [this, paramName = param.name,
-                                              sl = row.slider.get()]
-                {
-                    if (onParameterChanged)
-                        onParameterChanged (paramName, sl->getValue());
-                };
-                content_.addAndMakeVisible (row.slider.get());
-            }
-        }
-
-        resized();
+        browser_->goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+    }
+    else
+    {
+        // WebView2 is not installed — show a plain fallback on Windows.
+        showWebViewUnavailableMessage();
     }
 
-    // Height this panel wants to occupy (capped so the panel scrolls rather
-    // than pushing other components off screen).
-    int preferredHeight() const noexcept
-    {
-        if (rows_.empty()) return 0;
-        return juce::jmin ((int) rows_.size() * kRowH + 4, kMaxH);
-    }
-
-    void resized() override
-    {
-        viewport_.setBounds (getLocalBounds());
-
-        constexpr int kLabelW   = 150;
-        constexpr int kControlX = kLabelW + 6;
-        const int     kControlW = juce::jmax (1, getWidth() - kControlX - 4);
-        const int     totalH    = juce::jmax (1, (int) rows_.size() * kRowH + 4);
-
-        content_.setSize (juce::jmax (1, getWidth()), totalH);
-
-        int y = 2;
-        for (auto& row : rows_)
-        {
-            const int rowH = kRowH - 4;
-            if (row.label)  row.label->setBounds (4, y, kLabelW, rowH);
-            if (row.slider) row.slider->setBounds (kControlX, y, kControlW, rowH);
-            if (row.toggle) row.toggle->setBounds (kControlX, y, kControlW, rowH);
-            y += kRowH;
-        }
-    }
-
-private:
-    static constexpr int kRowH = 28;
-    static constexpr int kMaxH = 120;  // ~4 rows before scrolling
-
-    struct ParameterRow
-    {
-        juce::String                        name;
-        std::unique_ptr<juce::Label>        label;
-        std::unique_ptr<juce::Slider>       slider;
-        std::unique_ptr<juce::ToggleButton> toggle;
-    };
-
-    juce::Viewport               viewport_;
-    juce::Component              content_;
-    std::vector<ParameterRow>    rows_;
-};
-
-//==============================================================================
-// PraatPluginEditor
-//==============================================================================
-
-PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& ownerProcessor)
-    : AudioProcessorEditor (&ownerProcessor),
-      praatProcessor_ (ownerProcessor),
-      lookAndFeel_ (std::make_unique<PraatLookAndFeel>())
-{
-    setLookAndFeel (lookAndFeel_.get());
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Add all components
-    //──────────────────────────────────────────────────────────────────────────
-    for (juce::Component* c : std::initializer_list<juce::Component*>{
-                     &pluginTitleLabel_,
-                     &loadAudioButton_,      &recordButton_,
-                     &waveformDisplay_,
-                     &processedWaveformDisplay_,
-                     &playOriginalButton_,   &playProcessedButton_,  &stopButton_,
-                     &exportButton_,
-                     &scriptSectionLabel_,
-                     &scriptSelectorDropdown_,
-                     &loadScriptsDirButton_,
-                     &analyzeButton_,
-                     &resultsTextDisplay_,
-                     &statusBarLabel_ })
-        addAndMakeVisible (c);
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Listeners
-    //──────────────────────────────────────────────────────────────────────────
-    scriptSelectorDropdown_.addListener (this);
-    for (auto* b : { &loadAudioButton_, &recordButton_,
-                     &playOriginalButton_, &playProcessedButton_, &stopButton_,
-                     &exportButton_,
-                     &loadScriptsDirButton_, &analyzeButton_ })
-        b->addListener (this);
-
-    waveformDisplay_.onSelectionChanged = [this] (juce::Range<double> sel)
-    {
-        onWaveformSelectionChanged (sel);
-    };
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Button colours — drive PraatLookAndFeel role detection
-    //──────────────────────────────────────────────────────────────────────────
-
-    // MORPH: gold hue → Primary role
-    analyzeButton_.setColour (juce::TextButton::buttonColourId,  PraatColours::accentGold);
-    analyzeButton_.setColour (juce::TextButton::textColourOffId, juce::Colour (0xff1a1200));
-
-    // REC: red hue → Record role; toggleable
-    recordButton_.setClickingTogglesState (true);
-    recordButton_.setColour (juce::TextButton::buttonColourId,  PraatColours::recordRed);
-    recordButton_.setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary);
-    recordButton_.setColour (juce::TextButton::textColourOnId,  juce::Colours::white);
-
-    // All other buttons: achromatic → Secondary role
-    for (auto* b : { &loadAudioButton_, &playOriginalButton_,
-                     &playProcessedButton_, &stopButton_, &loadScriptsDirButton_,
-                     &exportButton_ })
-    {
-        b->setColour (juce::TextButton::buttonColourId,  PraatColours::buttonBg);
-        b->setColour (juce::TextButton::textColourOffId, PraatColours::textSecondary);
-    }
-
-    // Waveform colours — FabFilter-style: CLEAN = bright white edges,
-    // MORPHED = saturated gold edges (matches the accent colour).
-    waveformDisplay_.setWaveformColour  (juce::Colours::white.withAlpha (0.80f));
-    waveformDisplay_.setSelectionColour (PraatColours::accentGold);
-
-    processedWaveformDisplay_.setWaveformColour  (PraatColours::accentGold.withAlpha (0.88f));
-    processedWaveformDisplay_.setSelectionColour (juce::Colours::white);
-    processedWaveformDisplay_.setPlaceholderText ("Morph audio to see the result here");
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Dropdown colours
-    //──────────────────────────────────────────────────────────────────────────
-    scriptSelectorDropdown_.setColour (juce::ComboBox::backgroundColourId, PraatColours::buttonBg);
-    scriptSelectorDropdown_.setColour (juce::ComboBox::textColourId,       PraatColours::textPrimary);
-    scriptSelectorDropdown_.setColour (juce::ComboBox::outlineColourId,    PraatColours::buttonBorder);
-    scriptSelectorDropdown_.setColour (juce::ComboBox::arrowColourId,      PraatColours::textSecondary);
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Results text display
-    //──────────────────────────────────────────────────────────────────────────
-    resultsTextDisplay_.setMultiLine (true);
-    resultsTextDisplay_.setReadOnly (true);
-    resultsTextDisplay_.setScrollbarsShown (true);
-    resultsTextDisplay_.setFont (juce::Font (juce::FontOptions (
-        juce::Font::getDefaultMonospacedFontName(), 12.5f, juce::Font::plain)));
-
-    resultsTextDisplay_.setColour (juce::TextEditor::backgroundColourId,     juce::Colour (0xff0d0f14));
-    resultsTextDisplay_.setColour (juce::TextEditor::textColourId,           PraatColours::textPrimary);
-    resultsTextDisplay_.setColour (juce::TextEditor::outlineColourId,        juce::Colours::transparentBlack);
-    resultsTextDisplay_.setColour (juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);
-    resultsTextDisplay_.setColour (juce::TextEditor::highlightColourId,      PraatColours::accentGold.withAlpha (0.20f));
-    resultsTextDisplay_.setColour (juce::ScrollBar::thumbColourId,           juce::Colour (0xff333333));
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Labels
-    //──────────────────────────────────────────────────────────────────────────
-    pluginTitleLabel_.setText ("PRAAT PLUGIN", juce::dontSendNotification);
-    pluginTitleLabel_.setFont (juce::Font (juce::FontOptions (12.0f, juce::Font::bold)));
-    pluginTitleLabel_.setColour (juce::Label::textColourId, PraatColours::textPrimary);
-    pluginTitleLabel_.setJustificationType (juce::Justification::centredLeft);
-
-    scriptSectionLabel_.setText ("SCRIPT", juce::dontSendNotification);
-    scriptSectionLabel_.setFont (juce::Font (juce::FontOptions (9.0f, juce::Font::bold)));
-    scriptSectionLabel_.setColour (juce::Label::textColourId, PraatColours::textMuted);
-    scriptSectionLabel_.setJustificationType (juce::Justification::centredLeft);
-
-    statusBarLabel_.setFont (juce::Font (juce::FontOptions (10.5f)));
-    statusBarLabel_.setColour (juce::Label::textColourId, PraatColours::textSecondary);
-    statusBarLabel_.setJustificationType (juce::Justification::centredLeft);
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Parameter panel
-    //──────────────────────────────────────────────────────────────────────────
-    parameterPanel_ = std::make_unique<ScriptParameterPanel>();
-    parameterPanel_->onParameterChanged = [this] (const juce::String& name, double value)
-    {
-        praatProcessor_.setScriptParameter (name, juce::String (value));
-    };
-    addAndMakeVisible (parameterPanel_.get());
-
-    //──────────────────────────────────────────────────────────────────────────
-    // Initial state
-    //──────────────────────────────────────────────────────────────────────────
-    refreshScriptSelectorContents();
-    rebuildParameterPanel();
-    refreshWaveformDisplay();
-    refreshTransportButtonStates();
-    refreshAnalyzeButtonEnabledState();
-    refreshStatusBar();
-    statusDotColour_ = colourForCurrentStatus();
-
+    // setSize is called AFTER addAndMakeVisible so that resized() fires when
+    // browser_ already exists and receives its bounds.  Calling setSize before
+    // creating browser_ left the WebBrowserComponent with {0,0,0,0} bounds,
+    // causing WKWebView to have zero size and render nothing.
     setSize (kWidth, kHeight);
+
+    // Allow the user to drag the window edges to resize.
+    // Width: 420–900  Height: 480–1400
+    // The React layout is pure flexbox so it adapts automatically.
+    setResizable (true, true);
+    setResizeLimits (420, 480, 900, 1400);
+
     startTimerHz (20);
 }
 
 PraatPluginEditor::~PraatPluginEditor()
 {
     stopTimer();
-    setLookAndFeel (nullptr);
-    scriptSelectorDropdown_.removeListener (this);
-    for (auto* b : { &loadAudioButton_, &recordButton_,
-                     &playOriginalButton_, &playProcessedButton_, &stopButton_,
-                     &exportButton_,
-                     &loadScriptsDirButton_, &analyzeButton_ })
-        b->removeListener (this);
 }
 
-//==============================================================================
-// Paint
+// ─── Layout ───────────────────────────────────────────────────────────────────
 
 void PraatPluginEditor::paint (juce::Graphics& g)
 {
-    const int w = getWidth();
-    const int h = getHeight();
-
-    // ── Main background (the display "viewport" area) ─────────────────────────
-    g.fillAll (PraatColours::background);
-
-    // ── Header panel strip — slightly lighter than the display area ───────────
-    g.setColour (PraatColours::surface);
-    g.fillRect (0, 0, w, kHeaderH);
-
-    // ── 2px gold accent stripe — the only decorative element ─────────────────
-    g.setColour (PraatColours::accentGold);
-    g.fillRect (0, 0, w, 2);
-
-    // ── Hair-line divider between header and waveform area ────────────────────
-    g.setColour (PraatColours::border);
-    g.fillRect (0, kHeaderH, w, 1);
-
-    // ── Controls panel strip (transport + script + morph + results + status) ──
-    // Starts right after the two waveforms.
-    {
-        const int afterWaveforms = kHeaderH + kDivider
-            + kWaveformLabelH + kWaveformH
-            + kWaveformGap
-            + kWaveformLabelH + kWaveformH;
-        drawDivider (afterWaveforms);                 // below processed waveform
-        const int afterTransport = afterWaveforms + kDivider + kTransportH;
-        drawDivider (afterTransport);                 // below transport
-        drawDivider (afterTransport + kDivider + kScriptRowH);  // below script row
-
-        // Draw a divider below the parameter panel if it is visible.
-        if (parameterPanel_ != nullptr && parameterPanel_->isVisible())
-        {
-            const int panelBottom = parameterPanel_->getBottom();
-            drawDivider (panelBottom);
-        }
-    }
-
-    // ── Status bar background ─────────────────────────────────────────────────
-    g.setColour (PraatColours::statusBg);
-    g.fillRect (0, h - kStatusH, w, kStatusH);
-    g.setColour (PraatColours::divider);
-    g.fillRect (0, h - kStatusH, w, kDivider);
-
-        // Hair-line divider between display area and controls
-        g.setColour (PraatColours::border);
-        g.fillRect (0, controlsY, w, 1);
-    }
-
-    // ── "CLEAN" label — top-left corner of the original waveform ─────────────
-    {
-        const int waveAY = kHeaderH + 1 + 4;
-        g.setFont (juce::Font (juce::FontOptions (8.0f, juce::Font::bold)));
-        g.setColour (PraatColours::textMuted.brighter (0.5f));
-        g.drawText ("CLEAN",
-                    kPadH + 6, waveAY + 5, 60, 12,
-                    juce::Justification::centredLeft, false);
-    }
-
-    // ── "MORPHED" label — top-left corner of the processed waveform ──────────
-    {
-        const int waveBY = kHeaderH + 1 + 4 + kWaveformH + kWaveformGap;
-        g.setFont (juce::Font (juce::FontOptions (8.0f, juce::Font::bold)));
-        g.setColour (PraatColours::accentGold.withAlpha (0.65f));
-        g.drawText ("MORPHED",
-                    kPadH + 6, waveBY + 5, 70, 12,
-                    juce::Justification::centredLeft, false);
-    }
-
-    // ── Status bar (bottom strip of the controls panel) ───────────────────────
-    g.setColour (PraatColours::background);
-    g.fillRect (0, h - kStatusH, w, kStatusH);
-    g.setColour (PraatColours::borderSubtle);
-    g.fillRect (0, h - kStatusH, w, 1);
-
-    // ── Glowing status dot ────────────────────────────────────────────────────
-    {
-        constexpr float dotD  = 7.0f;
-        constexpr float glowD = 16.0f;
-        const float dotX = (float)kPadH;
-        const float dotY = (float)(h - kStatusH) + ((float)kStatusH - dotD) * 0.5f;
-        const float cx   = dotX + dotD * 0.5f;
-        const float cy   = dotY + dotD * 0.5f;
-
-        g.setGradientFill (juce::ColourGradient (
-            statusDotColour_.withAlpha (0.35f), cx, cy,
-            statusDotColour_.withAlpha (0.0f),  cx + glowD * 0.5f, cy, true));
-        const float go = (glowD - dotD) * 0.5f;
-        g.fillEllipse (dotX - go, dotY - go, glowD, glowD);
-        g.setColour (statusDotColour_);
-        g.fillEllipse (dotX, dotY, dotD, dotD);
-        g.setColour (juce::Colours::white.withAlpha (0.25f));
-        g.fillEllipse (dotX + 1.5f, dotY + 1.0f, 2.5f, 2.0f);
-    }
-
-    // ── Results area: subtle card border ─────────────────────────────────────
-    {
-        const auto panel = resultsTextDisplay_.getBounds().toFloat();
-        g.setColour (PraatColours::border.withAlpha (0.5f));
-        g.drawRoundedRectangle (panel.expanded (1.0f), 3.0f, 1.0f);
-    }
+    // Background matches --color-bg in tokens.css so there's no flash
+    // between plugin load and the first WebView paint.
+    g.fillAll (juce::Colour (0xff181818));
 }
-
-//==============================================================================
-// Layout
 
 void PraatPluginEditor::resized()
 {
-    int y = 0;
+    auto bounds = getLocalBounds();
 
-    // ── Header: title + LOAD + REC, inset vertically ─────────────────────────
-    {
-        juce::Rectangle<int> row = juce::Rectangle<int> (0, y, getWidth(), kHeaderH)
-                                       .reduced (kPadH, 7);
-        recordButton_.setBounds    (row.removeFromRight (38));
-        row.removeFromRight (5);
-        loadAudioButton_.setBounds (row.removeFromRight (66));
-        row.removeFromRight (8);
-        pluginTitleLabel_.setBounds (row);
-    }
-    y += kHeaderH + 1;  // 1px subtle separator
-
-    // ── CLEAN waveform — full width, no side padding ──────────────────────────
-    y += 4;   // small breathing gap after header
-    waveformDisplay_.setBounds (0, y, getWidth(), kWaveformH);
-    y += kWaveformH + kWaveformGap;
-
-    // ── MORPHED waveform — full width, no side padding ───────────────────────
-    processedWaveformDisplay_.setBounds (0, y, getWidth(), kWaveformH);
-    y += kWaveformH + 8;
-
-    // ── Subtle separator (drawn in paint) ─────────────────────────────────────
-    y += 1;   // separator itself
-
-    // ── Transport: PLAY A  PLAY B  STOP  [space]  EXPORT ────────────────────
-    {
-        juce::Rectangle<int> row (kPadH, y, getWidth() - kPadH * 2, kTransportH);
-        playOriginalButton_.setBounds  (row.removeFromLeft (82));
-        row.removeFromLeft (6);
-        playProcessedButton_.setBounds (row.removeFromLeft (82));
-        row.removeFromLeft (6);
-        stopButton_.setBounds          (row.removeFromLeft (82));
-        exportButton_.setBounds        (row.removeFromRight (82));
-    }
-    y += kTransportH + 8;
-
-    // ── Script row: SCRIPT label + dropdown + ... ────────────────────────────
-    {
-        juce::Rectangle<int> row (kPadH, y, getWidth() - kPadH * 2, kScriptRowH);
-        loadScriptsDirButton_.setBounds (row.removeFromRight (32));
-        row.removeFromRight (5);
-        scriptSelectorDropdown_.setBounds (row.removeFromRight (row.getWidth() - 52));
-        row.removeFromRight (5);
-        scriptSectionLabel_.setBounds (row);
-    }
-    y += kScriptRowH + kDivider;
-
-    // ── Parameter panel (dynamic — 0 height if script has no parameters) ─────
-    if (parameterPanel_ != nullptr)
-    {
-        const int panelH = parameterPanel_->preferredHeight();
-        if (panelH > 0)
-        {
-            parameterPanel_->setBounds (kPadH, y, getWidth() - kPadH * 2, panelH);
-            y += panelH + kDivider;
-        }
-        else
-        {
-            parameterPanel_->setBounds (0, y, 0, 0);  // hidden, no space
-        }
-    }
-
-    // ── Content below the last divider (Analyze + Results) ───────────────────
-    const int contentBottom = getHeight() - kStatusH - kDivider;
-    juce::Rectangle<int> content (kPadH, y, getWidth() - kPadH * 2,
-                                   contentBottom - y);
-
-    // ── MORPH button — full available width ──────────────────────────────────
-    analyzeButton_.setBounds (kPadH, y, getWidth() - kPadH * 2, kMorphH);
-    y += kMorphH + 8;
-
-    // ── Results panel — fills remaining space above status bar ───────────────
-    const int resultsBottom = getHeight() - kStatusH - 1;
-    if (resultsBottom > y)
-        resultsTextDisplay_.setBounds (kPadH, y, getWidth() - kPadH * 2,
-                                        resultsBottom - y);
-
-    // ── Status bar: dot is drawn in paint(), label positioned here ───────────
-    {
-        const int dotSpace = 20;
-        statusBarLabel_.setBounds (kPadH + dotSpace, getHeight() - kStatusH,
-                                    getWidth() - kPadH * 2 - dotSpace, kStatusH);
-    }
+    if (browser_)
+        browser_->setBounds (bounds);
+    else
+        webViewUnavailableLabel_.setBounds (bounds);
 }
 
-void PraatPluginEditor::paintSectionLabel (juce::Graphics& g,
-                                            const juce::String& labelText,
-                                            juce::Rectangle<int> area) const
-{
-    if (area.isEmpty()) return;
-
-    juce::GlyphArrangement ga;
-    ga.addLineOfText (juce::Font (juce::FontOptions (8.5f, juce::Font::bold)),
-                      labelText, 0.0f, 0.0f);
-    const float labelW = ga.getBoundingBox (0, -1, true).getWidth() + 6.0f;
-    const float lineY  = area.getCentreY();
-
-    g.setFont (juce::Font (juce::FontOptions (8.5f, juce::Font::bold)));
-    g.setColour (PraatColours::textMuted.brighter (0.3f));
-    g.drawText (labelText,
-                area.getX(), area.getY(), (int)labelW, area.getHeight(),
-                juce::Justification::centredLeft);
-
-    g.setColour (PraatColours::borderSubtle.brighter (0.1f));
-    g.fillRect ((float)area.getX() + labelW + 3.0f, lineY,
-                (float)area.getWidth() - labelW - 3.0f, 1.0f);
-}
-
-//==============================================================================
-// Timer
+// ─── Timer (20fps) ────────────────────────────────────────────────────────────
 
 void PraatPluginEditor::timerCallback()
 {
-    refreshTransportButtonStates();
-    refreshAnalyzeButtonEnabledState();
-    refreshStatusBar();
-
-    // ── Live recording: grow the ORIGINAL waveform + VU meter ───────────────
-    if (praatProcessor_.isCapturing())
-    {
-        praatProcessor_.copyLiveCaptureSnapshotTo (liveSnapshotBuffer_);
-
-        if (liveSnapshotBuffer_.getNumSamples() > 0)
-        {
-            // clearSelection=false so any existing selection is preserved.
-            waveformDisplay_.displayAudioBuffer (&liveSnapshotBuffer_,
-                                                  praatProcessor_.captureSampleRate(),
-                                                  false /* clearSelection */);
-        }
-
-        waveformDisplay_.setRecordingMode (true,
-                                           praatProcessor_.captureInputPeakLevel());
-    }
-    else
-    {
-        // Ensure recording overlay is always dismissed when not capturing.
-        waveformDisplay_.setRecordingMode (false);
-    }
-
-    // ── Playhead position ─────────────────────────────────────────────────────
-    if (praatProcessor_.isPlayingBack())
-    {
-        const double pos = praatProcessor_.currentPlaybackPosition();
-        if (praatProcessor_.isPlayingOriginal())
-        {
-            waveformDisplay_.setPlayheadPosition (pos);
-            processedWaveformDisplay_.setPlayheadPosition (-1.0);
-        }
-        else
-        {
-            waveformDisplay_.setPlayheadPosition (-1.0);
-            processedWaveformDisplay_.setPlayheadPosition (pos);
-        }
-    }
-    else
-    {
-        waveformDisplay_.setPlayheadPosition (-1.0);
-        processedWaveformDisplay_.setPlayheadPosition (-1.0);
-    }
-
-    // ── Waveform refresh after a script produced audio output ─────────────────
-    if (praatProcessor_.consumeAudioOutputNotification())
-    {
-        refreshWaveformDisplay();
-        refreshTransportButtonStates();
-    }
-
-    if (! praatProcessor_.isAnalysisInProgress())
-    {
-        const auto result = praatProcessor_.mostRecentAnalysisResult();
-        if (result.parsedSuccessfully || result.failureReason.isNotEmpty())
-            refreshResultsDisplay (result);
-    }
+    if (browser_)
+        pushStateToWebView();
 }
 
-//==============================================================================
-// Listeners
+// ─── WebView setup ────────────────────────────────────────────────────────────
 
-void PraatPluginEditor::buttonClicked (juce::Button* b)
+juce::WebBrowserComponent::Options PraatPluginEditor::buildBrowserOptions()
 {
-    if (b == &loadAudioButton_)      onLoadAudioButtonClicked();
-    if (b == &recordButton_)         onRecordButtonClicked();
-    if (b == &playOriginalButton_)   onPlayOriginalButtonClicked();
-    if (b == &playProcessedButton_)  onPlayProcessedButtonClicked();
-    if (b == &stopButton_)           onStopButtonClicked();
-    if (b == &exportButton_)         onExportButtonClicked();
-    if (b == &analyzeButton_)        onAnalyzeButtonClicked();
-    if (b == &loadScriptsDirButton_) onLoadScriptsDirButtonClicked();
-}
+    auto options = juce::WebBrowserComponent::Options{}
+        .withNativeIntegrationEnabled()
 
-void PraatPluginEditor::comboBoxChanged (juce::ComboBox*)
-{
-    onScriptSelectionChanged();
-}
+        // Keep the page loaded even when the plugin window is hidden.
+        // Without this, JUCE replaces the page with about:blank on hide,
+        // then calls goBack() on show — which can race with the initial load.
+        .withKeepPageLoadedWhenBrowserIsHidden()
 
-//==============================================================================
-// Handlers
-
-void PraatPluginEditor::onLoadAudioButtonClicked()
-{
-    activeFileChooser_ = std::make_unique<juce::FileChooser> (
-        "Select an audio file to analyse",
-        juce::File::getSpecialLocation (juce::File::userHomeDirectory),
-        "*.wav;*.aif;*.aiff;*.flac;*.mp3;*.ogg");
-
-    activeFileChooser_->launchAsync (
-        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-        [this] (const juce::FileChooser& fc)
+        // ── Resource provider ─────────────────────────────────────────────
+        // Serves BinaryData::index_html when the browser requests "/".
+        // WKWebView blocks file:// URLs in plugin processes, so this custom
+        // URL scheme (juce://juce.backend/) is the only reliable approach.
+        .withResourceProvider ([] (const juce::String& url) -> std::optional<juce::WebBrowserComponent::Resource>
         {
-            const auto chosen = fc.getResult();
-            if (chosen.existsAsFile())
+            if (url == "/" || url == "/index.html")
             {
-                if (praatProcessor_.loadAudioFromFile (chosen))
-                {
-                    refreshWaveformDisplay();
-                    refreshTransportButtonStates();
-                    refreshAnalyzeButtonEnabledState();
-                    refreshStatusBar();
-                }
+                const auto* bytes = reinterpret_cast<const std::byte*> (BinaryData::index_html);
+                return juce::WebBrowserComponent::Resource {
+                    std::vector<std::byte> (bytes, bytes + BinaryData::index_htmlSize),
+                    "text/html"
+                };
             }
-            activeFileChooser_.reset();
+            return std::nullopt;
+        })
+
+        // ── JS → C++ event listeners ──────────────────────────────────────
+        // Each eventId matches a sendToPlugin() call in juceBridge.js.
+        // Callbacks are always called on the message thread (JUCE guarantee).
+
+        .withEventListener ("loadAudioFile", [this] (const juce::var&)
+        {
+            onLoadAudioFile();
+        })
+        .withEventListener ("toggleRecord", [this] (const juce::var&)
+        {
+            onToggleRecord();
+        })
+        .withEventListener ("playOriginal", [this] (const juce::var&)
+        {
+            onPlayOriginal();
+        })
+        .withEventListener ("playProcessed", [this] (const juce::var&)
+        {
+            onPlayProcessed();
+        })
+        .withEventListener ("stopPlayback", [this] (const juce::var&)
+        {
+            onStopPlayback();
+        })
+        .withEventListener ("loadScriptsDir", [this] (const juce::var&)
+        {
+            onLoadScriptsDir();
+        })
+        .withEventListener ("analyze", [this] (const juce::var&)
+        {
+            onAnalyze();
+        })
+        .withEventListener ("selectScript", [this] (const juce::var& data)
+        {
+            onSelectScript (data["name"].toString());
+        })
+        .withEventListener ("setRegion", [this] (const juce::var& data)
+        {
+            onSetRegion (static_cast<double> (data["startFraction"]),
+                         static_cast<double> (data["endFraction"]));
+        })
+        .withEventListener ("exportProcessed", [this] (const juce::var&)
+        {
+            onExportProcessed();
+        })
+        .withEventListener ("setScriptParam", [this] (const juce::var& data)
+        {
+            onSetScriptParam (data["name"].toString(), data["value"].toString());
+        })
+        .withEventListener ("requestState", [this] (const juce::var&)
+        {
+            // JS asks for state on mount — respond immediately rather than
+            // waiting up to 50ms for the next timer tick.
+            pushStateToWebView();
         });
+
+#if JUCE_WINDOWS
+    // On Windows, request the WebView2 (Chromium) backend.
+    // Plugin processes are often denied access to the default WebView2 user-data
+    // folder, so we redirect it to the temp directory.
+    // If WebView2 Runtime is not installed, areOptionsSupported() will return false
+    // and the fallback message is shown instead.
+    options = options
+        .withBackend (juce::WebBrowserComponent::Options::Backend::webview2)
+        .withWinWebView2Options (
+            juce::WebBrowserComponent::Options::WinWebView2{}
+                .withUserDataFolder (
+                    juce::File::getSpecialLocation (juce::File::tempDirectory)
+                        .getChildFile ("PraatPlugin").getChildFile ("WebView2")
+                )
+                .withStatusBarDisabled()
+                .withBuiltInErrorPageDisabled()
+        );
+#endif
+
+    return options;
 }
 
-void PraatPluginEditor::onRecordButtonClicked()
+// ─── C++ → JS : state push ────────────────────────────────────────────────────
+
+void PraatPluginEditor::pushStateToWebView()
 {
-    // recordButton_ is a toggle — its new state is already set by JUCE.
-    if (recordButton_.getToggleState())
-    {
-        praatProcessor_.startLiveCapture();
-    }
-    else
-    {
-        praatProcessor_.stopLiveCapture();
-        // Waveform refresh happens via consumeAudioOutputNotification() in timer.
-    }
-
-    refreshTransportButtonStates();
-    refreshStatusBar();
-}
-
-void PraatPluginEditor::onPlayOriginalButtonClicked()
-{
-    praatProcessor_.startPlaybackOfOriginalRegion();
-    refreshTransportButtonStates();
-    refreshStatusBar();
-}
-
-void PraatPluginEditor::onPlayProcessedButtonClicked()
-{
-    praatProcessor_.startPlaybackOfProcessedOutput();
-    refreshTransportButtonStates();
-    refreshStatusBar();
-}
-
-void PraatPluginEditor::onStopButtonClicked()
-{
-    // Stop whichever is active — playback or recording.
-    praatProcessor_.stopPlayback();
-
-    if (praatProcessor_.isCapturing())
-    {
-        recordButton_.setToggleState (false, juce::dontSendNotification);
-        praatProcessor_.stopLiveCapture();
-    }
-
-    refreshTransportButtonStates();
-    refreshStatusBar();
-}
-
-void PraatPluginEditor::onExportButtonClicked()
-{
-    if (! praatProcessor_.hasProcessedAudio())
+    if (browser_ == nullptr)
         return;
 
-    // Suggest a filename based on the original file (or a generic name).
-    const auto originalFile = praatProcessor_.loadedAudioFile();
-    const auto suggestedName = originalFile.existsAsFile()
-        ? originalFile.getFileNameWithoutExtension() + "_morphed.wav"
-        : "morphed_output.wav";
+    auto& sm  = praatProcessor_.scriptManager();
+    auto& loc = praatProcessor_.praatLocator();
 
+    auto state = std::make_unique<juce::DynamicObject>();
+
+    // ── Scripts ───────────────────────────────────────────────────────────
+    juce::Array<juce::var> scriptNames;
+    for (const auto& scriptFile : sm.availableScripts())
+        scriptNames.add (scriptFile.getFileNameWithoutExtension());
+    state->setProperty ("scripts", juce::var (scriptNames));
+
+    const auto activeScript = sm.activeScript();
+    state->setProperty ("selectedScript",
+        activeScript.existsAsFile() ? juce::var (activeScript.getFileNameWithoutExtension())
+                                    : juce::var (juce::String{}));
+
+    // ── Script parameters ─────────────────────────────────────────────────
+    // Re-parse the form block when the script changes; keep current values
+    // when it stays the same.
+    if (activeScript != lastKnownScriptFile_)
+    {
+        lastKnownScriptFile_ = activeScript;
+        currentParams_       = PraatFormParser::parseExtraParams (activeScript);
+        currentParamValues_.clear();
+        for (const auto& p : currentParams_)
+            currentParamValues_.add (p.defaultValue);
+    }
+
+    {
+        juce::Array<juce::var> paramsArray;
+        for (int i = 0; i < currentParams_.size(); ++i)
+        {
+            const auto& p   = currentParams_[i];
+            const auto  val = (i < currentParamValues_.size()) ? currentParamValues_[i]
+                                                                : p.defaultValue;
+
+            auto obj = std::make_unique<juce::DynamicObject>();
+            obj->setProperty ("name",    p.name);
+            obj->setProperty ("type",    p.type);
+            obj->setProperty ("default", p.defaultValue);
+            obj->setProperty ("value",   val);
+
+            juce::Array<juce::var> opts;
+            for (const auto& opt : p.options)
+                opts.add (opt);
+            obj->setProperty ("options", juce::var (opts));
+
+            paramsArray.add (juce::var (obj.release()));
+        }
+        state->setProperty ("scriptParams", juce::var (paramsArray));
+    }
+
+    // ── Audio ─────────────────────────────────────────────────────────────
+    state->setProperty ("hasAudio",          praatProcessor_.hasAudioLoaded());
+    state->setProperty ("hasProcessedAudio", praatProcessor_.hasProcessedAudio());
+    state->setProperty ("fileName",
+        praatProcessor_.loadedAudioFile().getFileName());
+
+    // ── Recording ─────────────────────────────────────────────────────────
+    state->setProperty ("isRecording", praatProcessor_.isCapturing());
+
+    // ── Playback ──────────────────────────────────────────────────────────
+    state->setProperty ("isPlaying",     praatProcessor_.isPlayingBack());
+    state->setProperty ("playingSource", praatProcessor_.isPlayingOriginal()
+                                             ? juce::var ("original")
+                                             : juce::var ("processed"));
+
+    // ── Analysis ──────────────────────────────────────────────────────────
+    state->setProperty ("isAnalyzing", praatProcessor_.isAnalysisInProgress());
+    state->setProperty ("praatFound",  loc.isPraatInstalled());
+
+    // ── Status ────────────────────────────────────────────────────────────
+    state->setProperty ("status",     praatProcessor_.currentStatusMessage());
+    state->setProperty ("statusType", deriveStatusType());
+
+    // ── Results ───────────────────────────────────────────────────────────
+    const auto result = praatProcessor_.mostRecentAnalysisResult();
+
+    if (result.parsedSuccessfully)
+    {
+        auto resultsObj = std::make_unique<juce::DynamicObject>();
+
+        juce::Array<juce::var> pairs;
+        const auto& kvp = result.keyValuePairs;
+        for (int i = 0; i < kvp.size(); ++i)
+        {
+            // Each pair is a two-element JS array: ["key", "value"]
+            juce::Array<juce::var> pair;
+            pair.add (kvp.getAllKeys()[i]);
+            pair.add (kvp.getAllValues()[i]);
+            pairs.add (juce::var (pair));
+        }
+
+        resultsObj->setProperty ("pairs", juce::var (pairs));
+        resultsObj->setProperty ("raw",   result.rawConsoleOutput);
+        state->setProperty ("results", juce::var (resultsObj.release()));
+    }
+
+    // ── Waveforms ─────────────────────────────────────────────────────────
+    // Rebuilt only when audio content changes — not every timer tick.
+    // We check BOTH the file path (covers load-from-file) AND loadedAudioVersion()
+    // (covers re-recordings that reuse the same UUID path edge case, and same-file
+    // reloads from the file picker).
+    const auto     currentFile   = praatProcessor_.loadedAudioFile();
+    const uint32_t audioVersion  = praatProcessor_.loadedAudioVersion();
+    const bool     audioChanged  = (currentFile  != lastKnownAudioFile_)
+                                || (audioVersion != lastKnownAudioVersion_);
+    const bool processedAppeared = praatProcessor_.hasProcessedAudio() && !lastKnownHasProcessed_;
+
+    if (audioChanged && praatProcessor_.hasAudioLoaded())
+    {
+        cachedOriginalWaveform_ = buildDownsampledWaveform (praatProcessor_.loadedAudioBuffer());
+        lastKnownAudioFile_    = currentFile;
+        lastKnownAudioVersion_ = audioVersion;
+    }
+
+    if (processedAppeared)
+    {
+        cachedProcessedWaveform_ = buildDownsampledWaveform (praatProcessor_.processedAudioBuffer());
+        lastKnownHasProcessed_ = true;
+    }
+
+    // Always include the cached arrays (they may be empty []).
+    state->setProperty ("waveformSamples",  cachedOriginalWaveform_);
+    state->setProperty ("processedSamples", cachedProcessedWaveform_);
+
+    // ── Playback cursor ───────────────────────────────────────────────────
+    // Fraction 0–1 of the way through the currently-playing clip.
+    // 0 when stopped.  The UI draws a vertical cursor line on the right waveform.
+    {
+        double fraction = 0.0;
+
+        if (praatProcessor_.isPlayingBack())
+        {
+            const double pos = praatProcessor_.currentPlaybackPosition();
+
+            if (praatProcessor_.isPlayingOriginal())
+            {
+                const double sr = praatProcessor_.loadedAudioSampleRate();
+                const int    n  = praatProcessor_.loadedAudioBuffer().getNumSamples();
+                if (sr > 0.0 && n > 0)
+                    fraction = pos / (static_cast<double> (n) / sr);
+            }
+            else
+            {
+                const double sr = praatProcessor_.processedAudioSampleRate();
+                const int    n  = praatProcessor_.processedAudioBuffer().getNumSamples();
+                if (sr > 0.0 && n > 0)
+                    fraction = pos / (static_cast<double> (n) / sr);
+            }
+
+            fraction = juce::jlimit (0.0, 1.0, fraction);
+        }
+
+        state->setProperty ("playbackFraction", fraction);
+    }
+
+    browser_->emitEventIfBrowserIsVisible ("stateUpdate", juce::var (state.release()));
+}
+
+// Downsamples an AudioBuffer to ~512 RMS values for the waveform canvas.
+// RMS per window gives a smoother, more readable waveform than peak-picking.
+juce::var PraatPluginEditor::buildDownsampledWaveform (const juce::AudioBuffer<float>& buffer) const
+{
+    constexpr int kTargetPoints = 512;
+
+    if (buffer.getNumSamples() == 0 || buffer.getNumChannels() == 0)
+        return juce::var (juce::Array<juce::var>{});
+
+    const int   totalSamples = buffer.getNumSamples();
+    const int   channels     = buffer.getNumChannels();
+    const float windowSize   = static_cast<float> (totalSamples) / kTargetPoints;
+
+    juce::Array<juce::var> points;
+    points.ensureStorageAllocated (kTargetPoints);
+
+    for (int i = 0; i < kTargetPoints; ++i)
+    {
+        const int start = static_cast<int> (i * windowSize);
+        const int end   = std::min (static_cast<int> ((i + 1) * windowSize), totalSamples);
+
+        float sumSq = 0.0f;
+        int   count = 0;
+
+        for (int ch = 0; ch < channels; ++ch)
+        {
+            const float* samples = buffer.getReadPointer (ch);
+            for (int s = start; s < end; ++s)
+            {
+                sumSq += samples[s] * samples[s];
+                ++count;
+            }
+        }
+
+        const float rms = (count > 0) ? std::sqrt (sumSq / static_cast<float> (count)) : 0.0f;
+        points.add (juce::var (rms));
+    }
+
+    return juce::var (points);
+}
+
+// Maps processor state to a statusType string that drives the LED colour in StatusBar.jsx.
+juce::String PraatPluginEditor::deriveStatusType() const
+{
+    if (praatProcessor_.isCapturing())           return "recording";
+    if (praatProcessor_.isAnalysisInProgress())  return "analyzing";
+    if (praatProcessor_.isPlayingBack())         return "playing";
+    if (! praatProcessor_.isPraatAvailable())    return "error";
+    return "idle";
+}
+
+// ─── JS → C++ : action handlers ──────────────────────────────────────────────
+
+void PraatPluginEditor::onLoadAudioFile()
+{
     activeFileChooser_ = std::make_unique<juce::FileChooser> (
-        "Export processed audio",
-        juce::File::getSpecialLocation (juce::File::userDesktopDirectory)
-            .getChildFile (suggestedName),
-        "*.wav");
+        "Load Audio File",
+        juce::File::getSpecialLocation (juce::File::userMusicDirectory),
+        "*.wav;*.aif;*.aiff;*.mp3;*.flac");
 
     activeFileChooser_->launchAsync (
-        juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-        [this] (const juce::FileChooser& fc)
+        juce::FileBrowserComponent::openMode |
+        juce::FileBrowserComponent::canSelectFiles,
+        [this] (const juce::FileChooser& chooser)
         {
-            const auto dest = fc.getResult();
-            if (dest != juce::File{})
-                praatProcessor_.exportProcessedAudioToFile (dest);
-
-            activeFileChooser_.reset();
+            const auto selected = chooser.getResult();
+            if (selected.existsAsFile())
+                praatProcessor_.loadAudioFromFile (selected);
         });
 }
 
-void PraatPluginEditor::onAnalyzeButtonClicked()
+void PraatPluginEditor::onToggleRecord()
 {
-    praatProcessor_.beginAnalysisOfSelectedRegion();
-    refreshAnalyzeButtonEnabledState();
-    refreshStatusBar();
+    if (praatProcessor_.isCapturing())
+        praatProcessor_.stopLiveCapture();
+    else
+        praatProcessor_.startLiveCapture();
 }
 
-void PraatPluginEditor::onLoadScriptsDirButtonClicked()
+void PraatPluginEditor::onPlayOriginal()
+{
+    praatProcessor_.startPlaybackOfOriginalRegion();
+}
+
+void PraatPluginEditor::onPlayProcessed()
+{
+    praatProcessor_.startPlaybackOfProcessedOutput();
+}
+
+void PraatPluginEditor::onStopPlayback()
+{
+    praatProcessor_.stopPlayback();
+}
+
+void PraatPluginEditor::onLoadScriptsDir()
 {
     activeFileChooser_ = std::make_unique<juce::FileChooser> (
-        "Select a folder of .praat scripts",
+        "Select Scripts Directory",
         juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
 
     activeFileChooser_->launchAsync (
-        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
-        [this] (const juce::FileChooser& fc)
+        juce::FileBrowserComponent::openMode |
+        juce::FileBrowserComponent::canSelectDirectories,
+        [this] (const juce::FileChooser& chooser)
         {
-            const auto chosen = fc.getResult();
-            if (chosen.isDirectory())
-            {
-                praatProcessor_.scriptManager().loadScriptsFromDirectory (chosen);
-                refreshScriptSelectorContents();
-            }
-            activeFileChooser_.reset();
+            const auto dir = chooser.getResult();
+            if (dir.isDirectory())
+                praatProcessor_.scriptManager().loadScriptsFromDirectory (dir);
         });
 }
 
-void PraatPluginEditor::onScriptSelectionChanged()
+void PraatPluginEditor::onAnalyze()
 {
-    const int idx  = scriptSelectorDropdown_.getSelectedItemIndex();
-    const auto scr = praatProcessor_.scriptManager().scriptAtIndex (idx);
-    praatProcessor_.scriptManager().setActiveScript (scr);
-    rebuildParameterPanel();
-    refreshAnalyzeButtonEnabledState();
+    praatProcessor_.beginAnalysisOfSelectedRegion (currentParamValues_);
 }
 
-void PraatPluginEditor::onWaveformSelectionChanged (juce::Range<double> sel)
+void PraatPluginEditor::onSelectScript (const juce::String& scriptName)
 {
-    praatProcessor_.setAnalysisRegionInSeconds (sel);
-    refreshAnalyzeButtonEnabledState();
-}
+    auto& sm = praatProcessor_.scriptManager();
 
-//==============================================================================
-// Refresh helpers
-
-void PraatPluginEditor::rebuildParameterPanel()
-{
-    const juce::File activeScript = praatProcessor_.scriptManager().activeScript();
-    const auto params             = ScriptParameterParser::parse (activeScript);
-    const auto currentValues      = praatProcessor_.currentScriptParameters();
-
-    parameterPanel_->rebuild (params, currentValues);
-
-    // Recalculate our overall size — may grow or shrink depending on how many
-    // parameters the new script exposes.
-    const int panelH = parameterPanel_->preferredHeight();
-    parameterPanel_->setVisible (panelH > 0);
-
-    resized();
-    repaint();
-}
-
-void PraatPluginEditor::refreshWaveformDisplay()
-{
-    // Always dismiss the recording overlay and playhead when showing a new buffer.
-    waveformDisplay_.setRecordingMode (false);
-    waveformDisplay_.setPlayheadPosition (-1.0);
-    processedWaveformDisplay_.setPlayheadPosition (-1.0);
-
-    // ── Original waveform ─────────────────────────────────────────────────────
-    if (praatProcessor_.hasAudioLoaded())
+    for (const auto& scriptFile : sm.availableScripts())
     {
-        waveformDisplay_.displayAudioBuffer (&praatProcessor_.loadedAudioBuffer(),
-                                              praatProcessor_.loadedAudioSampleRate());
-        waveformDisplay_.setSelectedRegionInSeconds (
-            praatProcessor_.selectedRegionInSeconds());
-    }
-    else
-    {
-        waveformDisplay_.displayAudioBuffer (nullptr, 44100.0);
-    }
-
-    // ── Processed waveform ────────────────────────────────────────────────────
-    if (praatProcessor_.hasProcessedAudio())
-    {
-        processedWaveformDisplay_.displayAudioBuffer (
-            &praatProcessor_.processedAudioBuffer(),
-            praatProcessor_.processedAudioSampleRate());
-    }
-    else
-    {
-        processedWaveformDisplay_.displayAudioBuffer (nullptr, 44100.0);
-    }
-}
-
-void PraatPluginEditor::refreshScriptSelectorContents()
-{
-    scriptSelectorDropdown_.clear (juce::dontSendNotification);
-
-    const auto scripts = praatProcessor_.scriptManager().availableScripts();
-
-    if (scripts.isEmpty())
-    {
-        scriptSelectorDropdown_.addItem ("(no scripts)", 1);
-        scriptSelectorDropdown_.setEnabled (false);
-    }
-    else
-    {
-        scriptSelectorDropdown_.setEnabled (true);
-        for (int i = 0; i < scripts.size(); ++i)
-            scriptSelectorDropdown_.addItem (scripts[i].getFileNameWithoutExtension(), i + 1);
-
-        const int active = praatProcessor_.scriptManager().indexOfActiveScript();
-        scriptSelectorDropdown_.setSelectedItemIndex (active >= 0 ? active : 0,
-                                                       juce::dontSendNotification);
-    }
-}
-
-void PraatPluginEditor::refreshResultsDisplay (const AnalysisResult& result)
-{
-    juce::String display;
-
-    if (! result.parsedSuccessfully)
-    {
-        display = "Analysis failed:\n" + result.failureReason;
-        if (result.praatErrorOutput.isNotEmpty())
-            display += "\n\nPraat output:\n" + result.praatErrorOutput;
-    }
-    else
-    {
-        if (result.hasStructuredResults())
+        if (scriptFile.getFileNameWithoutExtension() == scriptName)
         {
-            for (int i = 0; i < result.keyValuePairs.size(); ++i)
-                display += result.keyValuePairs.getAllKeys()[i] + ":  "
-                         + result.keyValuePairs.getAllValues()[i] + "\n";
-        }
-
-        if (result.rawConsoleOutput.isNotEmpty())
-        {
-            if (display.isNotEmpty()) display += "\n";
-            display += result.rawConsoleOutput;
+            sm.setActiveScript (scriptFile);
+            return;
         }
     }
-
-    resultsTextDisplay_.setText (display, juce::dontSendNotification);
 }
 
-void PraatPluginEditor::refreshStatusBar()
+void PraatPluginEditor::onSetRegion (double startFraction, double endFraction)
 {
-    statusBarLabel_.setText (praatProcessor_.currentStatusMessage(),
-                              juce::dontSendNotification);
-
-    const auto newColour = colourForCurrentStatus();
-    if (newColour != statusDotColour_)
+    // {0, 1} from the UI means "reset to full file" — clear the selection.
+    if (startFraction <= 0.0 && endFraction >= 1.0)
     {
-        statusDotColour_ = newColour;
-        repaint();
+        praatProcessor_.setAnalysisRegionInSeconds ({});
+        return;
+    }
+
+    const double sampleRate = praatProcessor_.loadedAudioSampleRate();
+    const int    numSamples = praatProcessor_.loadedAudioBuffer().getNumSamples();
+
+    if (sampleRate <= 0.0 || numSamples == 0)
+        return;
+
+    const double duration = static_cast<double> (numSamples) / sampleRate;
+    praatProcessor_.setAnalysisRegionInSeconds ({
+        startFraction * duration,
+        endFraction   * duration
+    });
+}
+
+void PraatPluginEditor::onExportProcessed()
+{
+    const auto processedFile = praatProcessor_.processedAudioFile();
+    if (! processedFile.existsAsFile())
+        return;
+
+    activeFileChooser_ = std::make_unique<juce::FileChooser> (
+        "Export Morphed Audio",
+        juce::File::getSpecialLocation (juce::File::userMusicDirectory)
+            .getChildFile ("morphed_output.wav"),
+        "*.wav");
+
+    activeFileChooser_->launchAsync (
+        juce::FileBrowserComponent::saveMode |
+        juce::FileBrowserComponent::canSelectFiles |
+        juce::FileBrowserComponent::warnAboutOverwriting,
+        [processedFile] (const juce::FileChooser& chooser)
+        {
+            const auto dest = chooser.getResult();
+            if (dest.getFullPathName().isNotEmpty())
+                processedFile.copyFileTo (dest);
+        });
+}
+
+void PraatPluginEditor::onSetScriptParam (const juce::String& name, const juce::String& value)
+{
+    for (int i = 0; i < currentParams_.size(); ++i)
+    {
+        if (currentParams_[i].name == name)
+        {
+            currentParamValues_.set (i, value);
+            return;
+        }
     }
 }
 
-void PraatPluginEditor::refreshTransportButtonStates()
+// ─── Fallback UI ──────────────────────────────────────────────────────────────
+
+void PraatPluginEditor::showWebViewUnavailableMessage()
 {
-    const bool loaded    = praatProcessor_.hasAudioLoaded();
-    const bool processed = praatProcessor_.hasProcessedAudio();
-    const bool playing   = praatProcessor_.isPlayingBack();
-    const bool capturing = praatProcessor_.isCapturing();
-
-    playOriginalButton_.setEnabled  (loaded    && ! playing && ! capturing);
-    playProcessedButton_.setEnabled (processed && ! playing && ! capturing);
-    stopButton_.setEnabled          (playing || capturing);
-    exportButton_.setEnabled        (processed && ! capturing);
-
-    // Keep record button toggle state in sync with the processor.
-    if (recordButton_.getToggleState() != capturing)
-        recordButton_.setToggleState (capturing, juce::dontSendNotification);
-}
-
-void PraatPluginEditor::refreshAnalyzeButtonEnabledState()
-{
-    const bool canAnalyze = praatProcessor_.isPraatAvailable()
-                             && praatProcessor_.hasAudioLoaded()
-                             && praatProcessor_.scriptManager().hasActiveScriptSelected()
-                             && ! praatProcessor_.isAnalysisInProgress()
-                             && ! praatProcessor_.isCapturing();
-
-    analyzeButton_.setEnabled (canAnalyze);
-}
-
-juce::Colour PraatPluginEditor::colourForCurrentStatus() const
-{
-    if (! praatProcessor_.isPraatAvailable())  return PraatColours::statusRed;
-    if (praatProcessor_.isCapturing())          return PraatColours::recordRed;
-    if (praatProcessor_.isPlayingBack())        return PraatColours::statusBlue;
-    if (praatProcessor_.isAnalysisInProgress()) return PraatColours::statusAmber;
-
-    const auto result = praatProcessor_.mostRecentAnalysisResult();
-    if (result.failureReason.isNotEmpty())      return PraatColours::statusRed;
-
-    return PraatColours::statusGreen;
+    webViewUnavailableLabel_.setText (
+        "PraatPlugin requires the Microsoft WebView2 Runtime.\n\n"
+        "Download it free from:\nmicrosoft.com/edge/webview2",
+        juce::dontSendNotification);
+    webViewUnavailableLabel_.setJustificationType (juce::Justification::centred);
+    webViewUnavailableLabel_.setFont (juce::Font (13.0f));
+    webViewUnavailableLabel_.setColour (juce::Label::textColourId,       juce::Colour (0xffe8e8e8));
+    webViewUnavailableLabel_.setColour (juce::Label::backgroundColourId, juce::Colour (0xff181818));
+    addAndMakeVisible (webViewUnavailableLabel_);
 }

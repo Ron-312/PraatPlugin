@@ -29,9 +29,11 @@ PraatPluginProcessor::~PraatPluginProcessor()
     jobDispatcher_.stopAndWaitForCurrentJobToFinish();
     transportSource_.setSource (nullptr);
 
-    // Clean up stable processed-audio temp file (kept alive for playback).
+    // Clean up temp files kept alive for the transport reader.
     if (processedAudioFile_.existsAsFile())
         processedAudioFile_.deleteFile();
+    if (liveCaptureFile_.existsAsFile())
+        liveCaptureFile_.deleteFile();
 }
 
 //==============================================================================
@@ -168,11 +170,12 @@ void PraatPluginProcessor::stopLiveCapture()
     if (! audioCapture_.hasAudioReadyForAnalysis())
         return;
 
-    // Write the ring buffer to a temp WAV on a background thread (blocking I/O),
-    // then load it on the message thread so the waveform display updates.
+    // Use a UUID in the filename so each recording gets a unique path.
+    // This guarantees the editor's file-path change-detection always sees a new
+    // file, even when re-recording (same path would produce a false "no change").
     const auto captureFile = juce::File::getSpecialLocation (juce::File::tempDirectory)
                                  .getChildFile ("PraatPlugin")
-                                 .getChildFile ("live_capture.wav");
+                                 .getChildFile ("capture_" + juce::Uuid().toDashedString() + ".wav");
 
     captureFile.getParentDirectory().createDirectory();
 
@@ -182,10 +185,17 @@ void PraatPluginProcessor::stopLiveCapture()
 
         juce::MessageManager::callAsync ([this, captureFile] ()
         {
-            loadAudioFromFile (captureFile);
-            captureFile.deleteFile();
+            // Delete the previous capture file now that we have a new one.
+            // The old transport reader held it open; releasing it here is safe
+            // because loadAudioFromFile() disconnects the transport first.
+            if (liveCaptureFile_.existsAsFile())
+                liveCaptureFile_.deleteFile();
+
+            // Keep the new file alive — the transport reader needs it for playback.
+            liveCaptureFile_ = captureFile;
+
+            loadAudioFromFile (liveCaptureFile_);
             audioCapture_.clearCaptureBuffer();
-            audioOutputWasReceived_ = true;   // triggers waveform refresh in editor
         });
     });
 }
@@ -264,6 +274,7 @@ bool PraatPluginProcessor::loadAudioFromFile (const juce::File& audioFile)
     }
 
     audioIsLoaded_ = true;
+    ++loadedAudioVersion_;   // signal to editor that the buffer content has changed
     return true;
 }
 
@@ -285,6 +296,11 @@ double PraatPluginProcessor::loadedAudioSampleRate() const noexcept
 juce::File PraatPluginProcessor::loadedAudioFile() const noexcept
 {
     return loadedAudioFile_;
+}
+
+uint32_t PraatPluginProcessor::loadedAudioVersion() const noexcept
+{
+    return loadedAudioVersion_.load();
 }
 
 //==============================================================================
@@ -342,15 +358,9 @@ bool PraatPluginProcessor::hasProcessedAudio() const noexcept
     return hasProcessedAudio_.load();
 }
 
-bool PraatPluginProcessor::exportProcessedAudioToFile (const juce::File& destination) const
+juce::File PraatPluginProcessor::processedAudioFile() const noexcept
 {
-    if (! hasProcessedAudio_.load())
-        return false;
-
-    const auto result = WavFileWriter::writeAudioBufferToWavFile (
-        processedAudioBuffer_, processedAudioSampleRate_, destination);
-
-    return result == WavFileWriter::WriteResult::Success;
+    return processedAudioFile_;
 }
 
 const juce::AudioBuffer<float>& PraatPluginProcessor::processedAudioBuffer() const noexcept
@@ -446,7 +456,7 @@ bool PraatPluginProcessor::isPlayingOriginal() const noexcept
 //==============================================================================
 // Analysis
 
-void PraatPluginProcessor::beginAnalysisOfSelectedRegion()
+void PraatPluginProcessor::beginAnalysisOfSelectedRegion (const juce::StringArray& extraScriptArgs)
 {
     if (! isPraatAvailable())
         return;
@@ -492,8 +502,8 @@ void PraatPluginProcessor::beginAnalysisOfSelectedRegion()
                                      numSamples);
     }
 
-    job.currentState      = JobState::Pending;
-    job.scriptParameters  = currentScriptParameters();
+    job.extraScriptArgs = extraScriptArgs;
+    job.currentState    = JobState::Pending;
 
     analysisIsInProgress_ = true;
     jobQueue_.enqueueAnalysisJob (std::move (job));

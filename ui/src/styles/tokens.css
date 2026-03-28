@@ -1,0 +1,68 @@
+/* ─── Design Tokens ──────────────────────────────────────────────────────────
+ *
+ * Studio × Teenage Engineering palette.
+ *
+ * Rules:
+ *   - Neutral greys everywhere except --color-signal (Praat pink).
+ *   - Signal color is used ONLY for the waveform and the active Analyze button.
+ *   - Everything else is black, grey, or white.
+ *   - Border-radius is deliberately small (2px) for a hardware / screen-printed feel.
+ *   - All spacing lives on a 4px grid.
+ *   - Labels are ALL-CAPS with wide letter-spacing (Teenage Engineering style).
+ *   - Values and results are monospace.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Backgrounds ─────────────────────────────────────────────────────── */
+  --color-bg:             #181818;   /* outermost window fill                */
+  --color-surface:        #222222;   /* section panels, header               */
+  --color-surface-raised: #2c2c2c;   /* buttons, inputs                      */
+  --color-screen:         #111111;   /* waveform and results "screen" panels */
+
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --color-border:         #383838;
+  --color-border-subtle:  #2a2a2a;
+
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --color-text:           #e8e8e8;
+  --color-text-dim:       #888888;
+  --color-text-inverted:  #111111;
+
+  /* ── Signal / Accent ─────────────────────────────────────────────────── */
+  --color-signal:         #e05090;   /* Praat pink — used sparingly          */
+  --color-active:         #ffffff;   /* white — the hero Analyze button fill */
+  --color-recording:      #d94040;   /* red — only during live capture       */
+  --color-ok:             #666666;   /* dimmed LED for "ready" state         */
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  --color-btn:            #2c2c2c;
+  --color-btn-border:     #404040;
+  --color-btn-hover:      #363636;
+  --color-btn-active:     #1e1e1e;
+
+  /* ── Typography ──────────────────────────────────────────────────────── */
+  --font-ui:   -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+  --font-mono: 'Menlo', 'Monaco', 'Courier New', Courier, monospace;
+
+  /* Type scale */
+  --text-xs:   10px;
+  --text-sm:   11px;
+  --text-base: 12px;
+  --text-md:   13px;
+
+  /* Label style (Teenage Engineering — uppercase, wide tracking) */
+  --label-size:     10px;
+  --label-weight:   600;
+  --label-tracking: 1.3px;
+
+  /* ── Spacing (4px grid) ──────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* ── Shape ───────────────────────────────────────────────────────────── */
+  --radius: 2px;   /* small radius — looks hardware-stamped, not web-bubbly */
+}
