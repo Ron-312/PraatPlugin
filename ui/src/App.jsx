@@ -81,10 +81,11 @@ export function App() {
       />
 
       <ScriptSection
-        scripts={state.scripts}
+        scriptFolders={state.scriptFolders}
         selectedScript={state.selectedScript}
         onSelectScript={actions.selectScript}
         onLoadScriptsDir={actions.loadScriptsDir}
+        onDownloadScripts={actions.downloadScripts}
       />
 
       <ScriptParams
@@ -96,6 +97,7 @@ export function App() {
         isAnalyzing={state.isAnalyzing}
         canAnalyze={canAnalyze}
         onAnalyze={actions.analyze}
+        onCancel={actions.cancelAnalysis}
       />
 
       <Results
@@ -105,6 +107,7 @@ export function App() {
       <StatusBar
         status={state.status}
         statusType={state.statusType}
+        isDownloadingScripts={state.isDownloadingScripts}
       />
     </div>
   )

@@ -162,9 +162,21 @@ juce::WebBrowserComponent::Options PraatPluginEditor::buildBrowserOptions()
         })
         .withEventListener ("requestState", [this] (const juce::var&)
         {
-            // JS asks for state on mount — respond immediately rather than
-            // waiting up to 50ms for the next timer tick.
+            // JS asks for state on mount (UI is definitely visible at this point).
+            // Reset the script list version counters so pushStateToWebView() always
+            // fires a fresh scriptsUpdate — emitEventIfBrowserIsVisible() may have
+            // silently dropped the earlier emit if the window wasn't open yet.
+            lastKnownScriptCount_ = -1;
+            lastKnownFolderCount_ = -1;
             pushStateToWebView();
+        })
+        .withEventListener ("downloadScripts", [this] (const juce::var&)
+        {
+            praatProcessor_.triggerScriptDownload();
+        })
+        .withEventListener ("cancelAnalysis", [this] (const juce::var&)
+        {
+            praatProcessor_.cancelCurrentAnalysis();
         });
 
 #if JUCE_WINDOWS
@@ -201,16 +213,52 @@ void PraatPluginEditor::pushStateToWebView()
 
     auto state = std::make_unique<juce::DynamicObject>();
 
-    // ── Scripts ───────────────────────────────────────────────────────────
-    juce::Array<juce::var> scriptNames;
-    for (const auto& scriptFile : sm.availableScripts())
-        scriptNames.add (scriptFile.getFileNameWithoutExtension());
-    state->setProperty ("scripts", juce::var (scriptNames));
+    // ── Script list — sent as a SEPARATE event, not part of stateUpdate ──────
+    // The script list can be 400+ items.  Bundling it in stateUpdate at 20fps
+    // overwhelms WKWebView's message queue.  Instead emit "scriptsUpdate" as
+    // a one-shot event only when the list actually changes.
+    {
+        const int scriptCount = sm.numberOfAvailableScripts();
+        const int folderCount = sm.numberOfFolders();
+
+        if (scriptCount != lastKnownScriptCount_ || folderCount != lastKnownFolderCount_)
+        {
+            juce::Array<juce::var> foldersArray;
+            for (int fi = 0; fi < folderCount; ++fi)
+            {
+                auto folderObj = std::make_unique<juce::DynamicObject>();
+                folderObj->setProperty ("name", sm.folderNameAtIndex (fi));
+
+                juce::Array<juce::var> scriptNames;
+                for (int si = 0; si < sm.numberOfScriptsInFolder (fi); ++si)
+                    scriptNames.add (sm.scriptInFolder (fi, si).getFileNameWithoutExtension());
+                folderObj->setProperty ("scripts", juce::var (scriptNames));
+
+                foldersArray.add (juce::var (folderObj.release()));
+            }
+
+            cachedScriptFolders_  = juce::var (foldersArray);
+            lastKnownScriptCount_ = scriptCount;
+            lastKnownFolderCount_ = folderCount;
+
+            // Fire the dedicated heavy event.
+            browser_->emitEventIfBrowserIsVisible ("scriptsUpdate", cachedScriptFolders_);
+        }
+    }
 
     const auto activeScript = sm.activeScript();
-    state->setProperty ("selectedScript",
-        activeScript.existsAsFile() ? juce::var (activeScript.getFileNameWithoutExtension())
-                                    : juce::var (juce::String{}));
+    if (activeScript.existsAsFile())
+    {
+        const auto folderName = sm.folderNameForScript (activeScript);
+        const auto qualifiedName = folderName.isNotEmpty()
+            ? folderName + "/" + activeScript.getFileNameWithoutExtension()
+            : activeScript.getFileNameWithoutExtension();
+        state->setProperty ("selectedScript", juce::var (qualifiedName));
+    }
+    else
+    {
+        state->setProperty ("selectedScript", juce::var (juce::String{}));
+    }
 
     // ── Script parameters ─────────────────────────────────────────────────
     // Re-parse the form block when the script changes; keep current values
@@ -221,7 +269,7 @@ void PraatPluginEditor::pushStateToWebView()
         currentParams_       = PraatFormParser::parseExtraParams (activeScript);
         currentParamValues_.clear();
         for (const auto& p : currentParams_)
-            currentParamValues_.add (p.defaultValue);
+            currentParamValues_.set (p.name, p.defaultValue);
     }
 
     {
@@ -229,8 +277,7 @@ void PraatPluginEditor::pushStateToWebView()
         for (int i = 0; i < currentParams_.size(); ++i)
         {
             const auto& p   = currentParams_[i];
-            const auto  val = (i < currentParamValues_.size()) ? currentParamValues_[i]
-                                                                : p.defaultValue;
+            const auto  val = currentParamValues_.getValue (p.name, p.defaultValue);
 
             auto obj = std::make_unique<juce::DynamicObject>();
             obj->setProperty ("name",    p.name);
@@ -264,33 +311,40 @@ void PraatPluginEditor::pushStateToWebView()
                                              : juce::var ("processed"));
 
     // ── Analysis ──────────────────────────────────────────────────────────
-    state->setProperty ("isAnalyzing", praatProcessor_.isAnalysisInProgress());
-    state->setProperty ("praatFound",  loc.isPraatInstalled());
+    state->setProperty ("isAnalyzing",         praatProcessor_.isAnalysisInProgress());
+    state->setProperty ("isDownloadingScripts", praatProcessor_.isDownloadingScripts());
+    state->setProperty ("praatFound",           loc.isPraatInstalled());
 
     // ── Status ────────────────────────────────────────────────────────────
     state->setProperty ("status",     praatProcessor_.currentStatusMessage());
     state->setProperty ("statusType", deriveStatusType());
 
     // ── Results ───────────────────────────────────────────────────────────
+    // Send whenever there's something to show: parsed output OR an error.
     const auto result = praatProcessor_.mostRecentAnalysisResult();
 
-    if (result.parsedSuccessfully)
+    if (result.parsedSuccessfully || result.failureReason.isNotEmpty()
+            || result.rawConsoleOutput.isNotEmpty())
     {
         auto resultsObj = std::make_unique<juce::DynamicObject>();
 
         juce::Array<juce::var> pairs;
-        const auto& kvp = result.keyValuePairs;
-        for (int i = 0; i < kvp.size(); ++i)
+        if (result.parsedSuccessfully)
         {
-            // Each pair is a two-element JS array: ["key", "value"]
-            juce::Array<juce::var> pair;
-            pair.add (kvp.getAllKeys()[i]);
-            pair.add (kvp.getAllValues()[i]);
-            pairs.add (juce::var (pair));
+            const auto& kvp = result.keyValuePairs;
+            for (int i = 0; i < kvp.size(); ++i)
+            {
+                juce::Array<juce::var> pair;
+                pair.add (kvp.getAllKeys()[i]);
+                pair.add (kvp.getAllValues()[i]);
+                pairs.add (juce::var (pair));
+            }
         }
 
-        resultsObj->setProperty ("pairs", juce::var (pairs));
-        resultsObj->setProperty ("raw",   result.rawConsoleOutput);
+        resultsObj->setProperty ("pairs",         juce::var (pairs));
+        resultsObj->setProperty ("raw",           result.rawConsoleOutput);
+        resultsObj->setProperty ("error",         result.failureReason);
+        resultsObj->setProperty ("parsedOk",      result.parsedSuccessfully);
         state->setProperty ("results", juce::var (resultsObj.release()));
     }
 
@@ -303,8 +357,6 @@ void PraatPluginEditor::pushStateToWebView()
     const uint32_t audioVersion  = praatProcessor_.loadedAudioVersion();
     const bool     audioChanged  = (currentFile  != lastKnownAudioFile_)
                                 || (audioVersion != lastKnownAudioVersion_);
-    const bool processedAppeared = praatProcessor_.hasProcessedAudio() && !lastKnownHasProcessed_;
-
     if (audioChanged && praatProcessor_.hasAudioLoaded())
     {
         cachedOriginalWaveform_ = buildDownsampledWaveform (praatProcessor_.loadedAudioBuffer());
@@ -312,10 +364,12 @@ void PraatPluginEditor::pushStateToWebView()
         lastKnownAudioVersion_ = audioVersion;
     }
 
-    if (processedAppeared)
+    // Rebuild processed waveform every time a new morph produces audio output.
+    // consumeAudioOutputNotification() resets the flag, so it fires once per job.
+    if (praatProcessor_.consumeAudioOutputNotification())
     {
         cachedProcessedWaveform_ = buildDownsampledWaveform (praatProcessor_.processedAudioBuffer());
-        lastKnownHasProcessed_ = true;
+        lastKnownHasProcessed_   = true;
     }
 
     // Always include the cached arrays (they may be empty []).
@@ -463,22 +517,48 @@ void PraatPluginEditor::onLoadScriptsDir()
         {
             const auto dir = chooser.getResult();
             if (dir.isDirectory())
-                praatProcessor_.scriptManager().loadScriptsFromDirectory (dir);
+                praatProcessor_.scriptManager().loadScriptsFromDirectoryRecursive (dir);
         });
 }
 
 void PraatPluginEditor::onAnalyze()
 {
+    praatProcessor_.stopPlayback();
     praatProcessor_.beginAnalysisOfSelectedRegion (currentParamValues_);
 }
 
-void PraatPluginEditor::onSelectScript (const juce::String& scriptName)
+void PraatPluginEditor::onSelectScript (const juce::String& qualifiedName)
 {
     auto& sm = praatProcessor_.scriptManager();
 
+    // Try folder-qualified format first: "FOLDER/scriptName"
+    const int slash = qualifiedName.indexOfChar ('/');
+    if (slash >= 0)
+    {
+        const auto folder = qualifiedName.substring (0, slash);
+        const auto name   = qualifiedName.substring (slash + 1);
+
+        for (int fi = 0; fi < sm.numberOfFolders(); ++fi)
+        {
+            if (sm.folderNameAtIndex (fi) == folder)
+            {
+                for (int si = 0; si < sm.numberOfScriptsInFolder (fi); ++si)
+                {
+                    const auto f = sm.scriptInFolder (fi, si);
+                    if (f.getFileNameWithoutExtension() == name)
+                    {
+                        sm.setActiveScript (f);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: flat name search (backward compat with bundled scripts)
     for (const auto& scriptFile : sm.availableScripts())
     {
-        if (scriptFile.getFileNameWithoutExtension() == scriptName)
+        if (scriptFile.getFileNameWithoutExtension() == qualifiedName)
         {
             sm.setActiveScript (scriptFile);
             return;
@@ -515,9 +595,9 @@ void PraatPluginEditor::onExportProcessed()
         return;
 
     activeFileChooser_ = std::make_unique<juce::FileChooser> (
-        "Export Morphed Audio",
+        "Export Processed Audio",
         juce::File::getSpecialLocation (juce::File::userMusicDirectory)
-            .getChildFile ("morphed_output.wav"),
+            .getChildFile ("PraatPlugin_output.wav"),
         "*.wav");
 
     activeFileChooser_->launchAsync (
@@ -534,14 +614,7 @@ void PraatPluginEditor::onExportProcessed()
 
 void PraatPluginEditor::onSetScriptParam (const juce::String& name, const juce::String& value)
 {
-    for (int i = 0; i < currentParams_.size(); ++i)
-    {
-        if (currentParams_[i].name == name)
-        {
-            currentParamValues_.set (i, value);
-            return;
-        }
-    }
+    currentParamValues_.set (name, value);
 }
 
 // ─── Fallback UI ──────────────────────────────────────────────────────────────

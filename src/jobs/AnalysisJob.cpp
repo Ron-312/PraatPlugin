@@ -8,6 +8,7 @@ juce::String describeJobState (JobState state)
         case JobState::Running:               return "Running";
         case JobState::CompletedSuccessfully: return "Completed";
         case JobState::FailedWithError:       return "Failed";
+        case JobState::Cancelled:             return "Cancelled";
     }
     return "Unknown";
 }

@@ -11,18 +11,28 @@
 
 import './AnalyzeButton.css'
 
-export function AnalyzeButton({ isAnalyzing, canAnalyze, onAnalyze }) {
-  const label    = isAnalyzing ? 'MORPHING…' : 'MORPH'
-  const disabled = isAnalyzing || !canAnalyze
+export function AnalyzeButton({ isAnalyzing, canAnalyze, onAnalyze, onCancel }) {
+  if (isAnalyzing) {
+    return (
+      <div className="analyze-button">
+        <button
+          className="analyze-button__btn analyze-button__btn--cancel"
+          onClick={onCancel}
+        >
+          ■ CANCEL
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="analyze-button">
       <button
-        className={`analyze-button__btn ${isAnalyzing ? 'analyze-button__btn--running' : ''}`}
+        className="analyze-button__btn"
         onClick={onAnalyze}
-        disabled={disabled}
+        disabled={!canAnalyze}
       >
-        {label}
+        RUN
       </button>
     </div>
   )

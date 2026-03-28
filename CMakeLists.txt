@@ -82,11 +82,13 @@ endif()
 
 # ─── Bundled Praat scripts + built React UI (all embedded as BinaryData) ──────
 juce_add_binary_data(PraatPlugin_BinaryData SOURCES
+    # Core bundled scripts — offline fallback, always available
     scripts/examples/pitch_analysis.praat
     scripts/examples/formant_analysis.praat
     scripts/examples/fuzz_distortion.praat
     scripts/examples/robot_voice.praat
     scripts/examples/pitch_shift.praat
+    # React UI bundle
     ui/dist/index.html
 )
 
@@ -105,6 +107,7 @@ target_sources(PraatPlugin PRIVATE
     src/jobs/JobQueue.cpp
     src/jobs/JobDispatcher.cpp
     src/scripts/ScriptManager.cpp
+    src/scripts/ScriptDownloader.cpp
     src/scripts/ScriptParameterParser.cpp
     src/results/ResultParser.cpp
 )

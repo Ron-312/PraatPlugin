@@ -28,11 +28,21 @@ export function Results({ results }) {
 
 function ResultsContent({ results }) {
   if (!results) {
-    return <span className="results__placeholder">Run ANALYZE to see output here.</span>
+    return <span className="results__placeholder">Press RUN to see output here.</span>
   }
 
+  const hasError = results.error && results.error.trim().length > 0
   const hasPairs = results.pairs && results.pairs.length > 0
-  const hasRaw   = results.raw && results.raw.trim().length > 0
+  const hasRaw   = results.raw   && results.raw.trim().length > 0
+
+  if (hasError) {
+    return (
+      <>
+        <pre className="results__error">{results.error.trim()}</pre>
+        {hasRaw && <pre className="results__raw">{results.raw.trim()}</pre>}
+      </>
+    )
+  }
 
   if (!hasPairs && !hasRaw) {
     return <span className="results__placeholder">Script ran — no output was produced.</span>
@@ -52,10 +62,7 @@ function ResultsContent({ results }) {
           </tbody>
         </table>
       )}
-
-      {hasRaw && (
-        <pre className="results__raw">{results.raw.trim()}</pre>
-      )}
+      {hasRaw && <pre className="results__raw">{results.raw.trim()}</pre>}
     </>
   )
 }

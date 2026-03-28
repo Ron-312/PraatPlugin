@@ -49,6 +49,10 @@ public:
 
     bool isCurrentlyProcessingAJob() const noexcept;
 
+    // Signals the currently running Praat process to be killed.
+    // No-op if no job is running.  Safe to call from any thread.
+    void cancelCurrentJob();
+
     // How long stopAndWaitForCurrentJobToFinish() waits before giving up.
     static constexpr int processTimeoutForStopMs_ { 35'000 };
 
@@ -75,7 +79,8 @@ private:
     mutable std::mutex           callbackMutex_;
     JobCompletionCallback        completionCallback_;
 
-    std::atomic<bool>            isProcessingAJob_ { false };
+    std::atomic<bool>            isProcessingAJob_  { false };
+    std::atomic<bool>            cancelRequested_   { false };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JobDispatcher)
 };
