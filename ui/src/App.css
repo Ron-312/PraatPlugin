@@ -1,0 +1,13 @@
+/* ─── App Layout ─────────────────────────────────────────────────────────────
+ *
+ * Flex column that fills the entire plugin window.
+ * Each section is flex-shrink: 0 except Results, which takes the leftover space.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg);
+  overflow: hidden;
+}

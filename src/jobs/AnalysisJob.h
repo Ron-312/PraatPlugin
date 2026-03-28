@@ -52,6 +52,11 @@ struct AnalysisJob
     // Path to the Praat executable, resolved by PraatInstallationLocator.
     juce::File praatExecutableFile;
 
+    // Extra script arguments (form fields 3+) supplied by the user via the
+    // parameter panel.  If empty, JobDispatcher falls back to the script's
+    // declared defaults.
+    juce::StringArray extraScriptArgs;
+
     // Tracks progress through the job lifecycle.
     JobState currentState { JobState::Pending };
 

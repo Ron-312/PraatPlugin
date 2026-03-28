@@ -95,18 +95,90 @@ void JobDispatcher::writeAudioToTempFile (AnalysisJob& job)
     }
 }
 
+// ── Form argument extractor ────────────────────────────────────────────────────
+//
+// Praat's --run mode maps CLI arguments to form fields positionally and requires
+// ALL fields to be supplied.  If a script declares N fields but only 2 arguments
+// are passed (inputFile, outputFile), Praat aborts with:
+//   "Found 2 arguments but expected more"
+//
+// This helper reads the script's form block and extracts the default value of
+// every field beyond the first two.  Those defaults are appended automatically
+// so any user script with extra parameters (stretch factor, sample rate, etc.)
+// runs with its declared defaults without requiring extra UI.
+static juce::StringArray extractExtraFormDefaults (const juce::File& scriptFile)
+{
+    juce::StringArray extras;
+    const juce::String content = scriptFile.loadFileAsString();
+
+    bool inForm    = false;
+    int  fieldIndex = 0;
+
+    // All Praat form field type keywords (case-insensitive).
+    static const char* const kFieldTypes[] = {
+        "sentence", "word", "text", "real", "positive", "natural",
+        "integer", "boolean", "choice", "optionmenu", nullptr
+    };
+
+    for (auto line : juce::StringArray::fromLines (content))
+    {
+        line = line.trimStart();
+
+        if (line.startsWithIgnoreCase ("form ") || line.equalsIgnoreCase ("form"))
+        {
+            inForm = true;
+            continue;
+        }
+        if (line.equalsIgnoreCase ("endform"))
+            break;
+        if (! inForm)
+            continue;
+
+        for (int t = 0; kFieldTypes[t] != nullptr; ++t)
+        {
+            const juce::String prefix = juce::String (kFieldTypes[t]) + " ";
+            if (line.startsWithIgnoreCase (prefix))
+            {
+                ++fieldIndex;
+                if (fieldIndex > 2)
+                {
+                    // Line format: "<type> <fieldName> [<default>...]"
+                    // Everything after the field name is the default value.
+                    const auto afterKeyword = line.substring ((int) prefix.length()).trimStart();
+                    const int  nameEnd      = afterKeyword.indexOfChar (' ');
+                    const auto defaultVal   = (nameEnd >= 0)
+                                                 ? afterKeyword.substring (nameEnd + 1).trimStart()
+                                                 : juce::String{};
+                    extras.add (defaultVal);
+                }
+                break;
+            }
+        }
+    }
+
+    return extras;
+}
+
 void JobDispatcher::runPraatScript (AnalysisJob& job)
 {
     PraatRunner praatRunner (job.praatExecutableFile);
     ResultParser resultParser;
 
-    // Pass inputFile as arg 1 and outputFile as arg 2.
-    // Analysis scripts accept (but ignore) outputFile.
-    // Manipulation scripts write a processed WAV to outputFile.
+    // Always supply inputFile (arg 1) and outputFile (arg 2).
+    // If the user supplied extra args via the parameter panel, use those;
+    // otherwise fall back to the script's declared defaults.
+    juce::StringArray scriptArgs = {
+        job.capturedAudioWavFile.getFullPathName(),
+        job.outputAudioWavFile.getFullPathName()
+    };
+    if (job.extraScriptArgs.size() > 0)
+        scriptArgs.addArray (job.extraScriptArgs);
+    else
+        scriptArgs.addArray (extractExtraFormDefaults (job.praatScriptFile));
+
     const auto runOutcome = praatRunner.launchPraatWithScript (
         job.praatScriptFile,
-        { job.capturedAudioWavFile.getFullPathName(),
-          job.outputAudioWavFile.getFullPathName() });
+        scriptArgs);
 
     if (runOutcome.exitedSuccessfully)
     {

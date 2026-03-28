@@ -1,0 +1,65 @@
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3) var(--space-2);
+  flex: 1;            /* grows to fill available space between script row and status */
+  min-height: 0;      /* required for flex children to scroll correctly              */
+}
+
+.results__label {
+  /* inherits .section-label */
+  flex-shrink: 0;
+}
+
+/* The "screen" — inset LCD look, same treatment as waveforms */
+.results__screen {
+  flex: 1;
+  min-height: 0;
+  background: var(--color-screen);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-2);
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+/* ── Placeholder ─────────────────────────────────────────────────────────── */
+.results__placeholder {
+  color: var(--color-text-dim);
+  font-size: var(--text-sm);
+}
+
+/* ── Key-value table ─────────────────────────────────────────────────────── */
+.results__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results__row {
+  vertical-align: baseline;
+}
+
+.results__key {
+  color: var(--color-signal);    /* pink — the only signal-color use outside waveforms */
+  font-weight: 600;
+  padding-right: var(--space-3);
+  white-space: nowrap;
+  width: 1%;                     /* shrink to content, let value column expand         */
+}
+
+.results__value {
+  color: var(--color-text);
+}
+
+/* ── Raw console output ───────────────────────────────────────────────────── */
+.results__raw {
+  margin-top: var(--space-2);
+  color: var(--color-text-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-2);
+}
