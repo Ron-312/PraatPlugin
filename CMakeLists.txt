@@ -105,6 +105,7 @@ target_sources(PraatPlugin PRIVATE
     src/jobs/JobQueue.cpp
     src/jobs/JobDispatcher.cpp
     src/scripts/ScriptManager.cpp
+    src/scripts/ScriptParameterParser.cpp
     src/results/ResultParser.cpp
 )
 

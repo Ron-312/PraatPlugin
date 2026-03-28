@@ -7,9 +7,11 @@
 #include "audio/AudioCapture.h"
 #include "praat/PraatInstallationLocator.h"
 #include "scripts/ScriptManager.h"
+#include "scripts/ScriptParameterParser.h"
 #include "jobs/JobQueue.h"
 #include "jobs/JobDispatcher.h"
 #include "results/AnalysisResult.h"
+#include <map>
 #include <mutex>
 
 // The central coordinator of PraatPlugin.
@@ -141,6 +143,10 @@ public:
     // Sample rate of the processed audio (0.0 if none available).
     double processedAudioSampleRate() const noexcept;
 
+    // Writes the processed audio buffer to destinationFile as a WAV.
+    // Returns true on success.  MESSAGE-THREAD ONLY.
+    bool exportProcessedAudioToFile (const juce::File& destination) const;
+
     //──────────────────────────────────────────────────────────────────────────
     // Region selection
     //──────────────────────────────────────────────────────────────────────────
@@ -204,6 +210,22 @@ public:
 
     // Human-readable status for the status bar.
     juce::String currentStatusMessage() const;
+
+    //──────────────────────────────────────────────────────────────────────────
+    // Script parameters — per-script user-controlled values
+    //──────────────────────────────────────────────────────────────────────────
+
+    // Returns the current parameter values for the active script.
+    // If the user has not yet changed anything, defaults from the script's
+    // form block are returned (parsed via ScriptParameterParser).
+    // MESSAGE-THREAD ONLY.
+    juce::StringPairArray currentScriptParameters() const;
+
+    // Updates one parameter value for the active script.
+    // Called by the editor when the user moves a slider.
+    // MESSAGE-THREAD ONLY.
+    void setScriptParameter (const juce::String& parameterName,
+                             const juce::String& value);
 
     // Access to subsystems needed by the editor.
     ScriptManager&            scriptManager() noexcept { return scriptManager_; }
@@ -275,6 +297,14 @@ private:
     ScriptManager             scriptManager_;
     JobQueue                  jobQueue_;
     JobDispatcher             jobDispatcher_;
+
+    //──────────────────────────────────────────────────────────────────────────
+    // Per-script parameter values (message-thread only)
+    // Maps absolute script file path → (parameterName → value string).
+    // Only stores values that have been explicitly changed by the user;
+    // defaults are read on demand from the script's form block.
+    //──────────────────────────────────────────────────────────────────────────
+    std::map<juce::String, juce::StringPairArray> scriptParameterValues_;
 
     //──────────────────────────────────────────────────────────────────────────
     // Analysis state (message-thread only, except where noted)
