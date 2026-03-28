@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <functional>
 
 // Launches Praat as a child process in batch mode and waits for it to finish.
 //
@@ -32,8 +33,11 @@ public:
 
     // Launches Praat and waits for it to complete (up to processTimeoutMilliseconds).
     // scriptArguments are appended after the script file path on the command line.
+    // shouldCancel is polled every 100 ms — if it returns true the process is killed
+    // and a cancelled outcome is returned (exitedSuccessfully=false, exitCode=-2).
     RunOutcome launchPraatWithScript (const juce::File& scriptFile,
-                                      const juce::StringArray& scriptArguments = {});
+                                      const juce::StringArray& scriptArguments = {},
+                                      std::function<bool()> shouldCancel = nullptr);
 
     // Returns true if the stored executable path points to a file that exists
     // and appears executable. Does not actually launch Praat.

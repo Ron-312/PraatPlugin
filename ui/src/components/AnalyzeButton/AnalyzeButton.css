@@ -33,18 +33,17 @@
   cursor: not-allowed;
 }
 
-/* Running state — muted white with a pulse animation */
-.analyze-button__btn--running {
-  background: #444444;
-  color: var(--color-text-dim);
-  animation: analyze-pulse 1.2s ease-in-out infinite;
+/* Cancel state — red border/text, always clickable */
+.analyze-button__btn--cancel {
+  background: #2a1010;
+  color: #f87171;
+  border: 1px solid #f87171;
 }
 
-.analyze-button__btn--running:hover {
-  background: #444444;  /* no hover change while running */
+.analyze-button__btn--cancel:hover {
+  background: #3d1515;
 }
 
-@keyframes analyze-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.6; }
+.analyze-button__btn--cancel:active {
+  background: #521a1a;
 }

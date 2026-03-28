@@ -22,16 +22,17 @@ import { sendToPlugin, onPluginEvent } from '../bridge/juceBridge'
 // Every key here must have a matching property emitted by pushStateToWebView()
 // in PraatPluginEditor.cpp.
 const INITIAL_STATE = {
-  scripts:          [],       // string[]  — file names without extension
-  selectedScript:   '',       // string    — currently selected script name
+  scriptFolders:    [],       // {name: string, scripts: string[]}[]  — folder-organized
+  selectedScript:   '',       // string    — "FOLDER/scriptName" or ''
 
   hasAudio:         false,    // bool      — an audio file is loaded
   hasProcessedAudio: false,   // bool      — a script produced output audio
   fileName:         '',       // string    — loaded file basename
 
-  isRecording:      false,    // bool      — live capture is active
-  isAnalyzing:      false,    // bool      — a Praat job is running
-  isPlaying:        false,    // bool      — transport is playing
+  isRecording:           false,    // bool      — live capture is active
+  isAnalyzing:           false,    // bool      — a Praat job is running
+  isDownloadingScripts:  false,    // bool      — community scripts downloading
+  isPlaying:             false,    // bool      — transport is playing
   playingSource:    'none',   // 'original' | 'processed' | 'none'
 
   praatFound:       false,    // bool      — Praat executable was located
@@ -63,17 +64,22 @@ export function usePluginState() {
     // Ask C++ for the current state the moment the UI mounts.
     sendToPlugin('requestState')
 
-    // C++ pushes incremental updates at 20fps — merge them into local state.
-    const cleanup = onPluginEvent('stateUpdate', (incoming) => {
+    // C++ pushes incremental real-time updates at 20fps (no scriptFolders here).
+    const cleanupState = onPluginEvent('stateUpdate', (incoming) => {
       // Normalise array fields: a default-constructed juce::var serialises as
       // JSON null, not [].  The UI components always expect real arrays.
       if (incoming.waveformSamples  == null) incoming.waveformSamples  = []
       if (incoming.processedSamples == null) incoming.processedSamples = []
-      if (incoming.scripts          == null) incoming.scripts          = []
       setState(prev => ({ ...prev, ...incoming }))
     })
 
-    return cleanup
+    // Script list is sent as its own event — only fires when the list changes.
+    // This keeps the heavy 400-item payload out of the 20fps stateUpdate stream.
+    const cleanupScripts = onPluginEvent('scriptsUpdate', (folders) => {
+      setState(prev => ({ ...prev, scriptFolders: folders ?? [] }))
+    })
+
+    return () => { cleanupState(); cleanupScripts() }
   }, [])
 
   // ── Action creators ─────────────────────────────────────────────────────
@@ -85,7 +91,9 @@ export function usePluginState() {
     playProcessed:    useCallback(() => sendToPlugin('playProcessed'),        []),
     stopPlayback:     useCallback(() => sendToPlugin('stopPlayback'),         []),
     loadScriptsDir:   useCallback(() => sendToPlugin('loadScriptsDir'),       []),
+    downloadScripts:  useCallback(() => sendToPlugin('downloadScripts'),      []),
     analyze:          useCallback(() => sendToPlugin('analyze'),              []),
+    cancelAnalysis:   useCallback(() => sendToPlugin('cancelAnalysis'),       []),
     selectScript:     useCallback(
       (scriptName) => sendToPlugin('selectScript', { name: scriptName }),     []
     ),
@@ -107,12 +115,17 @@ export function usePluginState() {
 // work on the UI without having Ableton open.
 const MOCK_STATE = {
   ...INITIAL_STATE,
-  scripts:          ['pitch_analysis', 'formant_analysis', 'robot_voice'],
-  selectedScript:   'pitch_analysis',
+  scriptFolders: [
+    { name: 'BUNDLED',    scripts: ['pitch_analysis', 'formant_analysis', 'robot_voice'] },
+    { name: 'PITCH',      scripts: ['pitch_shift', 'pitch_correction', 'vibrato', 'pitch_morphing'] },
+    { name: 'REVERB',     scripts: ['shimmer_reverb', 'convolution_reverb', 'room_simulation'] },
+    { name: 'DISTORTION', scripts: ['fuzz_distortion', 'soft_clip', 'tanh_saturation'] },
+  ],
+  selectedScript:   'BUNDLED/pitch_analysis',
   hasAudio:         true,
   fileName:         'vocal_take_01.wav',
   praatFound:       true,
-  status:           'Ready — press Analyze to run the selected script.',
+  status:           'Ready — press Run to execute the selected script.',
   statusType:       'idle',
   results: {
     pairs: [

@@ -10,7 +10,8 @@ enum class JobState
     Pending,               // Created, waiting in JobQueue
     Running,               // JobDispatcher is actively processing it
     CompletedSuccessfully, // Praat ran and result was parsed
-    FailedWithError        // Praat could not run, timed out, or returned an error
+    FailedWithError,       // Praat could not run, timed out, or returned an error
+    Cancelled              // User cancelled the job before it finished
 };
 
 // Returns a human-readable label for the given job state.
@@ -49,21 +50,15 @@ struct AnalysisJob
     // The .praat script to run against capturedAudioWavFile.
     juce::File praatScriptFile;
 
-    // User-controlled parameter values for the script, in the same order as
-    // the fields appear in the script's form block (after inputFile/outputFile).
-    // Values are passed as additional positional CLI arguments to Praat after
-    // the two mandatory WAV file paths.
-    // Example: if the form block has "real Threshold 0.3", this holds
-    // {"Threshold", "0.45"} when the user has moved the slider to 0.45.
+    // User-controlled parameter values for the script, keyed by field name.
+    // JobDispatcher uses PraatFormParser::parseAllFields() to build the final
+    // positional CLI argument list in form order, substituting file paths for
+    // sentence fields and looking up user values here for all other fields.
+    // Falls back to the field's declared default when a name is not found.
     juce::StringPairArray scriptParameters;
 
     // Path to the Praat executable, resolved by PraatInstallationLocator.
     juce::File praatExecutableFile;
-
-    // Extra script arguments (form fields 3+) supplied by the user via the
-    // parameter panel.  If empty, JobDispatcher falls back to the script's
-    // declared defaults.
-    juce::StringArray extraScriptArgs;
 
     // Tracks progress through the job lifecycle.
     JobState currentState { JobState::Pending };
