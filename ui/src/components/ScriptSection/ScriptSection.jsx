@@ -1,19 +1,38 @@
 // ─── ScriptSection ────────────────────────────────────────────────────────────
 //
-// Script selector dropdown and directory browser button.
-//
-// The dropdown is the primary control — it lists all .praat scripts found
-// in the loaded scripts directory. Selecting one sets it as the active script
-// in C++ via the bridge.
+// Shows the currently selected script as a clickable button that opens the
+// ScriptBrowser popup. Also provides a download button (↓) to fetch the
+// community script library from GitHub, and a BROWSE button to load a local
+// folder.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useState } from 'react'
+import { ScriptBrowser } from '../ScriptBrowser/ScriptBrowser'
 import './ScriptSection.css'
 
-export function ScriptSection({ scripts, selectedScript, onSelectScript, onLoadScriptsDir }) {
-  const hasScripts = scripts.length > 0
+export function ScriptSection({
+  scriptFolders,
+  selectedScript,
+  onSelectScript,
+  onLoadScriptsDir,
+  onDownloadScripts,
+}) {
+  const [browserOpen, setBrowserOpen] = useState(false)
 
-  function handleChange(event) {
-    onSelectScript(event.target.value)
+  const hasScripts = scriptFolders.length > 0
+
+  // "PITCH/pitch_shift" → display "pitch_shift" with tag "PITCH"
+  const displayName = selectedScript
+    ? selectedScript.split('/').pop()
+    : '— no script selected —'
+
+  const folderTag = selectedScript && selectedScript.includes('/')
+    ? selectedScript.split('/')[0]
+    : null
+
+  function handleSelect(qualifiedName) {
+    onSelectScript(qualifiedName)
+    setBrowserOpen(false)
   }
 
   return (
@@ -21,30 +40,43 @@ export function ScriptSection({ scripts, selectedScript, onSelectScript, onLoadS
       <span className="section-label script-section__label">SCRIPT</span>
 
       <div className="script-section__row">
-        <div className="script-section__select-wrapper">
-          <select
-            className="script-section__select"
-            value={selectedScript}
-            onChange={handleChange}
-            disabled={!hasScripts}
-          >
-            {!hasScripts && (
-              <option value="">— no scripts loaded —</option>
-            )}
-            {scripts.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          {/* Custom chevron — CSS-only, no icon lib needed */}
+        {/* Trigger button — opens the script browser popup */}
+        <button
+          className="script-section__trigger"
+          onClick={() => setBrowserOpen(true)}
+          disabled={!hasScripts}
+          title={selectedScript || 'No script selected'}
+        >
+          <span className="script-section__name">{displayName}</span>
+          {folderTag && (
+            <span className="script-section__folder-tag">{folderTag}</span>
+          )}
           <span className="script-section__chevron" aria-hidden="true">▾</span>
-        </div>
+        </button>
 
+        {/* Download button — fetches/updates community scripts from GitHub */}
+        <button
+          className="btn script-section__dl-btn"
+          onClick={onDownloadScripts}
+          title="Download / update scripts from GitHub"
+        >
+          ↓
+        </button>
+
+        {/* Browse button — loads a local folder */}
         <button className="btn script-section__browse-btn" onClick={onLoadScriptsDir}>
           BROWSE
         </button>
       </div>
+
+      {browserOpen && (
+        <ScriptBrowser
+          scriptFolders={scriptFolders}
+          selectedScript={selectedScript}
+          onSelect={handleSelect}
+          onClose={() => setBrowserOpen(false)}
+        />
+      )}
     </div>
   )
 }

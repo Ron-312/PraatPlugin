@@ -22,6 +22,12 @@ PraatPluginProcessor::PraatPluginProcessor()
 
     // Write bundled .praat scripts to app-support folder and auto-load them.
     installBundledScriptsIfNeeded();
+
+    // Load community scripts if already downloaded; otherwise start a one-time download.
+    if (ScriptDownloader::isAlreadyDownloaded())
+        scriptManager_.loadScriptsFromDirectoryRecursive (ScriptDownloader::communityScriptsRoot());
+    else
+        triggerScriptDownload();
 }
 
 PraatPluginProcessor::~PraatPluginProcessor()
@@ -132,22 +138,6 @@ void PraatPluginProcessor::installBundledScriptsIfNeeded()
     extractIfMissing (BinaryData::pitch_shift_praat,
                       BinaryData::pitch_shift_praatSize,
                       "pitch_shift.praat");
-
-    extractIfMissing (BinaryData::wavefolder_praat,
-                      BinaryData::wavefolder_praatSize,
-                      "wavefolder.praat");
-
-    extractIfMissing (BinaryData::stereo_phaser_praat,
-                      BinaryData::stereo_phaser_praatSize,
-                      "stereo_phaser.praat");
-
-    extractIfMissing (BinaryData::spectral_reverb_praat,
-                      BinaryData::spectral_reverb_praatSize,
-                      "spectral_reverb.praat");
-
-    extractIfMissing (BinaryData::paulstretch_praat,
-                      BinaryData::paulstretch_praatSize,
-                      "paulstretch.praat");
 
     // Auto-load so the UI shows scripts immediately without the user
     // having to click "Load Scripts...".
@@ -456,7 +446,7 @@ bool PraatPluginProcessor::isPlayingOriginal() const noexcept
 //==============================================================================
 // Analysis
 
-void PraatPluginProcessor::beginAnalysisOfSelectedRegion (const juce::StringArray& extraScriptArgs)
+void PraatPluginProcessor::beginAnalysisOfSelectedRegion (const juce::StringPairArray& scriptParameters)
 {
     if (! isPraatAvailable())
         return;
@@ -502,11 +492,16 @@ void PraatPluginProcessor::beginAnalysisOfSelectedRegion (const juce::StringArra
                                      numSamples);
     }
 
-    job.extraScriptArgs = extraScriptArgs;
+    job.scriptParameters = scriptParameters;
     job.currentState    = JobState::Pending;
 
     analysisIsInProgress_ = true;
     jobQueue_.enqueueAnalysisJob (std::move (job));
+}
+
+void PraatPluginProcessor::cancelCurrentAnalysis()
+{
+    jobDispatcher_.cancelCurrentJob();
 }
 
 //==============================================================================
@@ -583,6 +578,9 @@ AnalysisResult PraatPluginProcessor::mostRecentAnalysisResult() const
 
 juce::String PraatPluginProcessor::currentStatusMessage() const
 {
+    if (isDownloadingScripts_.load())
+        return "Downloading scripts from GitHub\xe2\x80\xa6";
+
     if (! isPraatAvailable())
         return praatLocator_.describeSearchResult();
 
@@ -593,7 +591,7 @@ juce::String PraatPluginProcessor::currentStatusMessage() const
         return "Playing...";
 
     if (isAnalysisInProgress())
-        return "Analyzing...";
+        return "Running script...";
 
     const auto result = mostRecentAnalysisResult();
 
@@ -601,12 +599,12 @@ juce::String PraatPluginProcessor::currentStatusMessage() const
         return "Error: " + result.failureReason;
 
     if (result.parsedSuccessfully)
-        return "Analysis complete";
+        return "Done";
 
     if (! hasAudioLoaded())
         return "Load an audio file to begin";
 
-    return "Ready \xe2\x80\x94 select a region and press Analyze";
+    return "Ready \xe2\x80\x94 select a region and press Run";
 }
 
 //==============================================================================
@@ -615,11 +613,19 @@ juce::String PraatPluginProcessor::currentStatusMessage() const
 void PraatPluginProcessor::receiveCompletedJob (AnalysisJob completedJob)
 {
     // Called on the message thread via MessageManager::callAsync (see JobDispatcher).
+    analysisIsInProgress_ = false;
+
+    // If the user cancelled, don't overwrite the last successful result.
+    if (completedJob.currentState == JobState::Cancelled)
+    {
+        triggerAsyncUpdate();
+        return;
+    }
+
     {
         std::lock_guard<std::mutex> lock (latestResultMutex_);
         latestResult_ = completedJob.result;
     }
-    analysisIsInProgress_ = false;
 
     // If the script produced audio output, load it into the PROCESSED slot.
     // The original stays intact so the user can A/B compare.
@@ -645,6 +651,24 @@ void PraatPluginProcessor::handleAsyncUpdate()
 {
     // Message thread: editor polls via Timer, so this is a no-op hook point
     // for future expansion.
+}
+
+void PraatPluginProcessor::triggerScriptDownload()
+{
+    isDownloadingScripts_ = true;
+    scriptDownloader_.onComplete = [this] (bool success, juce::String error)
+    {
+        onScriptDownloadComplete (success, std::move (error));
+    };
+    scriptDownloader_.startDownload();
+}
+
+void PraatPluginProcessor::onScriptDownloadComplete (bool success, const juce::String& /*error*/)
+{
+    isDownloadingScripts_ = false;
+    if (success)
+        scriptManager_.loadScriptsFromDirectoryRecursive (ScriptDownloader::communityScriptsRoot());
+    triggerAsyncUpdate();
 }
 
 juce::AudioProcessorEditor* PraatPluginProcessor::createEditor()

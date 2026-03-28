@@ -7,6 +7,7 @@
 #include "audio/AudioCapture.h"
 #include "praat/PraatInstallationLocator.h"
 #include "scripts/ScriptManager.h"
+#include "scripts/ScriptDownloader.h"
 #include "scripts/ScriptParameterParser.h"
 #include "jobs/JobQueue.h"
 #include "jobs/JobDispatcher.h"
@@ -189,16 +190,21 @@ public:
     //──────────────────────────────────────────────────────────────────────────
 
     // Extracts the selected region, creates an AnalysisJob, and enqueues it.
-    // extraScriptArgs supplies user-edited values for any form fields beyond
-    // inputFile/outputFile; pass {} to use the script's own defaults.
-    void beginAnalysisOfSelectedRegion (const juce::StringArray& extraScriptArgs = {});
+    // scriptParameters supplies user-edited values keyed by field name.
+    // Pass {} to use the script's own declared defaults for all fields.
+    void beginAnalysisOfSelectedRegion (const juce::StringPairArray& scriptParameters = {});
+
+    // Kills the currently running Praat process (if any).
+    // No-op if no analysis is in progress.
+    void cancelCurrentAnalysis();
 
     //──────────────────────────────────────────────────────────────────────────
     // State queries — safe to call on the message thread
     //──────────────────────────────────────────────────────────────────────────
 
-    bool isPraatAvailable()     const noexcept;
-    bool isAnalysisInProgress() const noexcept;
+    bool isPraatAvailable()       const noexcept;
+    bool isAnalysisInProgress()   const noexcept;
+    bool isDownloadingScripts()   const noexcept { return isDownloadingScripts_.load(); }
 
     // Returns true (and resets the flag) if a script produced audio output since
     // the last call. Used by the editor to know when to refresh the waveform.
@@ -231,6 +237,10 @@ public:
     ScriptManager&            scriptManager() noexcept { return scriptManager_; }
     PraatInstallationLocator& praatLocator()  noexcept { return praatLocator_; }
 
+    // Starts (or re-starts) a background download of the community script library
+    // from GitHub. Safe to call on the message thread.
+    void triggerScriptDownload();
+
 private:
     // Plays back the transport source or clears the output buffer.
     // AUDIO-THREAD SAFE: only touches AudioTransportSource (which handles its own safety).
@@ -246,6 +256,9 @@ private:
 
     // Called (by value) from JobDispatcher's worker thread via message thread post.
     void receiveCompletedJob (AnalysisJob completedJob);
+
+    // Called on the message thread when the script download finishes.
+    void onScriptDownloadComplete (bool success, const juce::String& errorMessage);
 
     //──────────────────────────────────────────────────────────────────────────
     // Live capture (AudioCapture handles audio-thread safety)
@@ -295,6 +308,8 @@ private:
     //──────────────────────────────────────────────────────────────────────────
     PraatInstallationLocator  praatLocator_;
     ScriptManager             scriptManager_;
+    ScriptDownloader          scriptDownloader_;
+    std::atomic<bool>         isDownloadingScripts_ { false };
     JobQueue                  jobQueue_;
     JobDispatcher             jobDispatcher_;
 
