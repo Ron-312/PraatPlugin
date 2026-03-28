@@ -138,11 +138,17 @@ private:
     uint32_t   lastKnownAudioVersion_ { 0xFFFFFFFFu }; // intentionally mismatches initial 0
     bool       lastKnownHasProcessed_ { false };
 
+    // ── Script list cache ─────────────────────────────────────────────────
+    // scriptFolders JSON is large (400+ scripts) — only rebuild when the list changes.
+    int       lastKnownScriptCount_  { -1 };
+    int       lastKnownFolderCount_  { -1 };
+    juce::var cachedScriptFolders_   { juce::Array<juce::var>{} };
+
     // ── Script parameter cache ─────────────────────────────────────────────
     // Re-parsed whenever the active script changes.
     juce::File                    lastKnownScriptFile_;
     juce::Array<FormParam>        currentParams_;
-    juce::StringArray             currentParamValues_;   // parallel to currentParams_
+    juce::StringPairArray         currentParamValues_;   // name → value, keyed by field name
 
     static constexpr int kWidth  { 520 };
     static constexpr int kHeight { 620 };

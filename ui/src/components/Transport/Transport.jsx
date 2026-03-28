@@ -51,7 +51,7 @@ export function Transport({
         className="btn transport__btn"
         onClick={onExportProcessed}
         disabled={!hasProcessedAudio}
-        title="Save morphed audio to disk"
+        title="Save processed audio to disk"
       >
         ↓ EXPORT
       </button>

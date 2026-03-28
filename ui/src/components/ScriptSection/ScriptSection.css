@@ -17,54 +17,68 @@
   align-items: center;
 }
 
-/* ── Custom select ────────────────────────────────────────────────────────── */
-.script-section__select-wrapper {
+/* ── Trigger button (opens the script browser popup) ─────────────────────── */
+.script-section__trigger {
   flex: 1;
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   min-width: 0;
-}
 
-.script-section__select {
-  width: 100%;
   background: var(--color-btn);
   color: var(--color-text);
   border: 1px solid var(--color-btn-border);
   border-radius: var(--radius);
-  padding: 5px var(--space-4) 5px var(--space-2);
+  padding: 5px var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   cursor: pointer;
   outline: none;
-
-  /* Hide the native arrow — we draw our own chevron */
-  appearance: none;
-  -webkit-appearance: none;
+  text-align: left;
+  overflow: hidden;
 }
 
-.script-section__select:hover:not(:disabled) {
+.script-section__trigger:hover:not(:disabled) {
   background: var(--color-btn-hover);
   border-color: #505050;
 }
 
-.script-section__select:disabled {
+.script-section__trigger:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-.script-section__select option {
-  background: var(--color-surface-raised);
+.script-section__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text);
 }
 
-/* Custom chevron — sits in the right padding of the select */
+/* Small badge showing which folder the selected script belongs to */
+.script-section__folder-tag {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius);
+  padding: 1px 4px;
+  letter-spacing: 0.4px;
+}
+
 .script-section__chevron {
-  position: absolute;
-  right: var(--space-2);
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   font-size: 10px;
   color: var(--color-text-dim);
-  pointer-events: none;
+}
+
+/* ── Download + Browse buttons ────────────────────────────────────────────── */
+.script-section__dl-btn {
+  flex-shrink: 0;
+  min-width: 26px;
+  font-size: var(--text-base);
 }
 
 .script-section__browse-btn {

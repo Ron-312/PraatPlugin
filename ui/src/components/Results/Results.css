@@ -54,6 +54,14 @@
   color: var(--color-text);
 }
 
+/* ── Error output ─────────────────────────────────────────────────────────── */
+.results__error {
+  color: #f87171;          /* red — signals a Praat script failure */
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-weight: 500;
+}
+
 /* ── Raw console output ───────────────────────────────────────────────────── */
 .results__raw {
   margin-top: var(--space-2);

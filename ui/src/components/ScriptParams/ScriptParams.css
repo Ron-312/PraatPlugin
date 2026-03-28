@@ -32,7 +32,9 @@
 }
 
 .script-params__name {
-  flex: 0 0 110px;
+  flex: 0 0 auto;       /* take natural content width */
+  max-width: 42%;       /* cap at 42% so the control always has room */
+  min-width: 60px;
   font-size: var(--text-sm);
   color: var(--color-text-dim);
   font-family: var(--font-mono);

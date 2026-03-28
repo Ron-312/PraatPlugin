@@ -7,7 +7,8 @@ PraatRunner::PraatRunner (juce::File praatExecutableFile)
 
 PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
     const juce::File& scriptFile,
-    const juce::StringArray& scriptArguments)
+    const juce::StringArray& scriptArguments,
+    std::function<bool()> shouldCancel)
 {
     // Build the full command line:
     //   /Applications/Praat.app/Contents/MacOS/Praat --run /path/to/script.praat [args...]
@@ -28,16 +29,29 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
                  "Failed to launch Praat. Check that the executable exists and is runnable." };
     }
 
-    const bool finishedWithinTimeout = praatProcess.waitForProcessToFinish (
-        processTimeoutMilliseconds);
+    // Poll every 100 ms so we can honour cancellation requests and enforce
+    // the overall timeout without blocking for up to 30 seconds at a time.
+    int totalWaitedMs = 0;
+    static constexpr int kPollIntervalMs = 100;
 
-    if (! finishedWithinTimeout)
+    while (! praatProcess.waitForProcessToFinish (kPollIntervalMs))
     {
-        praatProcess.kill();
-        return { false, -1,
-                 {},
-                 "Praat timed out after " +
-                     juce::String (processTimeoutMilliseconds / 1000) + " seconds." };
+        totalWaitedMs += kPollIntervalMs;
+
+        if (shouldCancel && shouldCancel())
+        {
+            praatProcess.kill();
+            return { false, -2, {}, "Analysis cancelled." };
+        }
+
+        if (totalWaitedMs >= processTimeoutMilliseconds)
+        {
+            praatProcess.kill();
+            return { false, -1,
+                     {},
+                     "Praat timed out after " +
+                         juce::String (processTimeoutMilliseconds / 1000) + " seconds." };
+        }
     }
 
     const juce::String allOutput = praatProcess.readAllProcessOutput();

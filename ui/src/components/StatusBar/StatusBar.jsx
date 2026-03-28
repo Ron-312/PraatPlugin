@@ -22,13 +22,20 @@ const LED_MODIFIER = {
   error:     'status-bar__led--error',
 }
 
-export function StatusBar({ status, statusType }) {
+export function StatusBar({ status, statusType, isDownloadingScripts }) {
   const ledClass = LED_MODIFIER[statusType] ?? LED_MODIFIER.idle
 
   return (
     <div className="status-bar">
-      <span className={`status-bar__led ${ledClass}`} aria-hidden="true" />
-      <span className="status-bar__message">{status}</span>
+      {isDownloadingScripts && (
+        <div className="status-bar__download-bar" aria-label="Downloading scripts…" />
+      )}
+      <div className="status-bar__row">
+        <span className={`status-bar__led ${ledClass}`} aria-hidden="true" />
+        <span className="status-bar__message">
+          {isDownloadingScripts ? 'Downloading community scripts from GitHub…' : status}
+        </span>
+      </div>
     </div>
   )
 }
