@@ -79,7 +79,7 @@ export function usePluginState() {
       // underscore-prefixed key so it doesn't clutter the rest of the state.
       const debug = incoming._debug ?? null
       const { _debug: _ignored, ...rest } = incoming
-      setState(prev => ({ ...prev, ...rest, ...(debug !== null ? { debug } : {}) }))
+      setState(prev => ({ ...prev, ...rest, debug }))
     })
 
     // Script list is sent as its own event — only fires when the list changes.

@@ -56,7 +56,7 @@ public:
     static void          log (const juce::String& msg,
                                const juce::String& kind = "info");
     static juce::File    logFilePath();
-    static DebugWatchdog* instance() noexcept { return instance_; }
+    static DebugWatchdog* instance() noexcept { return instance_.load(); }
 
 private:
     static constexpr int kMaxEntries = 100;
@@ -85,7 +85,7 @@ private:
     mutable juce::CriticalSection fileLock_;
     std::unique_ptr<juce::FileLogger> logger_;
 
-    static DebugWatchdog* instance_;
+    static std::atomic<DebugWatchdog*> instance_;
 };
 
 // ─── RAII scope timer ─────────────────────────────────────────────────────────
