@@ -9,6 +9,7 @@
 #include "scripts/ScriptManager.h"
 #include "scripts/ScriptDownloader.h"
 #include "scripts/ScriptParameterParser.h"
+#include "debug/DebugWatchdog.h"   // defines PRAAT_LOG / PRAAT_LOG_ERR / PRAAT_TIME_SCOPE (no-ops when debug logging is off)
 #include "jobs/JobQueue.h"
 #include "jobs/JobDispatcher.h"
 #include "results/AnalysisResult.h"
@@ -71,9 +72,10 @@ public:
     // All methods below are MESSAGE-THREAD ONLY unless noted.
     //──────────────────────────────────────────────────────────────────────────
 
-    // Loads the audio file into memory.
+    // Starts an async load of the audio file into memory.
     // Replaces any previously loaded file.
-    // Returns true if the file was read successfully.
+    // Returns true if the load was successfully scheduled (false if the file
+    // format is unreadable).  The audio is not yet available when this returns.
     bool loadAudioFromFile (const juce::File& audioFile);
 
     //──────────────────────────────────────────────────────────────────────────
@@ -331,6 +333,29 @@ private:
     // Set by receiveCompletedJob() when a script wrote audio output.
     // Consumed (and reset) by consumeAudioOutputNotification().
     std::atomic<bool>         audioOutputWasReceived_ { false };
+
+    // ── Async file-load guards ────────────────────────────────────────────────
+    // isAlive_ is shared with callAsync lambdas posted by background load
+    // threads.  Set to false in the destructor so any in-flight lambda
+    // returns early rather than writing into freed members.
+    // Set to false as the very first action in the destructor body, before any
+    // member is torn down, so all in-flight lambdas bail out early.
+    std::shared_ptr<std::atomic<bool>> isAlive_ {
+        std::make_shared<std::atomic<bool>> (true) };
+
+    // Incremented every time loadAudioFromFile() is called.  Background-thread
+    // callAsync deliveries compare against this to detect stale loads (e.g.
+    // the user picked a second file before the first one finished reading).
+    std::atomic<uint32_t> loadRequestGeneration_ { 0 };
+
+    // ── Debug watchdog (debug builds only) ────────────────────────────────────
+    // Declared last so it is constructed after all other members (start() is
+    // called explicitly at the end of the constructor) and its automatic
+    // destructor runs first as a safety backstop (stop() is called explicitly
+    // at the start of the destructor, which is the primary teardown path).
+#ifdef PRAATPLUGIN_DEBUG_LOGGING
+    DebugWatchdog debugWatchdog_;
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PraatPluginProcessor)
 };

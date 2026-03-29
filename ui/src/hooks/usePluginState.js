@@ -51,6 +51,10 @@ const INITIAL_STATE = {
   playbackFraction: 0,        // 0–1       — cursor position in the playing clip
 
   scriptParams:     [],       // FormParam[]  — extra form fields for current script
+
+  // Populated only in debug builds (-DPRAATPLUGIN_DEBUG_LOGGING=ON).
+  // Shape: { latencyMs: number, logPath: string, entries: {t,msg,kind}[] }
+  debug:            null,
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -70,7 +74,12 @@ export function usePluginState() {
       // JSON null, not [].  The UI components always expect real arrays.
       if (incoming.waveformSamples  == null) incoming.waveformSamples  = []
       if (incoming.processedSamples == null) incoming.processedSamples = []
-      setState(prev => ({ ...prev, ...incoming }))
+
+      // _debug is only present in debug builds; map it to `debug` and strip the
+      // underscore-prefixed key so it doesn't clutter the rest of the state.
+      const debug = incoming._debug ?? null
+      const { _debug: _ignored, ...rest } = incoming
+      setState(prev => ({ ...prev, ...rest, debug }))
     })
 
     // Script list is sent as its own event — only fires when the list changes.
@@ -104,7 +113,8 @@ export function usePluginState() {
     setRegion:        useCallback(
       (start, end) => sendToPlugin('setRegion', { startFraction: start, endFraction: end }), []
     ),
-    exportProcessed:  useCallback(() => sendToPlugin('exportProcessed'),      []),
+    exportProcessed:       useCallback(() => sendToPlugin('exportProcessed'),        []),
+    browsePraatExecutable: useCallback(() => sendToPlugin('browsePraatExecutable'), []),
   }
 
   return { state, actions }
@@ -139,4 +149,19 @@ const MOCK_STATE = {
     { name: 'stretchFactor', type: 'real',     default: '2.0',  value: '2.0',  options: [] },
     { name: 'windowSize',    type: 'positive', default: '0.25', value: '0.25', options: [] },
   ],
+  debug: {
+    latencyMs: 4,
+    logPath: 'C:\\Users\\dev\\AppData\\Local\\Temp\\PraatPlugin\\debug.log',
+    entries: [
+      { t: '14:32:06.001', msg: 'Script completed: pitch_analysis.praat',            kind: 'info'  },
+      { t: '14:32:05.880', msg: 'Running script: pitch_analysis.praat',              kind: 'info'  },
+      { t: '14:32:05.210', msg: 'loadAudioFromFile (file picker)  245 ms',           kind: 'slow'  },
+      { t: '14:32:04.800', msg: 'STALL END — total duration 380 ms',                 kind: 'stall' },
+      { t: '14:32:04.450', msg: 'STALL BEGIN — message thread unresponsive 320 ms',  kind: 'stall' },
+      { t: '14:32:04.100', msg: 'PraatRunner: Praat exited with code 1 — ...',       kind: 'error' },
+      { t: '14:32:03.500', msg: 'setStateInformation called',                        kind: 'info'  },
+      { t: '14:32:03.200', msg: 'installBundledScripts  12 ms',                      kind: 'info'  },
+      { t: '14:32:03.100', msg: 'Processor constructed',                             kind: 'info'  },
+    ],
+  },
 }

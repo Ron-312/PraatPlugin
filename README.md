@@ -32,15 +32,18 @@ Great for voice and speech work, music production, phonetics research, or anywhe
 
 ### Build requirements
 
-| Tool | Version |
-|---|---|
-| CMake | 3.22 or later |
-| Xcode Command Line Tools | Any recent version |
-| Node.js + npm | For rebuilding the UI only |
+| Tool | Platform | Version |
+|---|---|---|
+| CMake | All | 3.22 or later |
+| Xcode Command Line Tools | macOS | Any recent version |
+| Visual Studio 2022 (with C++ workload) | Windows | 17+ |
+| Node.js + npm | All | For rebuilding the UI only |
 
 ---
 
 ## Building from source
+
+### macOS
 
 ```bash
 # 1. Clone
@@ -63,13 +66,48 @@ cp -R build/PraatPlugin_artefacts/Release/AU/PraatPlugin.component \
 
 After deploying, rescan plugins in your DAW.
 
+### Windows
+
+The plugin uses JUCE's `WebBrowserComponent` backed by WebView2, which requires the **Microsoft.Web.WebView2 NuGet package** to be present at build time. This is not installed by default.
+
+**Step 1 — Install the WebView2 SDK** (one-time, run in PowerShell):
+
+```powershell
+Register-PackageSource -provider NuGet -name nugetRepository `
+    -location https://www.nuget.org/api/v2 -Force
+
+Install-Package Microsoft.Web.WebView2 -Scope CurrentUser `
+    -RequiredVersion 1.0.3485.44 -Source nugetRepository -Force
+```
+
+This installs the package to `%LOCALAPPDATA%\PackageManagement\NuGet\Packages\`.
+
+**Step 2 — Build:**
+
+```bash
+# Clone
+git clone https://github.com/Ron-312/PraatPlugin.git
+cd PraatPlugin
+
+# Build the React UI (only needed when ui/src changes)
+cd ui && npm install && npm run build && cd ..
+
+# Configure — point JUCE at the NuGet packages folder
+cmake -B build -DJUCE_WEBVIEW2_PACKAGE_LOCATION="%LOCALAPPDATA%\PackageManagement\NuGet\Packages"
+cmake --build build --config Release
+```
+
+The VST3 is output to `build\PraatPlugin_artefacts\Release\VST3\PraatPlugin.vst3`. Copy it to `%COMMONPROGRAMFILES%\VST3\` or your DAW's VST3 scan folder, then rescan.
+
+> **Note:** `JUCE_WEBVIEW2_PACKAGE_LOCATION` must point to the **parent** folder that *contains* the `Microsoft.Web.WebView2.*` directory — not to the package folder itself. If you pass the wrong path, CMake will report "Found WebView2" but the build will fail with `Cannot open include file: 'WebView2.h'`.
+
 ---
 
 ## Scripts
 
 ### Community library (300+ scripts)
 
-On first run the plugin automatically downloads the full [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library by Shay Cohen directly from GitHub. Scripts are saved to `~/Library/Application Support/PraatPlugin/community_scripts/` and loaded organized by category:
+On first run the plugin automatically downloads the full [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library by Shai Cohen directly from GitHub. Scripts are saved to `~/Library/Application Support/PraatPlugin/community_scripts/` and loaded organized by category:
 
 | Category | Examples |
 |---|---|
@@ -104,7 +142,7 @@ Nine scripts ship embedded in the plugin and are extracted to `~/Library/Applica
 | `wavefolder.praat` | Buchla-style wavefolding distortion |
 | `paulstretch.praat` | Extreme time-stretch via FFT phase randomisation |
 
-These scripts were adapted from Shay Cohen's library for use with the plugin's headless CLI calling convention.
+These scripts were adapted from Shai Cohen's library for use with the plugin's headless CLI calling convention.
 
 ### Browsing scripts
 
@@ -209,7 +247,7 @@ PraatPlugin/
 │       ├── bridge/      # juceBridge.js (JS ↔ C++ events)
 │       └── styles/      # Design tokens + global CSS
 ├── legacy/              # Original JUCE-component editor (preserved)
-├── scripts/examples/    # Bundled Praat scripts (adapted from Shay Cohen's library)
+├── scripts/examples/    # Bundled Praat scripts (adapted from Shai Cohen's library)
 ├── docs/adr/            # Architecture decision records
 └── CMakeLists.txt
 ```
@@ -241,7 +279,7 @@ Open a GitHub issue at [Ron-312/PraatPlugin](https://github.com/Ron-312/PraatPlu
 
 ## Acknowledgements
 
-A huge thank you to **Shay Cohen** ([@ShaiCohen-ops](https://github.com/ShaiCohen-ops)) for building and open-sourcing the [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library — 300+ Praat scripts covering everything from pitch manipulation to granular synthesis. The bundled scripts in this plugin are adapted from that library, and the entire community library is downloaded directly from Shay's repo on first run. Go check it out and give it a star.
+A huge thank you to **Shai Cohen** ([@ShaiCohen-ops](https://github.com/ShaiCohen-ops)) for building and open-sourcing the [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library — 300+ Praat scripts covering everything from pitch manipulation to granular synthesis. The bundled scripts in this plugin are adapted from that library, and the entire community library is downloaded directly from Shai's repo on first run. Go check it out and give it a star.
 
 ---
 

@@ -4,9 +4,13 @@
 
 | Tool | Version | Install |
 |------|---------|---------|
-| macOS | 15+ (Apple Silicon) | — |
-| Xcode Command Line Tools | 17+ | `xcode-select --install` |
+| macOS | 12+ | — |
+| Xcode Command Line Tools | Any recent version | `xcode-select --install` |
+| **Windows** | 10+ | — |
+| Visual Studio | 2022 (MSVC 19.3+) | [visualstudio.com](https://visualstudio.microsoft.com/) |
+| WebView2 Runtime | Any | Pre-installed on Windows 10/11; JUCE fetches the SDK headers automatically |
 | CMake | 3.22+ | `brew install cmake` |
+| Node.js + npm | 18+ | `brew install node` |
 | Praat | 6.x | [Download from fon.hum.uva.nl](https://www.fon.hum.uva.nl/praat/) or `brew install --cask praat` |
 | Git | 2.x | Included with CLT |
 
@@ -18,30 +22,72 @@ JUCE is fetched automatically by CMake at configure time (~250 MB, cached after 
 
 ```bash
 # 1 — Clone the repo
-git clone <repo-url> PraatPlugin
+git clone https://github.com/Ron-312/PraatPlugin.git PraatPlugin
 cd PraatPlugin
 
-# 2 — Configure (first run downloads JUCE ~250 MB)
+# 2 — Build the React UI (only needed when ui/src changes)
+cd ui && npm install && npm run build && cd ..
+
+# 3 — Configure (first run downloads JUCE ~250 MB)
 cmake -B build/debug \
       -DCMAKE_BUILD_TYPE=Debug \
       -DCMAKE_OSX_ARCHITECTURES=arm64 \
       -G "Unix Makefiles"
 
-# 3 — Build VST3
+# 4 — Build VST3
 cmake --build build/debug --target PraatPlugin_VST3 -- -j$(sysctl -n hw.logicalcpu)
 
-# 4 — Build AU
+# 5 — Build AU
 cmake --build build/debug --target PraatPlugin_AU -- -j$(sysctl -n hw.logicalcpu)
 
-# 5 — Install to system plugin folders
+# 6 — Install to system plugin folders
 cp -r build/debug/PraatPlugin_artefacts/Debug/VST3/PraatPlugin.vst3 \
       ~/Library/Audio/Plug-Ins/VST3/
 cp -r build/debug/PraatPlugin_artefacts/Debug/AU/PraatPlugin.component \
       ~/Library/Audio/Plug-Ins/Components/
 
-# 6 — Validate AU
+# 7 — Validate AU
 auval -v aufx Prt1 Prat
 ```
+
+> **Note on `auval` warnings:** Debug builds may emit warnings about missing Info.plist keys or entitlements. These are expected and do not indicate a failure. The test passes as long as the final line reads `PASS`.
+
+### Windows
+
+```bat
+git clone https://github.com/Ron-312/PraatPlugin.git PraatPlugin
+cd PraatPlugin
+
+cd ui && npm ci && npm run build && cd ..
+
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+cmake --build build --target PraatPlugin_VST3 --config Debug --parallel
+```
+
+Copy `build\PraatPlugin_artefacts\Debug\VST3\PraatPlugin.vst3` to `%CommonProgramFiles%\VST3\`.
+AU is macOS-only; VST3 is the Windows format.
+
+---
+
+## UI Development
+
+The plugin UI is a React app bundled by Vite into a single HTML file that JUCE serves via `WebBrowserComponent`. You only need to touch this when modifying files under `ui/src/`.
+
+```bash
+cd ui
+
+# Install dependencies (first time or after package.json changes)
+npm install
+
+# Hot-reload dev server — open in a browser for fast iteration
+# Note: the bridge to C++ won't work here; use stub data in juceBridge.js
+npm run dev
+
+# Produce the final bundle (required before building the plugin)
+npm run build
+```
+
+After `npm run build`, the output is written to `ui/dist/`. CMake copies this into the plugin binary at build time — you must rebuild the C++ target after any UI change.
 
 ---
 
@@ -55,6 +101,88 @@ cmake -B build/tests \
 
 cmake --build build/tests
 cd build/tests && ctest --output-on-failure
+```
+
+---
+
+## Debug Build (QA / Profiling)
+
+A special debug build adds a live **DevPanel** inside the plugin and writes a log file to disk.  Use this build when investigating DAW-blocking issues or C++ errors that are hard to reproduce.
+
+### Building
+
+**Windows:**
+```bat
+cmake -B build -DPRAATPLUGIN_DEBUG_LOGGING=ON
+cmake --build build --config Debug --target PraatPlugin_VST3
+```
+
+**macOS:**
+```bash
+cmake -B build/debug \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DPRAATPLUGIN_DEBUG_LOGGING=ON \
+      -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build/debug --target PraatPlugin_VST3
+```
+
+### Using the DevPanel
+
+1. Load the debug VST3 in your DAW.
+2. Click the **DEV** button in the plugin header (keyboard shortcuts are unreliable in DAW hosts).
+3. A panel slides up from the bottom:
+
+```
+┌─────────────────────────────────────────────────────┐
+│ DevTools   MSG 4 ms              [copy log]   [✕]   │
+├─────────────────────────────────────────────────────┤
+│ 14:32:05  loadAudioFromFile (file picker)  245 ms   │  ← yellow = slow (>30 ms)
+│ 14:32:04  STALL BEGIN — message thread 380 ms       │  ← red = stall (>250 ms)
+│ 14:32:04  PraatRunner: Praat exited code 1 — ...    │  ← red bold = C++ error
+└─────────────────────────────────────────────────────┘
+│ log: C:\Users\...\AppData\Local\Temp\PraatPlugin\debug.log │
+```
+
+**Colour coding:**
+| Colour | Meaning |
+|--------|---------|
+| Grey | Normal lifecycle events |
+| Yellow | Operation took 30–99 ms on the message thread |
+| Red | Stall (>250 ms) or C++ error |
+
+**"MSG X ms"** in the header is the live round-trip latency of the message thread.  Green < 30 ms, yellow < 100 ms, red ≥ 100 ms.
+
+Hit **"copy log"** to paste the full entry list into a Slack message or bug report.
+
+### Log file
+
+Every entry is also written to:
+- **Windows:** `%TEMP%\PraatPlugin\debug.log`
+- **macOS:** `$TMPDIR/PraatPlugin/debug.log`
+
+The file accumulates across sessions (capped at 5 MB) so QA can attach it to a bug without having to reproduce the issue in the same session they open the DevPanel.
+
+### What is instrumented
+
+| Site | What is logged |
+|------|---------------|
+| `PraatPluginProcessor` constructor | `installBundledScripts` and `loadCommunityScripts` timing |
+| `loadAudioFromFile` | Total read time; error if format unreadable |
+| `setStateInformation` | Called marker (helps correlate session-restore hangs) |
+| `PraatInstallationLocator` | PATH search start + total time (the slow `where`/`which` call) |
+| `JobDispatcher` | Script start, completion, cancellation, WAV-write failure |
+| `PraatRunner` | Launch failure, timeout, non-zero exit code |
+| `ScriptDownloader` | curl failure, extraction failure, success |
+| Message thread (watchdog) | Any stall > 250 ms, with start/end/duration |
+
+### Adding instrumentation
+
+Use the macros in `src/debug/DebugWatchdog.h` — they compile to no-ops in production builds:
+
+```cpp
+PRAAT_LOG("something happened");           // info entry
+PRAAT_LOG_ERR("something went wrong");     // error entry (red)
+PRAAT_TIME_SCOPE("myOperation");           // logs if scope takes > 30 ms
 ```
 
 ---
@@ -111,6 +239,14 @@ ADRs are not just for big decisions. They are for any decision that a future rea
 
 ---
 
+## Superseding Architecture Decisions
+
+Document decisions that didn't work out in a new ADR with status `Superseded`. Don't delete old ADRs — the history of why we tried something and moved on is valuable.
+
+For bugs or feature requests, open a GitHub issue at [Ron-312/PraatPlugin](https://github.com/Ron-312/PraatPlugin/issues).
+
+---
+
 ## Writing Praat Scripts for the Plugin
 
 Scripts must be compatible with Praat's `--run` (batch) mode:
@@ -150,9 +286,3 @@ Lines not matching `KEY: value` are shown verbatim in the results panel and do n
 2. Add the `.cpp` to `target_sources` in `CMakeLists.txt`.
 3. Add unit tests in `tests/`.
 4. If the module introduces a new architectural boundary (new thread, new external process, new file format), write an ADR.
-
----
-
-## Reporting Issues
-
-Document decisions that didn't work out in a new ADR with status `Superseded`. Don't delete old ADRs — the history of why we tried something and moved on is valuable.

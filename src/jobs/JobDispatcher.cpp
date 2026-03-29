@@ -3,6 +3,7 @@
 #include "praat/PraatRunner.h"
 #include "praat/PraatFormParser.h"
 #include "results/ResultParser.h"
+#include "debug/DebugWatchdog.h"
 
 JobDispatcher::JobDispatcher (JobQueue& queue,
                                PraatInstallationLocator& praatLocator)
@@ -99,6 +100,7 @@ void JobDispatcher::writeAudioToTempFile (AnalysisJob& job)
                              + WavFileWriter::describeWriteResult (writeResult)
                              + "): "
                              + job.capturedAudioWavFile.getFullPathName();
+        PRAAT_LOG_ERR ("writeAudioToTempFile failed: " + job.errorDescription);
     }
 }
 
@@ -227,6 +229,17 @@ static juce::String buildWrapperScript (const juce::File&            inputWav,
 
 void JobDispatcher::runPraatScript (AnalysisJob& job)
 {
+    if (! job.praatExecutableFile.existsAsFile())
+    {
+        job.currentState     = JobState::FailedWithError;
+        job.errorDescription = "Praat executable not found. Click \"PRAAT NOT FOUND\" in the plugin header to locate it.";
+        PRAAT_LOG_ERR ("runPraatScript: executable not found at "
+                       + job.praatExecutableFile.getFullPathName());
+        return;
+    }
+
+    PRAAT_LOG ("Running script: " + job.praatScriptFile.getFileName());
+
     PraatRunner praatRunner (job.praatExecutableFile);
     ResultParser resultParser;
 
@@ -278,11 +291,13 @@ void JobDispatcher::runPraatScript (AnalysisJob& job)
     {
         job.currentState     = JobState::Cancelled;
         job.errorDescription = "Analysis cancelled.";
+        PRAAT_LOG ("Script cancelled: " + job.praatScriptFile.getFileName());
     }
     else if (runOutcome.exitedSuccessfully)
     {
         job.result       = resultParser.parseOutputFromSuccessfulRun (runOutcome.standardOutput);
         job.currentState = JobState::CompletedSuccessfully;
+        PRAAT_LOG ("Script completed: " + job.praatScriptFile.getFileName());
     }
     else
     {
@@ -292,6 +307,8 @@ void JobDispatcher::runPraatScript (AnalysisJob& job)
         job.errorDescription = runOutcome.standardError.isEmpty()
                                    ? "Praat exited with code " + juce::String (runOutcome.exitCode)
                                    : runOutcome.standardError;
+        PRAAT_LOG_ERR ("Script failed (" + job.praatScriptFile.getFileName() + "): "
+                       + job.errorDescription);
     }
 }
 

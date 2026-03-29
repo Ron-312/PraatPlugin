@@ -21,17 +21,46 @@ PraatPluginProcessor::PraatPluginProcessor()
     jobDispatcher_.startDispatchingJobs();
 
     // Write bundled .praat scripts to app-support folder and auto-load them.
-    installBundledScriptsIfNeeded();
+    {
+        PRAAT_TIME_SCOPE ("installBundledScripts");
+        installBundledScriptsIfNeeded();
+    }
 
     // Load community scripts if already downloaded; otherwise start a one-time download.
     if (ScriptDownloader::isAlreadyDownloaded())
+    {
+        PRAAT_TIME_SCOPE ("loadCommunityScripts");
         scriptManager_.loadScriptsFromDirectoryRecursive (ScriptDownloader::communityScriptsRoot());
+    }
     else
+    {
         triggerScriptDownload();
+    }
+
+    PRAAT_LOG ("Processor constructed");
+#ifdef PRAATPLUGIN_DEBUG_LOGGING
+    debugWatchdog_.start();
+#endif
 }
 
 PraatPluginProcessor::~PraatPluginProcessor()
 {
+    // Signal in-flight background load lambdas to abort before any member
+    // is destroyed.  Must be the very first line of the destructor.
+    *isAlive_ = false;
+
+    // Stop the debug watchdog FIRST so its callAsync lambdas can safely
+    // drain during the stopThread wait before we start destroying members.
+#ifdef PRAATPLUGIN_DEBUG_LOGGING
+    debugWatchdog_.stop();
+#endif
+    PRAAT_LOG ("Processor destructor: cancelling job dispatcher");
+
+    // Kill any running Praat process before joining the worker thread.
+    // Without this, stopAndWaitForCurrentJobToFinish() blocks for the full
+    // processTimeoutForStopMs_ (35 s) while Praat runs to completion —
+    // hanging the DAW host during plugin removal or session close.
+    jobDispatcher_.cancelCurrentJob();
     jobDispatcher_.stopAndWaitForCurrentJobToFinish();
     transportSource_.setSource (nullptr);
 
@@ -215,6 +244,11 @@ double PraatPluginProcessor::captureSampleRate() const noexcept
 
 bool PraatPluginProcessor::loadAudioFromFile (const juce::File& audioFile)
 {
+    // ── Message thread (fast path) ────────────────────────────────────────────
+    // Opening a reader only reads the file header — no sample data yet.  This
+    // is O(1) and safe to do on the message thread.  The slow reader->read()
+    // call is deferred to a background thread below.
+
     // Stop any current playback before replacing the source.
     transportSource_.stop();
     transportSource_.setSource (nullptr);
@@ -228,43 +262,80 @@ bool PraatPluginProcessor::loadAudioFromFile (const juce::File& audioFile)
     processedAudioBuffer_.setSize (0, 0, false, true, false);
     hasProcessedAudio_  = false;
 
-    // Create a format reader for the file.
-    std::unique_ptr<juce::AudioFormatReader> reader (
-        audioFormatManager_.createReaderFor (audioFile));
+    // Wrap both readers in a shared struct so they survive inside copyable
+    // lambdas: std::function (used by Thread::launch and callAsync) requires
+    // CopyConstructible callables, so we cannot capture unique_ptrs directly.
+    struct Readers {
+        std::unique_ptr<juce::AudioFormatReader> decode;
+        std::unique_ptr<juce::AudioFormatReader> playback;
+    };
+    auto readers = std::make_shared<Readers>();
+    readers->decode.reset (audioFormatManager_.createReaderFor (audioFile));
 
-    if (reader == nullptr)
-        return false;
-
-    // Read the entire file into the in-memory buffer (for waveform display and
-    // region extraction at analysis time).
-    const int numChannels = static_cast<int> (reader->numChannels);
-    const int numSamples  = static_cast<int> (reader->lengthInSamples);
-
-    loadedAudioBuffer_.setSize (numChannels, numSamples, false, true, false);
-    reader->read (&loadedAudioBuffer_, 0, numSamples, 0, true, true);
-
-    loadedAudioSampleRate_ = reader->sampleRate;
-    loadedAudioFile_       = audioFile;
-    selectedRegionSeconds_ = {};   // clear old selection
-
-    // Set up the transport source with a fresh reader for playback.
-    // (We create a new reader here because the first one may have its position
-    // advanced after the read() call above.)
-    std::unique_ptr<juce::AudioFormatReader> playbackReader (
-        audioFormatManager_.createReaderFor (audioFile));
-
-    if (playbackReader != nullptr)
+    if (readers->decode == nullptr)
     {
-        audioReaderSource_ = std::make_unique<juce::AudioFormatReaderSource> (
-            playbackReader.release(), true /* takes ownership */);
-
-        transportSource_.setSource (audioReaderSource_.get(),
-                                    0, nullptr,
-                                    loadedAudioSampleRate_);
+        PRAAT_LOG_ERR ("loadAudioFromFile: unreadable format — " + audioFile.getFileName());
+        return false;
     }
 
-    audioIsLoaded_ = true;
-    ++loadedAudioVersion_;   // signal to editor that the buffer content has changed
+    // Capture metadata before handing the reader off to the background thread.
+    const int    numChannels = static_cast<int> (readers->decode->numChannels);
+    const int    numSamples  = static_cast<int> (readers->decode->lengthInSamples);
+    const double sampleRate  = readers->decode->sampleRate;
+
+    // Open the playback reader now (also O(1) — header only).
+    readers->playback.reset (audioFormatManager_.createReaderFor (audioFile));
+
+    // Pre-allocate the destination buffer on the message thread so the
+    // background thread only performs the write, touching no processor members.
+    auto buffer = std::make_shared<juce::AudioBuffer<float>> (numChannels, numSamples);
+
+    // Snapshot alive flag and bump the generation counter so any in-flight load
+    // that was superseded by this call discards its stale result.
+    const auto aliveRef     = isAlive_;
+    const auto myGeneration = ++loadRequestGeneration_;
+
+    // ── Background thread — blocking disk I/O only ────────────────────────────
+    juce::Thread::launch ([this, readers, buffer, aliveRef, myGeneration,
+                           audioFile, sampleRate, numSamples]
+    {
+        // This is the slow part — safely off the message thread.
+        if (! readers->decode->read (buffer.get(), 0, numSamples, 0, true, true))
+        {
+            PRAAT_LOG_ERR ("loadAudioFromFile: read failed — " + audioFile.getFileName());
+            return;
+        }
+
+        // Deliver the result back to the message thread.
+        juce::MessageManager::callAsync ([this, readers, buffer, aliveRef,
+                                          myGeneration, audioFile, sampleRate] () mutable
+        {
+            if (! aliveRef->load())
+                return;   // processor was destroyed while we were loading
+
+            if (loadRequestGeneration_.load() != myGeneration)
+                return;   // user picked a newer file before this one finished
+
+            loadedAudioBuffer_     = std::move (*buffer);
+            loadedAudioSampleRate_ = sampleRate;
+            loadedAudioFile_       = audioFile;
+            selectedRegionSeconds_ = {};   // clear old selection
+
+            if (readers->playback != nullptr)
+            {
+                audioReaderSource_ = std::make_unique<juce::AudioFormatReaderSource> (
+                    readers->playback.release(), true /* takes ownership */);
+
+                transportSource_.setSource (audioReaderSource_.get(),
+                                            0, nullptr,
+                                            loadedAudioSampleRate_);
+            }
+
+            audioIsLoaded_ = true;
+            ++loadedAudioVersion_;   // signal to editor that buffer content changed
+        });
+    });
+
     return true;
 }
 
@@ -716,6 +787,7 @@ void PraatPluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 
 void PraatPluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    PRAAT_LOG ("setStateInformation called");
     const auto state = juce::ValueTree::readFromData (data, static_cast<size_t> (sizeInBytes));
     if (! state.isValid()) return;
 
@@ -732,7 +804,19 @@ void PraatPluginProcessor::setStateInformation (const void* data, int sizeInByte
     {
         const juce::File lastAudioFile (lastAudioPath);
         if (lastAudioFile.existsAsFile())
-            loadAudioFromFile (lastAudioFile);
+        {
+            // Defer the disk-read to the next message-loop iteration so that
+            // setStateInformation() returns promptly to the DAW host.
+            // Reading a large WAV file synchronously here would stall the host's
+            // main thread during session restore — callAsync posts this work
+            // back onto the message thread queue without blocking the caller.
+            juce::MessageManager::callAsync ([this, lastAudioFile, aliveGuard = isAlive_]
+            {
+                if (! aliveGuard->load())
+                    return;
+                loadAudioFromFile (lastAudioFile);
+            });
+        }
     }
 
     // Restore per-script parameter values from child nodes.
