@@ -25,12 +25,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(JUCE)
 
 # ─── Plugin target ────────────────────────────────────────────────────────────
+if(APPLE)
+    set(PLUGIN_FORMATS VST3 AU)
+else()
+    set(PLUGIN_FORMATS VST3)
+endif()
+
 juce_add_plugin(PraatPlugin
     COMPANY_NAME                "PraatPlugin"
     PLUGIN_MANUFACTURER_CODE    Prat
     PLUGIN_CODE                 Prt1
 
-    FORMATS                     VST3 $<$<PLATFORM_ID:Darwin>:AU>
+    FORMATS                     ${PLUGIN_FORMATS}
     PRODUCT_NAME                "PraatPlugin"
 
     IS_SYNTH                    FALSE
