@@ -37,3 +37,4 @@ DerivedData/
 
 node_modules/
 ui/dist/
+ui/.vite/

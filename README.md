@@ -107,7 +107,7 @@ The VST3 is output to `build\PraatPlugin_artefacts\Release\VST3\PraatPlugin.vst3
 
 ### Community library (300+ scripts)
 
-On first run the plugin automatically downloads the full [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library by Shay Cohen directly from GitHub. Scripts are saved to `~/Library/Application Support/PraatPlugin/community_scripts/` and loaded organized by category:
+On first run the plugin automatically downloads the full [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library by Shai Cohen directly from GitHub. Scripts are saved to `~/Library/Application Support/PraatPlugin/community_scripts/` and loaded organized by category:
 
 | Category | Examples |
 |---|---|
@@ -142,7 +142,7 @@ Nine scripts ship embedded in the plugin and are extracted to `~/Library/Applica
 | `wavefolder.praat` | Buchla-style wavefolding distortion |
 | `paulstretch.praat` | Extreme time-stretch via FFT phase randomisation |
 
-These scripts were adapted from Shay Cohen's library for use with the plugin's headless CLI calling convention.
+These scripts were adapted from Shai Cohen's library for use with the plugin's headless CLI calling convention.
 
 ### Browsing scripts
 
@@ -247,7 +247,7 @@ PraatPlugin/
 │       ├── bridge/      # juceBridge.js (JS ↔ C++ events)
 │       └── styles/      # Design tokens + global CSS
 ├── legacy/              # Original JUCE-component editor (preserved)
-├── scripts/examples/    # Bundled Praat scripts (adapted from Shay Cohen's library)
+├── scripts/examples/    # Bundled Praat scripts (adapted from Shai Cohen's library)
 ├── docs/adr/            # Architecture decision records
 └── CMakeLists.txt
 ```
@@ -279,7 +279,7 @@ Open a GitHub issue at [Ron-312/PraatPlugin](https://github.com/Ron-312/PraatPlu
 
 ## Acknowledgements
 
-A huge thank you to **Shay Cohen** ([@ShaiCohen-ops](https://github.com/ShaiCohen-ops)) for building and open-sourcing the [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library — 300+ Praat scripts covering everything from pitch manipulation to granular synthesis. The bundled scripts in this plugin are adapted from that library, and the entire community library is downloaded directly from Shay's repo on first run. Go check it out and give it a star.
+A huge thank you to **Shai Cohen** ([@ShaiCohen-ops](https://github.com/ShaiCohen-ops)) for building and open-sourcing the [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library — 300+ Praat scripts covering everything from pitch manipulation to granular synthesis. The bundled scripts in this plugin are adapted from that library, and the entire community library is downloaded directly from Shai's repo on first run. Go check it out and give it a star.
 
 ---
 

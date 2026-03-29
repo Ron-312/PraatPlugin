@@ -76,3 +76,35 @@
 .header__praat-status--clickable:hover .header__status-text {
   color: var(--color-text);
 }
+
+/* ── Right group (praat status + optional DEV button) ────────────────────── */
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Debug-build DEV toggle button */
+.header__dev-btn {
+  background: transparent;
+  border: 1px solid #333;
+  color: #444;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 5px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.header__dev-btn:hover {
+  border-color: #555;
+  color: #888;
+}
+
+.header__dev-btn--active {
+  border-color: #facc15;
+  color: #facc15;
+}

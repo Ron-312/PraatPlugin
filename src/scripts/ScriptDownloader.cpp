@@ -1,4 +1,5 @@
 #include "scripts/ScriptDownloader.h"
+#include "debug/DebugWatchdog.h"
 
 ScriptDownloader::ScriptDownloader()
     : juce::Thread ("ScriptDownloader")
@@ -63,6 +64,7 @@ void ScriptDownloader::run()
 
         if (! curl.start (curlArgs))
         {
+            PRAAT_LOG_ERR ("ScriptDownloader: failed to launch curl.exe — Windows 10 1803+ required");
             juce::MessageManager::callAsync ([cb = onComplete]
             {
                 if (cb) cb (false, "Could not launch curl.exe — Windows 10 1803+ required.");
@@ -80,6 +82,8 @@ void ScriptDownloader::run()
 
         if (curl.getExitCode() != 0 || ! tempZip.existsAsFile() || tempZip.getSize() == 0)
         {
+            PRAAT_LOG_ERR ("ScriptDownloader: curl failed (exit "
+                           + juce::String (curl.getExitCode()) + ")");
             tempZip.deleteFile();
             juce::MessageManager::callAsync ([cb = onComplete]
             {
@@ -132,6 +136,7 @@ void ScriptDownloader::run()
     juce::ZipFile zip (tempZip);
     if (zip.getNumEntries() == 0)
     {
+        PRAAT_LOG_ERR ("ScriptDownloader: downloaded archive is empty or corrupt");
         tempZip.deleteFile();
         juce::MessageManager::callAsync ([cb = onComplete]
         {
@@ -146,6 +151,7 @@ void ScriptDownloader::run()
     if (result.failed())
     {
         const juce::String msg = result.getErrorMessage();
+        PRAAT_LOG_ERR ("ScriptDownloader: extraction failed — " + msg);
         juce::MessageManager::callAsync ([cb = onComplete, msg]
         {
             if (cb) cb (false, "Extraction failed: " + msg);
@@ -154,6 +160,7 @@ void ScriptDownloader::run()
     }
 
     // ── 4. Done ────────────────────────────────────────────────────────────────
+    PRAAT_LOG ("ScriptDownloader: community scripts downloaded successfully");
     juce::MessageManager::callAsync ([cb = onComplete]
     {
         if (cb) cb (true, {});
