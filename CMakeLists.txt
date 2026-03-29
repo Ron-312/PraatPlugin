@@ -156,6 +156,27 @@ if(APPLE)
     )
 endif()
 
+# ─── Optional debug logging / DevPanel ───────────────────────────────────────
+# Automatically active in Debug builds.
+# Force-enable for Release QA builds with:  cmake -DPRAATPLUGIN_DEBUG_LOGGING=ON ..
+# Log file: %TEMP%\PraatPlugin\debug.log  (Windows)
+#           $TMPDIR/PraatPlugin/debug.log  (macOS)
+option(PRAATPLUGIN_DEBUG_LOGGING "Force-enable DevPanel for all configs (auto-on in Debug)" OFF)
+
+# DebugWatchdog.cpp is wrapped in #ifdef so it compiles to nothing in Release.
+target_sources(PraatPlugin PRIVATE src/debug/DebugWatchdog.cpp)
+
+# Define is set automatically for Debug builds, or for all configs when option is ON.
+target_compile_definitions(PraatPlugin PRIVATE
+    $<$<OR:$<CONFIG:Debug>,$<BOOL:${PRAATPLUGIN_DEBUG_LOGGING}>>:PRAATPLUGIN_DEBUG_LOGGING=1>
+)
+
+if(PRAATPLUGIN_DEBUG_LOGGING)
+    message(STATUS "PraatPlugin: debug logging force-enabled for all configs")
+else()
+    message(STATUS "PraatPlugin: debug logging auto-enabled for Debug builds only")
+endif()
+
 # ─── Optional test suite ──────────────────────────────────────────────────────
 option(BUILD_TESTS "Build unit tests (requires Catch2)" OFF)
 if(BUILD_TESTS)
