@@ -1,24 +1,22 @@
-<p align="center">
-  <img src="docs/logo.svg" alt="PraatPlugin logo" width="64">
-</p>
+<div align="center">
+  <img src="docs/logo.svg" alt="PraatPlugin logo" width="72">
+  <h1>PraatPlugin</h1>
+  <p>A VST3 / AU plugin that runs <a href="https://www.praat.org">Praat</a> scripts on audio — from inside your DAW.</p>
 
-<h1 align="center">PraatPlugin</h1>
+  <p>
+    <a href="https://praatplugin.netlify.app"><img src="https://img.shields.io/badge/PraatPlugin_Website-e05090?style=for-the-badge" alt="Website"></a>
+    <a href="https://github.com/Ron-312/PraatPlugin/releases"><img src="https://img.shields.io/badge/Download-181717?style=for-the-badge&logo=github&logoColor=white" alt="Releases"></a>
+    <a href="https://github.com/Ron-312/PraatPlugin/issues"><img src="https://img.shields.io/badge/Issues-181717?style=for-the-badge&logo=github&logoColor=white" alt="Issues"></a>
+  </p>
 
-<p align="center">
-  A VST3 / AU plugin that runs <a href="https://www.praat.org">Praat</a> scripts on audio — from inside your DAW.
-</p>
-
-<p align="center">
-  <a href="https://praatplugin.netlify.app">praatplugin.netlify.app</a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
-  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue" alt="Platform">
-  <img src="https://img.shields.io/badge/Format-VST3%20%7C%20AU-blueviolet" alt="VST3 / AU">
-  <img src="https://img.shields.io/badge/Built%20with-JUCE-e05090" alt="Built with JUCE">
-  <img src="https://img.shields.io/github/stars/Ron-312/PraatPlugin?style=social" alt="GitHub Stars">
-</p>
+  <p>
+    <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License">
+    <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue?style=flat-square" alt="Platform">
+    <img src="https://img.shields.io/badge/Format-VST3%20%7C%20AU-blueviolet?style=flat-square" alt="VST3 / AU">
+    <img src="https://img.shields.io/badge/Built%20with-JUCE-e05090?style=flat-square" alt="Built with JUCE">
+    <img src="https://img.shields.io/github/stars/Ron-312/PraatPlugin?style=social" alt="GitHub Stars">
+  </p>
+</div>
 
 <p align="center">
   <img src="docs/screenshots/plugin_ui.png" alt="PraatPlugin UI" width="480">
@@ -41,6 +39,7 @@ Great for voice and speech work, music production, phonetics research, or anywhe
 - [Scripts](#scripts)
 - [Writing your own scripts](#writing-your-own-scripts)
 - [UI overview](#ui-overview)
+- [Project structure](#project-structure)
 - [Architecture](#architecture)
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
