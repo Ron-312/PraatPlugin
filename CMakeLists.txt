@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22...4.3)
 
 project(PraatPlugin
-    VERSION 1.0.0
+    VERSION 1.5.0
     DESCRIPTION "DAW plugin that runs Praat speech-analysis scripts"
     LANGUAGES C CXX
 )

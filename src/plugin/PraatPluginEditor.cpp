@@ -2,6 +2,146 @@
 #include "debug/DebugWatchdog.h"
 #include <BinaryData.h>
 
+// ─── Windows audio-file drop target ──────────────────────────────────────────
+//
+// WebView2 calls RevokeDragDrop() on the plugin's main HWND during its own
+// initialisation, wiping JUCE's built-in FileDragAndDropTarget registration.
+// This means file drops stop working for the entire window — including the
+// native JUCE strip at the bottom that is outside the WebView2 bounds.
+//
+// Fix: after WebView2 finishes loading the page we re-register our own
+// IDropTarget on the parent HWND via RegisterDragDrop.  This is completely
+// independent of WebView2's child-HWND drop handling.
+//
+// Only compiled on Windows (macOS uses the WebKit responder chain, which does
+// not have this problem).
+// ─────────────────────────────────────────────────────────────────────────────
+#if JUCE_WINDOWS
+#include <shlobj.h>     // HDROP, DragQueryFileW, CF_HDROP (includes shellapi.h correctly)
+#undef min
+#undef max
+
+class AudioFileDropTarget  : public IDropTarget
+{
+public:
+    explicit AudioFileDropTarget (PraatPluginProcessor& p) : processor_ (p) {}
+
+    // Set by the editor; read on the JUCE message thread (via 20fps timer).
+    // Written from the COM drag-drop thread — atomic for correctness.
+    std::atomic<bool> isDraggingOver { false };
+
+    // ── IUnknown ──────────────────────────────────────────────────────────
+    ULONG STDMETHODCALLTYPE AddRef()  override { return ++refCount_; }
+
+    ULONG STDMETHODCALLTYPE Release() override
+    {
+        const ULONG n = --refCount_;
+        if (n == 0) delete this;
+        return n;
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface (REFIID riid, void** ppv) override
+    {
+        if (riid == IID_IUnknown || riid == IID_IDropTarget)
+        {
+            *ppv = static_cast<IDropTarget*> (this);
+            AddRef();
+            return S_OK;
+        }
+        *ppv = nullptr;
+        return E_NOINTERFACE;
+    }
+
+    // ── IDropTarget ───────────────────────────────────────────────────────
+    HRESULT STDMETHODCALLTYPE DragEnter (IDataObject* obj, DWORD, POINTL, DWORD* effect) override
+    {
+        const bool ok = hasAudioFile (obj);
+        *effect = ok ? DROPEFFECT_COPY : DROPEFFECT_NONE;
+        if (ok) isDraggingOver.store (true);
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE DragOver (DWORD, POINTL, DWORD* effect) override
+    {
+        *effect = DROPEFFECT_COPY;
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE DragLeave() override
+    {
+        isDraggingOver.store (false);
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE Drop (IDataObject* obj, DWORD, POINTL, DWORD* effect) override
+    {
+        isDraggingOver.store (false);
+        *effect = DROPEFFECT_COPY;
+
+        const auto path = firstAudioFilePath (obj);
+        if (path.isNotEmpty())
+        {
+            // Marshal onto the JUCE message thread — Drop() may arrive on a
+            // COM worker thread in cross-process (Explorer → plugin) scenarios.
+            juce::MessageManager::callAsync ([this, path]
+            {
+                processor_.loadAudioFromFile (juce::File (path));
+            });
+        }
+        return S_OK;
+    }
+
+private:
+    PraatPluginProcessor& processor_;
+    ULONG refCount_ { 1 };
+
+    static juce::StringArray pathsFromDataObject (IDataObject* obj)
+    {
+        juce::StringArray paths;
+        FORMATETC fmt { CF_HDROP, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+        STGMEDIUM stg {};
+        if (FAILED (obj->GetData (&fmt, &stg)))
+            return paths;
+
+        if (auto* drop = static_cast<HDROP> (GlobalLock (stg.hGlobal)))
+        {
+            const UINT n = DragQueryFileW (drop, 0xFFFFFFFFu, nullptr, 0);
+            for (UINT i = 0; i < n; ++i)
+            {
+                wchar_t buf[MAX_PATH] {};
+                if (DragQueryFileW (drop, i, buf, MAX_PATH))
+                    paths.add (juce::String (buf));
+            }
+            GlobalUnlock (stg.hGlobal);
+        }
+        ReleaseStgMedium (&stg);
+        return paths;
+    }
+
+    static bool isAudioExtension (const juce::String& path)
+    {
+        const auto ext = juce::File (path).getFileExtension().toLowerCase();
+        return ext == ".wav" || ext == ".aif" || ext == ".aiff"
+            || ext == ".mp3" || ext == ".flac";
+    }
+
+    static bool hasAudioFile (IDataObject* obj)
+    {
+        for (const auto& p : pathsFromDataObject (obj))
+            if (isAudioExtension (p)) return true;
+        return false;
+    }
+
+    static juce::String firstAudioFilePath (IDataObject* obj)
+    {
+        for (const auto& p : pathsFromDataObject (obj))
+            if (isAudioExtension (p)) return p;
+        return {};
+    }
+};
+#endif  // JUCE_WINDOWS
+
+
 // ─── Constructor / Destructor ─────────────────────────────────────────────────
 
 PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& processor)
@@ -23,6 +163,12 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& processor)
         {
             pageLoaded_ = true;
             pushStateToWebView();
+#if JUCE_WINDOWS
+            // WebView2 calls RevokeDragDrop() on the parent HWND during its
+            // own initialisation, wiping JUCE's drop-target registration.
+            // Re-register ours now that WebView2 is fully set up.
+            registerWindowsDropTarget();
+#endif
         };
 
         // Surface any load failure as a visible error message.
@@ -61,6 +207,12 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& processor)
 PraatPluginEditor::~PraatPluginEditor()
 {
     stopTimer();
+#if JUCE_WINDOWS
+    windowsDropTarget_ = nullptr;
+    if (auto* peer = getPeer())
+        if (auto* hwnd = peer->getNativeHandle())
+            RevokeDragDrop (static_cast<HWND> (hwnd));
+#endif
 }
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -147,9 +299,9 @@ juce::WebBrowserComponent::Options PraatPluginEditor::buildBrowserOptions()
         {
             onLoadScriptsDir();
         })
-        .withEventListener ("analyze", [this] (const juce::var&)
+        .withEventListener ("run", [this] (const juce::var&)
         {
-            onAnalyze();
+            onRun();
         })
         .withEventListener ("selectScript", [this] (const juce::var& data)
         {
@@ -163,6 +315,10 @@ juce::WebBrowserComponent::Options PraatPluginEditor::buildBrowserOptions()
         .withEventListener ("exportProcessed", [this] (const juce::var&)
         {
             onExportProcessed();
+        })
+        .withEventListener ("startDragExport", [this] (const juce::var&)
+        {
+            onStartDragExport();
         })
         .withEventListener ("setScriptParam", [this] (const juce::var& data)
         {
@@ -324,13 +480,20 @@ void PraatPluginEditor::pushStateToWebView()
                                              : juce::var ("processed"));
 
     // ── Analysis ──────────────────────────────────────────────────────────
-    state->setProperty ("isAnalyzing",         praatProcessor_.isAnalysisInProgress());
+    state->setProperty ("isRunning",            praatProcessor_.isAnalysisInProgress());
     state->setProperty ("isDownloadingScripts", praatProcessor_.isDownloadingScripts());
     state->setProperty ("praatFound",           loc.isPraatInstalled());
 
     // ── Status ────────────────────────────────────────────────────────────
     state->setProperty ("status",     praatProcessor_.currentStatusMessage());
     state->setProperty ("statusType", deriveStatusType());
+#if JUCE_WINDOWS
+    // On Windows the FileDragAndDropTarget callbacks are replaced by the COM
+    // drop target — read drag state from it instead.
+    if (windowsDropTarget_ != nullptr)
+        isDragOver_ = windowsDropTarget_->isDraggingOver.load();
+#endif
+    state->setProperty ("isDragOver",  isDragOver_);
 
     // ── Results ───────────────────────────────────────────────────────────
     // Send whenever there's something to show: parsed output OR an error.
@@ -480,7 +643,7 @@ juce::var PraatPluginEditor::buildDownsampledWaveform (const juce::AudioBuffer<f
 juce::String PraatPluginEditor::deriveStatusType() const
 {
     if (praatProcessor_.isCapturing())           return "recording";
-    if (praatProcessor_.isAnalysisInProgress())  return "analyzing";
+    if (praatProcessor_.isAnalysisInProgress())  return "running";
     if (praatProcessor_.isPlayingBack())         return "playing";
     if (! praatProcessor_.isPraatAvailable())    return "error";
     return "idle";
@@ -549,7 +712,7 @@ void PraatPluginEditor::onLoadScriptsDir()
         });
 }
 
-void PraatPluginEditor::onAnalyze()
+void PraatPluginEditor::onRun()
 {
     praatProcessor_.stopPlayback();
     praatProcessor_.beginAnalysisOfSelectedRegion (currentParamValues_);
@@ -622,10 +785,23 @@ void PraatPluginEditor::onExportProcessed()
     if (! processedFile.existsAsFile())
         return;
 
+    // Build a descriptive default filename: "<original>_<script>.wav"
+    // e.g. "vocal_take_01_pitch_shift.wav"
+    const auto sourceStem = praatProcessor_.loadedAudioFile()
+                                .getFileNameWithoutExtension();
+    const auto scriptStem = praatProcessor_.scriptManager()
+                                .activeScript()
+                                .getFileNameWithoutExtension();
+
+    juce::String defaultName = sourceStem.isNotEmpty() ? sourceStem : "output";
+    if (scriptStem.isNotEmpty())
+        defaultName += "_" + scriptStem;
+    defaultName += ".wav";
+
     activeFileChooser_ = std::make_unique<juce::FileChooser> (
         "Export Processed Audio",
         juce::File::getSpecialLocation (juce::File::userMusicDirectory)
-            .getChildFile ("PraatPlugin_output.wav"),
+            .getChildFile (defaultName),
         "*.wav");
 
     activeFileChooser_->launchAsync (
@@ -638,6 +814,39 @@ void PraatPluginEditor::onExportProcessed()
             if (dest.getFullPathName().isNotEmpty())
                 processedFile.copyFileTo (dest);
         });
+}
+
+void PraatPluginEditor::onStartDragExport()
+{
+    const auto file = praatProcessor_.processedAudioFile();
+    if (! file.existsAsFile())
+        return;
+
+    // Build the same smart name used by the EXPORT file chooser so the file
+    // that lands in the DAW has a meaningful name, not the internal temp path.
+    const auto sourceStem = praatProcessor_.loadedAudioFile()
+                                .getFileNameWithoutExtension();
+    const auto scriptStem = praatProcessor_.scriptManager()
+                                .activeScript()
+                                .getFileNameWithoutExtension();
+    juce::String niceName = sourceStem.isNotEmpty() ? sourceStem : "output";
+    if (scriptStem.isNotEmpty())
+        niceName += "_" + scriptStem;
+    niceName += ".wav";
+
+    // Copy to a temp location with the nice name so the dragged file is named
+    // correctly when the DAW receives it.
+    const auto namedCopy = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                               .getChildFile ("PraatPlugin")
+                               .getChildFile (niceName);
+    namedCopy.getParentDirectory().createDirectory();
+    file.copyFileTo (namedCopy);
+
+    // performExternalDragDropOfFiles blocks on a modal OS drag loop until the
+    // user drops or cancels — safe to call here since the message thread
+    // processes events internally during the drag.
+    juce::DragAndDropContainer::performExternalDragDropOfFiles (
+        { namedCopy.getFullPathName() }, /*canMove=*/true, browser_.get());
 }
 
 void PraatPluginEditor::onSetScriptParam (const juce::String& name, const juce::String& value)
@@ -667,6 +876,87 @@ void PraatPluginEditor::onBrowsePraatExecutable()
                 praatProcessor_.praatLocator().overrideExecutablePathWithUserChoice (chosen);
         });
 }
+
+// ─── FileDragAndDropTarget ────────────────────────────────────────────────────
+//
+// Handles files dragged directly onto the plugin window.
+// On macOS this covers the full area (WKWebView participates in the drag
+// responder chain).  On Windows, WebView2 intercepts its own HWND, so most
+// drops on the React UI land in the NativeControlStrip below — but the editor-
+// level callbacks fire when the cursor first enters the window, allowing us to
+// set isDragOver_ so the React UI can display a drop indicator.
+// ─────────────────────────────────────────────────────────────────────────────
+
+bool PraatPluginEditor::isInterestedInFileDrag (const juce::StringArray& files)
+{
+    for (const auto& f : files)
+    {
+        const auto ext = juce::File (f).getFileExtension().toLowerCase();
+        if (ext == ".wav" || ext == ".aif" || ext == ".aiff"
+         || ext == ".mp3" || ext == ".flac")
+            return true;
+    }
+    return false;
+}
+
+void PraatPluginEditor::fileDragEnter (const juce::StringArray&, int, int)
+{
+    isDragOver_ = true;
+}
+
+void PraatPluginEditor::fileDragExit (const juce::StringArray&)
+{
+    isDragOver_ = false;
+}
+
+void PraatPluginEditor::filesDropped (const juce::StringArray& files, int, int)
+{
+    isDragOver_ = false;
+    if (! files.isEmpty())
+    {
+        PRAAT_TIME_SCOPE ("loadAudioFromFile (drag-and-drop)");
+        praatProcessor_.loadAudioFromFile (juce::File (files[0]));
+    }
+}
+
+#if JUCE_WINDOWS
+void PraatPluginEditor::registerWindowsDropTarget()
+{
+    // Called from pageFinishedLoading after WebView2 has completed its own
+    // drag-drop setup (which calls RevokeDragDrop on our parent HWND).
+    //
+    // The key problem: WebView2 creates child HWNDs that cover the entire
+    // plugin area and registers IDropTarget on THOSE.  The OS routes drops to
+    // the innermost (topmost-z) HWND with a registered drop target, so our
+    // parent-only registration never fires.
+    //
+    // Fix: register our IDropTarget on the parent AND every child HWND so we
+    // intercept drops regardless of which window WebView2 put on top.
+    auto* peer = getPeer();
+    if (peer == nullptr) return;
+
+    auto* hwnd = static_cast<HWND> (peer->getNativeHandle());
+    if (hwnd == nullptr) return;
+
+    auto* target = new AudioFileDropTarget (praatProcessor_);
+    windowsDropTarget_ = target;
+
+    // Register on the parent HWND.
+    RevokeDragDrop (hwnd);
+    RegisterDragDrop (hwnd, target);
+
+    // Register on all WebView2 child HWNDs.
+    EnumChildWindows (hwnd, [] (HWND child, LPARAM lp) -> BOOL
+    {
+        auto* t = reinterpret_cast<IDropTarget*> (lp);
+        RevokeDragDrop (child);
+        RegisterDragDrop (child, t);
+        return TRUE;   // continue enumeration
+    }, reinterpret_cast<LPARAM> (static_cast<IDropTarget*> (target)));
+
+    target->Release();  // each RegisterDragDrop holds its own AddRef
+}
+#endif
 
 // ─── Fallback UI ──────────────────────────────────────────────────────────────
 

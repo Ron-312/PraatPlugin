@@ -52,7 +52,7 @@
   animation: led-blink 0.6s ease-in-out infinite;
 }
 
-.status-bar__led--analyzing {
+.status-bar__led--running {
   background: var(--color-signal);
   animation: led-blink 1s ease-in-out infinite;
 }

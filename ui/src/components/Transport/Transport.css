@@ -11,6 +11,47 @@
   letter-spacing: 0.8px;
 }
 
+/* ── Export + Drag group ──────────────────────────────────────────────────── */
+.transport__export-group {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+}
+
+.transport__export-btn {
+  flex: 1;
+  letter-spacing: 0.8px;
+  min-width: 0;
+}
+
+/* Small drag-to-DAW pill — sits flush against the Export button */
+.transport__drag-btn {
+  width: 26px;
+  flex-shrink: 0;
+  cursor: grab;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  letter-spacing: 0;
+  color: var(--color-text-dim);
+}
+
+.transport__drag-btn:not(:disabled):hover {
+  color: var(--color-text);
+}
+
+.transport__drag-btn:not(:disabled):active,
+.transport__drag-btn:not(:disabled):active:hover {
+  cursor: grabbing;
+  background: var(--color-btn-active);
+}
+
+.transport__drag-btn--disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 /* Active — white fill, black text (plays nicely against the dark bg) */
 .transport__btn--active {
   background: var(--color-active);
