@@ -9,7 +9,7 @@
 //     If the message thread doesn't respond within stallThresholdMs, a STALL
 //     entry is recorded and written to the log file.
 //   • Keeps a rolling buffer of the 100 most recent entries for the in-plugin
-//     DevPanel (toggle with Ctrl+Shift+D inside the plugin window).
+//     DevPanel (toggle via the DEV button in the plugin header).
 //   • Mirrors every entry to  %TEMP%\PraatPlugin\debug.log  (Windows) or
 //     $TMPDIR/PraatPlugin/debug.log  (macOS) for attaching to bug reports.
 //
@@ -21,7 +21,7 @@
 //   4. Use PRAAT_LOG / PRAAT_LOG_ERR / PRAAT_TIME_SCOPE at relevant sites.
 //
 // Usage — QA side:
-//   Open the plugin and press Ctrl+Shift+D to show the DevPanel.
+//   Click the DEV button in the plugin header to show the DevPanel.
 //   It shows live message-thread latency and a colour-coded event log.
 //   Hit "copy log" to paste into a bug report.
 // ─────────────────────────────────────────────────────────────────────────────
