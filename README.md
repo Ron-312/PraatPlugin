@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://praatplugin.netlify.app">🌐 praatplugin.netlify.app</a>
+  <a href="https://praatplugin.netlify.app">praatplugin.netlify.app</a>
 </p>
 
 <p align="center">
