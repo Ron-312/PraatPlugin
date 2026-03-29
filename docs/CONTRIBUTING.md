@@ -59,6 +59,88 @@ cd build/tests && ctest --output-on-failure
 
 ---
 
+## Debug Build (QA / Profiling)
+
+A special debug build adds a live **DevPanel** inside the plugin and writes a log file to disk.  Use this build when investigating DAW-blocking issues or C++ errors that are hard to reproduce.
+
+### Building
+
+**Windows:**
+```bat
+cmake -B build -DPRAATPLUGIN_DEBUG_LOGGING=ON
+cmake --build build --config Debug --target PraatPlugin_VST3
+```
+
+**macOS:**
+```bash
+cmake -B build/debug \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DPRAATPLUGIN_DEBUG_LOGGING=ON \
+      -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build/debug --target PraatPlugin_VST3
+```
+
+### Using the DevPanel
+
+1. Load the debug VST3 in your DAW.
+2. Press **Ctrl+Shift+D** (Windows/Linux) or **Cmd+Shift+D** (macOS) inside the plugin window.
+3. A panel slides up from the bottom:
+
+```
+┌─────────────────────────────────────────────────────┐
+│ DevTools   MSG 4 ms              [copy log]   [✕]   │
+├─────────────────────────────────────────────────────┤
+│ 14:32:05  loadAudioFromFile (file picker)  245 ms   │  ← yellow = slow (>30 ms)
+│ 14:32:04  STALL BEGIN — message thread 380 ms       │  ← red = stall (>250 ms)
+│ 14:32:04  PraatRunner: Praat exited code 1 — ...    │  ← red bold = C++ error
+└─────────────────────────────────────────────────────┘
+│ log: C:\Users\...\AppData\Local\Temp\PraatPlugin\debug.log │
+```
+
+**Colour coding:**
+| Colour | Meaning |
+|--------|---------|
+| Grey | Normal lifecycle events |
+| Yellow | Operation took 30–99 ms on the message thread |
+| Red | Stall (>250 ms) or C++ error |
+
+**"MSG X ms"** in the header is the live round-trip latency of the message thread.  Green < 30 ms, yellow < 100 ms, red ≥ 100 ms.
+
+Hit **"copy log"** to paste the full entry list into a Slack message or bug report.
+
+### Log file
+
+Every entry is also written to:
+- **Windows:** `%TEMP%\PraatPlugin\debug.log`
+- **macOS:** `$TMPDIR/PraatPlugin/debug.log`
+
+The file accumulates across sessions (capped at 5 MB) so QA can attach it to a bug without having to reproduce the issue in the same session they open the DevPanel.
+
+### What is instrumented
+
+| Site | What is logged |
+|------|---------------|
+| `PraatPluginProcessor` constructor | `installBundledScripts` and `loadCommunityScripts` timing |
+| `loadAudioFromFile` | Total read time; error if format unreadable |
+| `setStateInformation` | Called marker (helps correlate session-restore hangs) |
+| `PraatInstallationLocator` | PATH search start + total time (the slow `where`/`which` call) |
+| `JobDispatcher` | Script start, completion, cancellation, WAV-write failure |
+| `PraatRunner` | Launch failure, timeout, non-zero exit code |
+| `ScriptDownloader` | curl failure, extraction failure, success |
+| Message thread (watchdog) | Any stall > 250 ms, with start/end/duration |
+
+### Adding instrumentation
+
+Use the macros in `src/debug/DebugWatchdog.h` — they compile to no-ops in production builds:
+
+```cpp
+PRAAT_LOG("something happened");           // info entry
+PRAAT_LOG_ERR("something went wrong");     // error entry (red)
+PRAAT_TIME_SCOPE("myOperation");           // logs if scope takes > 30 ms
+```
+
+---
+
 ## Code Style
 
 This project uses self-documenting names — code should read like a sentence.

@@ -1,4 +1,5 @@
 #include "praat/PraatRunner.h"
+#include "debug/DebugWatchdog.h"
 
 PraatRunner::PraatRunner (juce::File praatExecutableFile)
     : praatExecutableFile_ (std::move (praatExecutableFile))
@@ -24,6 +25,8 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
 
     if (! launchSucceeded)
     {
+        PRAAT_LOG_ERR ("PraatRunner: failed to launch Praat at "
+                       + praatExecutableFile_.getFullPathName());
         return { false, -1,
                  {},
                  "Failed to launch Praat. Check that the executable exists and is runnable." };
@@ -47,6 +50,9 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
         if (totalWaitedMs >= processTimeoutMilliseconds)
         {
             praatProcess.kill();
+            PRAAT_LOG_ERR ("PraatRunner: script timed out after "
+                           + juce::String (processTimeoutMilliseconds / 1000) + " s — "
+                           + scriptFile.getFileName());
             return { false, -1,
                      {},
                      "Praat timed out after " +
@@ -62,6 +68,8 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
     // If exit code is non-zero, treat the full output as error output.
     if (exitCode != 0)
     {
+        PRAAT_LOG_ERR ("PraatRunner: Praat exited with code " + juce::String (exitCode)
+                       + " — " + allOutput.substring (0, 200));
         return { false, exitCode, {}, allOutput };
     }
 
