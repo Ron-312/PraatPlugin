@@ -1,8 +1,12 @@
 # PraatPlugin
 
-A VST3 / AU audio plugin that runs [Praat](https://www.praat.org) scripts on audio from inside your DAW. Load a take, drag-select the region you care about, pick a script from a library of 300+, tweak the parameters, and hit **Morph** — the processed audio appears as a second waveform ready to play or export.
+A VST3 / AU audio plugin that runs [Praat](https://www.praat.org) scripts on audio from inside your DAW. Load a take, drag-select the region you care about, pick a script from a library of 300+, tweak the parameters, and hit **Run** — the processed audio appears as a second waveform ready to play or export.
 
 Great for voice and speech work, music production, phonetics research, or anywhere you want Praat's analysis and processing power without leaving your DAW.
+
+<p align="center">
+  <img src="docs/screenshots/plugin_ui.png" alt="PraatPlugin UI" width="420">
+</p>
 
 ---
 
@@ -12,9 +16,9 @@ Great for voice and speech work, music production, phonetics research, or anywhe
 - **Drag a region** on the waveform to process only a subset
 - **Browse 300+ community scripts** organized by category — pitch, distortion, reverb, spectral, spatial, granular, and more
 - **Adjust script parameters** live with sliders, toggles, and dropdowns — values are read directly from the script's `form` block
-- **Morph** — runs Praat in headless mode and shows the result waveform
+- **Run** — runs Praat in headless mode and shows the result waveform
 - **Compare** original and processed audio with the built-in transport
-- **Export** the morphed audio as a WAV file
+- **Export** the processed audio as a WAV file
 
 ---
 
@@ -148,7 +152,7 @@ appendInfoLine: "duration: ", Get total duration
    - `boolean` → ON/OFF toggle
    - `choice` / `optionmenu` → dropdown menu
    - `sentence` / `word` / `text` → text input
-4. Write the processed audio to `outputFile$` — the plugin reads it back and shows it as the morphed waveform
+4. Write the processed audio to `outputFile$` — the plugin reads it back and shows it as the processed waveform
 5. Print results as `KEY: value` lines to the Praat info window — they appear in the Results panel
 
 See `scripts/examples/` for working examples of each pattern. The [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) repo is also a great reference for more advanced script patterns.
@@ -165,7 +169,7 @@ See `scripts/examples/` for working examples of each pattern. The [Praat-plugin_
 │  ▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓  │  ← original waveform (drag to select)
 │  ░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░  │  ← morphed waveform
 ├─────────────────────────────────────────────┤
-│  [▶ Original] [▶ Morphed] [■ Stop] [↓ Export]│
+│  [▶ Original] [▶ Processed] [■ Stop] [↓ Export]│
 ├─────────────────────────────────────────────┤
 │  SCRIPT  [pitch_shift   PITCH ▾] [↓] [BROWSE]│  ← ↓ downloads/updates from GitHub
 │                                             │
