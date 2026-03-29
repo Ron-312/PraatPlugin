@@ -1,16 +1,54 @@
-# PraatPlugin
+<p align="center">
+  <img src="docs/logo.svg" alt="PraatPlugin logo" width="64">
+</p>
 
-A VST3 / AU audio plugin that runs [Praat](https://www.praat.org) scripts on audio from inside your DAW. Load a take, drag-select the region you care about, pick a script from a library of 300+, tweak the parameters, and hit **Run** — the processed audio appears as a second waveform ready to play or export.
-
-Great for voice and speech work, music production, phonetics research, or anywhere you want Praat's analysis and processing power without leaving your DAW.
+<h1 align="center">PraatPlugin</h1>
 
 <p align="center">
-  <img src="docs/screenshots/plugin_ui.png" alt="PraatPlugin UI" width="420">
+  A VST3 / AU plugin that runs <a href="https://www.praat.org">Praat</a> scripts on audio — from inside your DAW.
+</p>
+
+<p align="center">
+  <a href="https://praatplugin.netlify.com">🌐 praatplugin.netlify.com</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-blue" alt="Platform">
+  <img src="https://img.shields.io/badge/Format-VST3%20%7C%20AU-blueviolet" alt="VST3 / AU">
+  <img src="https://img.shields.io/badge/Built%20with-JUCE-e05090" alt="Built with JUCE">
+  <img src="https://img.shields.io/github/stars/Ron-312/PraatPlugin?style=social" alt="GitHub Stars">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/plugin_ui.png" alt="PraatPlugin UI" width="480">
 </p>
 
 ---
 
-## What it does
+Load a take, drag-select the region you care about, pick a script from a library of 300+, tweak the parameters, and hit **Run** — the processed audio appears as a second waveform ready to play or export.
+
+Great for voice and speech work, music production, phonetics research, or anywhere you want Praat's analysis and processing power without leaving your DAW.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Download](#download)
+- [Requirements](#requirements)
+- [Building from source](#building-from-source)
+- [Scripts](#scripts)
+- [Writing your own scripts](#writing-your-own-scripts)
+- [UI overview](#ui-overview)
+- [Architecture](#architecture)
+- [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
+
+---
+
+## Features
 
 - **Load or record audio** directly inside the plugin window
 - **Drag a region** on the waveform to process only a subset
@@ -22,12 +60,25 @@ Great for voice and speech work, music production, phonetics research, or anywhe
 
 ---
 
+## Download
+
+Pre-built binaries are available on the [Releases](https://github.com/Ron-312/PraatPlugin/releases) page.
+
+| Platform | Format | Notes |
+|---|---|---|
+| macOS 12+ | VST3 + AU | Universal binary (Apple Silicon & Intel) |
+| Windows 10+ | VST3 | Requires [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
+
+After downloading, copy the plugin to your DAW's plugin folder and rescan.
+
+---
+
 ## Requirements
 
 | Dependency | Notes |
 |---|---|
-| **macOS 12+** | Windows supported (requires WebView2 Runtime) |
-| **Praat** | Download free from [praat.org](https://www.praat.org). The plugin searches standard macOS locations automatically. |
+| **macOS 12+ / Windows 10+** | See [Download](#download) for format details |
+| **Praat** | Download free from [praat.org](https://www.praat.org). The plugin searches standard locations automatically. |
 | **DAW** | Any DAW that loads VST3 or AU plugins (Ableton Live, Logic Pro, Reaper, etc.) |
 
 ### Build requirements
@@ -99,7 +150,8 @@ cmake --build build --config Release
 
 The VST3 is output to `build\PraatPlugin_artefacts\Release\VST3\PraatPlugin.vst3`. Copy it to `%COMMONPROGRAMFILES%\VST3\` or your DAW's VST3 scan folder, then rescan.
 
-> **Note:** `JUCE_WEBVIEW2_PACKAGE_LOCATION` must point to the **parent** folder that *contains* the `Microsoft.Web.WebView2.*` directory — not to the package folder itself. If you pass the wrong path, CMake will report "Found WebView2" but the build will fail with `Cannot open include file: 'WebView2.h'`.
+> [!NOTE]
+> `JUCE_WEBVIEW2_PACKAGE_LOCATION` must point to the **parent** folder that *contains* the `Microsoft.Web.WebView2.*` directory — not to the package folder itself. If you pass the wrong path, CMake will report "Found WebView2" but the build will fail with `Cannot open include file: 'WebView2.h'`.
 
 ---
 
@@ -214,7 +266,7 @@ See `scripts/examples/` for working examples of each pattern. The [Praat-plugin_
 │  PARAMETERS                                 │
 │  semitones  ●───────────────────  [7.0   ] │
 ├─────────────────────────────────────────────┤
-│  [              ▶  MORPH                  ] │
+│  [              ▶  RUN                    ] │
 ├─────────────────────────────────────────────┤
 │  RESULTS                                    │
 │  semitones    7.0                           │
@@ -271,18 +323,20 @@ See `docs/adr/` for detailed architecture decision records.
 
 ---
 
-## Support
+## Contributing
 
-Open a GitHub issue at [Ron-312/PraatPlugin](https://github.com/Ron-312/PraatPlugin/issues) for bug reports, feature requests, or questions about writing scripts.
+Bug reports, feature requests, and pull requests are welcome. Open an issue at [Ron-312/PraatPlugin](https://github.com/Ron-312/PraatPlugin/issues) to start a discussion before submitting large changes.
+
+If you write a Praat script that works well with the plugin's calling convention, consider contributing it to [Shai Cohen's script library](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) — that's where the community library lives.
 
 ---
 
 ## Acknowledgements
 
-A huge thank you to **Shai Cohen** ([@ShaiCohen-ops](https://github.com/ShaiCohen-ops)) for building and open-sourcing the [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library — 300+ Praat scripts covering everything from pitch manipulation to granular synthesis. The bundled scripts in this plugin are adapted from that library, and the entire community library is downloaded directly from Shai's repo on first run. Go check it out and give it a star.
+A huge thank you to **Shai Cohen** ([@ShaiCohen-ops](https://github.com/ShaiCohen-ops)) for building and open-sourcing the [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library — 300+ Praat scripts covering everything from pitch manipulation to granular synthesis. The bundled scripts in this plugin are adapted from that library, and the entire community library is downloaded directly from Shai's repo on first run.
 
 ---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.
