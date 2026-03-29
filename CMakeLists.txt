@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22...4.3)
 
 project(PraatPlugin
-    VERSION 1.0.0
+    VERSION 1.5.0
     DESCRIPTION "DAW plugin that runs Praat speech-analysis scripts"
     LANGUAGES C CXX
 )
@@ -102,6 +102,7 @@ juce_add_binary_data(PraatPlugin_BinaryData SOURCES
 target_sources(PraatPlugin PRIVATE
     src/plugin/PraatPluginProcessor.cpp
     src/plugin/PraatPluginEditor.cpp
+    $<$<PLATFORM_ID:Darwin>:src/plugin/PraatPluginEditor_mac.mm>
     src/ui/WaveformDisplay.cpp
     src/audio/AudioCapture.cpp
     src/audio/WavFileWriter.cpp

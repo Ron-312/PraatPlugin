@@ -32,8 +32,9 @@ DerivedData/
 # Temp analysis files (should never be committed)
 /tmp/PraatPlugin/
 
-#claude
+# Claude
 .claude/
+CLAUDE.md
 
 node_modules/
 ui/dist/

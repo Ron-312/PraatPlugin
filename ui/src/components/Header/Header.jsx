@@ -15,7 +15,7 @@ export function Header({ praatFound, onBrowsePraat, debugActive, onToggleDevPane
       <div className="header__identity">
         <div className="header__logo-mark">P</div>
         <span className="header__name">PRAAT PLUGIN</span>
-        <span className="header__version">1.0</span>
+        <span className="header__version">1.5</span>
       </div>
 
       <div className="header__right">

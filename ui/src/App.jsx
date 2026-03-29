@@ -55,10 +55,15 @@ export function App() {
   }, [actions])
 
   // Morph is only meaningful when audio is loaded and a script is selected.
-  const canAnalyze = state.hasAudio && state.selectedScript.length > 0
+  const canRun = state.hasAudio && state.selectedScript.length > 0
 
   return (
     <div className="app">
+      {state.isDragOver && (
+        <div className="app__drop-overlay">
+          <span className="app__drop-label">DROP HERE</span>
+        </div>
+      )}
       <Header
         praatFound={state.praatFound}
         onBrowsePraat={actions.browsePraatExecutable}
@@ -78,6 +83,8 @@ export function App() {
         onRegionChange={handleRegionChange}
         onLoadAudioFile={actions.loadAudioFile}
         onToggleRecord={actions.toggleRecord}
+        onStartDragExport={actions.startDragExport}
+        isDragOver={state.isDragOver}
       />
 
       <Transport
@@ -89,6 +96,7 @@ export function App() {
         onPlayProcessed={actions.playProcessed}
         onStopPlayback={actions.stopPlayback}
         onExportProcessed={actions.exportProcessed}
+        onStartDragExport={actions.startDragExport}
       />
 
       <ScriptSection
@@ -105,9 +113,9 @@ export function App() {
       />
 
       <AnalyzeButton
-        isAnalyzing={state.isAnalyzing}
-        canAnalyze={canAnalyze}
-        onAnalyze={actions.analyze}
+        isRunning={state.isRunning}
+        canRun={canRun}
+        onRun={actions.run}
         onCancel={actions.cancelAnalysis}
       />
 
@@ -115,15 +123,18 @@ export function App() {
         results={state.results}
       />
 
-      <StatusBar
-        status={state.status}
-        statusType={state.statusType}
-        isDownloadingScripts={state.isDownloadingScripts}
-      />
-
       {devPanelOpen && (
         <DevPanel debug={state.debug} onClose={() => setDevPanelOpen(false)} />
       )}
+
+      <div className="app__bottom-bar">
+        <StatusBar
+          status={state.status}
+          statusType={state.statusType}
+          isDownloadingScripts={state.isDownloadingScripts}
+        />
+        <div className="app__credits">Ron Hershkovitz &amp; Shai Cohen</div>
+      </div>
     </div>
   )
 }
