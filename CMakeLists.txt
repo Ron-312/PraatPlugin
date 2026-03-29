@@ -139,6 +139,7 @@ target_compile_definitions(PraatPlugin
     PUBLIC
         JUCE_WEB_BROWSER=1              # enable WebBrowserComponent
         JUCE_USE_WIN_WEBVIEW2=1         # use WebView2 on Windows (no-op on macOS)
+        JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1  # use WebView2LoaderStatic.lib; avoids needing WebView2Loader.dll at runtime
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )

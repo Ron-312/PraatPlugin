@@ -68,3 +68,11 @@
   letter-spacing: var(--label-tracking);
   color: var(--color-text-dim);
 }
+
+.header__praat-status--clickable {
+  cursor: pointer;
+}
+
+.header__praat-status--clickable:hover .header__status-text {
+  color: var(--color-text);
+}
