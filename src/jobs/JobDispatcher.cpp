@@ -227,6 +227,13 @@ static juce::String buildWrapperScript (const juce::File&            inputWav,
 
 void JobDispatcher::runPraatScript (AnalysisJob& job)
 {
+    if (! job.praatExecutableFile.existsAsFile())
+    {
+        job.currentState     = JobState::FailedWithError;
+        job.errorDescription = "Praat executable not found. Click \"PRAAT NOT FOUND\" in the plugin header to locate it.";
+        return;
+    }
+
     PraatRunner praatRunner (job.praatExecutableFile);
     ResultParser resultParser;
 

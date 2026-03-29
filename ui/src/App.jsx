@@ -53,6 +53,7 @@ export function App() {
     <div className="app">
       <Header
         praatFound={state.praatFound}
+        onBrowsePraat={actions.browsePraatExecutable}
       />
 
       <AudioSection

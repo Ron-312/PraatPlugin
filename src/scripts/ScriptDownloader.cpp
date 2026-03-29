@@ -42,8 +42,54 @@ void ScriptDownloader::run()
     // Clean up any leftover zip from a previous failed attempt.
     tempZip.deleteFile();
 
-    // ── 2. Download via curl ───────────────────────────────────────────────────
-    // curl is pre-installed on macOS. -L follows redirects; -o writes to file.
+    // ── 2. Download ────────────────────────────────────────────────────────────
+#if JUCE_WINDOWS
+    // On Windows 10 1803+ and all of Windows 11, curl.exe ships in System32.
+    // We use the full path to bypass Git's bundled curl, which has SSL issues
+    // with GitHub on some machines.
+    {
+        const auto systemRoot = juce::File (
+            juce::SystemStats::getEnvironmentVariable ("SystemRoot", "C:\\Windows"));
+        const auto curlExe = systemRoot.getChildFile ("System32\\curl.exe");
+
+        juce::ChildProcess curl;
+        const juce::StringArray curlArgs {
+            curlExe.getFullPathName(),
+            "-L", "-s", "--max-time", "120",
+            "--ssl-no-revoke",   // Schannel can't always reach the CRL endpoint
+            "-o", tempZip.getFullPathName(),
+            kZipUrl
+        };
+
+        if (! curl.start (curlArgs))
+        {
+            juce::MessageManager::callAsync ([cb = onComplete]
+            {
+                if (cb) cb (false, "Could not launch curl.exe — Windows 10 1803+ required.");
+            });
+            return;
+        }
+
+        curl.waitForProcessToFinish (130000);
+
+        if (threadShouldExit())
+        {
+            tempZip.deleteFile();
+            return;
+        }
+
+        if (curl.getExitCode() != 0 || ! tempZip.existsAsFile() || tempZip.getSize() == 0)
+        {
+            tempZip.deleteFile();
+            juce::MessageManager::callAsync ([cb = onComplete]
+            {
+                if (cb) cb (false, "Download failed — check your internet connection.");
+            });
+            return;
+        }
+    }
+#else
+    // On macOS, curl is always available and handles GitHub redirects reliably.
     juce::ChildProcess curl;
     const juce::StringArray curlArgs {
         "curl", "-L", "-s", "--max-time", "120",
@@ -77,6 +123,7 @@ void ScriptDownloader::run()
         });
         return;
     }
+#endif
 
     // ── 3. Extract zip ────────────────────────────────────────────────────────
     const juce::File destDir = communityScriptsRoot().getParentDirectory();  // community_scripts/

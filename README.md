@@ -32,15 +32,18 @@ Great for voice and speech work, music production, phonetics research, or anywhe
 
 ### Build requirements
 
-| Tool | Version |
-|---|---|
-| CMake | 3.22 or later |
-| Xcode Command Line Tools | Any recent version |
-| Node.js + npm | For rebuilding the UI only |
+| Tool | Platform | Version |
+|---|---|---|
+| CMake | All | 3.22 or later |
+| Xcode Command Line Tools | macOS | Any recent version |
+| Visual Studio 2022 (with C++ workload) | Windows | 17+ |
+| Node.js + npm | All | For rebuilding the UI only |
 
 ---
 
 ## Building from source
+
+### macOS
 
 ```bash
 # 1. Clone
@@ -62,6 +65,41 @@ cp -R build/PraatPlugin_artefacts/Release/AU/PraatPlugin.component \
 ```
 
 After deploying, rescan plugins in your DAW.
+
+### Windows
+
+The plugin uses JUCE's `WebBrowserComponent` backed by WebView2, which requires the **Microsoft.Web.WebView2 NuGet package** to be present at build time. This is not installed by default.
+
+**Step 1 — Install the WebView2 SDK** (one-time, run in PowerShell):
+
+```powershell
+Register-PackageSource -provider NuGet -name nugetRepository `
+    -location https://www.nuget.org/api/v2 -Force
+
+Install-Package Microsoft.Web.WebView2 -Scope CurrentUser `
+    -RequiredVersion 1.0.3485.44 -Source nugetRepository -Force
+```
+
+This installs the package to `%LOCALAPPDATA%\PackageManagement\NuGet\Packages\`.
+
+**Step 2 — Build:**
+
+```bash
+# Clone
+git clone https://github.com/Ron-312/PraatPlugin.git
+cd PraatPlugin
+
+# Build the React UI (only needed when ui/src changes)
+cd ui && npm install && npm run build && cd ..
+
+# Configure — point JUCE at the NuGet packages folder
+cmake -B build -DJUCE_WEBVIEW2_PACKAGE_LOCATION="%LOCALAPPDATA%\PackageManagement\NuGet\Packages"
+cmake --build build --config Release
+```
+
+The VST3 is output to `build\PraatPlugin_artefacts\Release\VST3\PraatPlugin.vst3`. Copy it to `%COMMONPROGRAMFILES%\VST3\` or your DAW's VST3 scan folder, then rescan.
+
+> **Note:** `JUCE_WEBVIEW2_PACKAGE_LOCATION` must point to the **parent** folder that *contains* the `Microsoft.Web.WebView2.*` directory — not to the package folder itself. If you pass the wrong path, CMake will report "Found WebView2" but the build will fail with `Cannot open include file: 'WebView2.h'`.
 
 ---
 
