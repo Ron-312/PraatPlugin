@@ -104,7 +104,8 @@ export function usePluginState() {
     setRegion:        useCallback(
       (start, end) => sendToPlugin('setRegion', { startFraction: start, endFraction: end }), []
     ),
-    exportProcessed:  useCallback(() => sendToPlugin('exportProcessed'),      []),
+    exportProcessed:       useCallback(() => sendToPlugin('exportProcessed'),        []),
+    browsePraatExecutable: useCallback(() => sendToPlugin('browsePraatExecutable'), []),
   }
 
   return { state, actions }

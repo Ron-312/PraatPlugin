@@ -9,7 +9,7 @@
 
 import './Header.css'
 
-export function Header({ praatFound }) {
+export function Header({ praatFound, onBrowsePraat }) {
   return (
     <header className="header">
       <div className="header__identity">
@@ -18,10 +18,14 @@ export function Header({ praatFound }) {
         <span className="header__version">1.0</span>
       </div>
 
-      <div className="header__praat-status">
+      <div
+        className={`header__praat-status ${!praatFound ? 'header__praat-status--clickable' : ''}`}
+        onClick={!praatFound ? onBrowsePraat : undefined}
+        title={!praatFound ? 'Click to locate Praat executable' : undefined}
+      >
         <span className={`header__led ${praatFound ? 'header__led--ok' : 'header__led--error'}`} />
         <span className="header__status-text">
-          {praatFound ? 'PRAAT FOUND' : 'PRAAT NOT FOUND'}
+          {praatFound ? 'PRAAT FOUND' : 'PRAAT NOT FOUND — CLICK TO LOCATE'}
         </span>
       </div>
     </header>

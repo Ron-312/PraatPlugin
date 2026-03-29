@@ -25,12 +25,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(JUCE)
 
 # ─── Plugin target ────────────────────────────────────────────────────────────
+if(APPLE)
+    set(PLUGIN_FORMATS VST3 AU)
+else()
+    set(PLUGIN_FORMATS VST3)
+endif()
+
 juce_add_plugin(PraatPlugin
     COMPANY_NAME                "PraatPlugin"
     PLUGIN_MANUFACTURER_CODE    Prat
     PLUGIN_CODE                 Prt1
 
-    FORMATS                     VST3 $<$<PLATFORM_ID:Darwin>:AU>
+    FORMATS                     ${PLUGIN_FORMATS}
     PRODUCT_NAME                "PraatPlugin"
 
     IS_SYNTH                    FALSE
@@ -139,6 +145,7 @@ target_compile_definitions(PraatPlugin
     PUBLIC
         JUCE_WEB_BROWSER=1              # enable WebBrowserComponent
         JUCE_USE_WIN_WEBVIEW2=1         # use WebView2 on Windows (no-op on macOS)
+        JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1  # use WebView2LoaderStatic.lib; avoids needing WebView2Loader.dll at runtime
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
