@@ -2,7 +2,7 @@
 
 #include "debug/DebugWatchdog.h"
 
-DebugWatchdog* DebugWatchdog::instance_ = nullptr;
+std::atomic<DebugWatchdog*> DebugWatchdog::instance_ { nullptr };
 
 static juce::String nowStr()
 {
@@ -16,7 +16,7 @@ DebugWatchdog::DebugWatchdog (int stallThresholdMs)
       stallThresholdMs_ (stallThresholdMs),
       alive_ (std::make_shared<std::atomic<bool>> (true))
 {
-    instance_ = this;
+    instance_.store (this);
 
     logFilePath().getParentDirectory().createDirectory();
 
@@ -37,7 +37,7 @@ DebugWatchdog::~DebugWatchdog()
 {
     stop();
     writeLine ("=== SESSION END ===\n");
-    instance_ = nullptr;
+    instance_.store (nullptr);
 }
 
 void DebugWatchdog::start()
@@ -61,11 +61,12 @@ void DebugWatchdog::stop()
 
 void DebugWatchdog::log (const juce::String& msg, const juce::String& kind)
 {
-    if (instance_ == nullptr)
+    auto* inst = instance_.load();
+    if (inst == nullptr)
         return;
 
-    instance_->writeLine (nowStr() + "  " + msg);
-    instance_->addEntry  (msg, kind);
+    inst->writeLine (nowStr() + "  " + msg);
+    inst->addEntry  (msg, kind);
 }
 
 juce::File DebugWatchdog::logFilePath()
@@ -189,5 +190,10 @@ void DebugWatchdog::writeLine (const juce::String& line)
     if (logger_)
         logger_->logMessage (line);
 }
+
+#else
+
+// Silence MSVC C4206: translation unit is empty when debug logging is off.
+namespace {}
 
 #endif // PRAATPLUGIN_DEBUG_LOGGING

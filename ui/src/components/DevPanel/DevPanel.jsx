@@ -1,6 +1,8 @@
 // ─── DevPanel ─────────────────────────────────────────────────────────────────
 //
-// In-plugin DevTools overlay.  Toggle with  Ctrl+Shift+D  (wired in App.jsx).
+// In-plugin DevTools overlay.  Toggle via the DEV button in App.jsx.
+// (Keyboard shortcuts are unreliable in plugin hosts — the DAW often
+//  consumes key events before WebView2 sees them.)
 //
 // Only renders when the C++ debug build passes a `_debug` object in stateUpdate
 // (i.e. when compiled with -DPRAATPLUGIN_DEBUG_LOGGING=ON).
@@ -31,7 +33,10 @@ export function DevPanel ({ debug, onClose }) {
 
   const copyLog = () => {
     const text = entries
-      .map(e => `${e.t}  [${e.kind.padEnd(5)}]  ${e.msg}`)
+      .map(e => {
+        const kind = typeof e.kind === 'string' ? e.kind : 'info'
+        return `${e.t}  [${kind.padEnd(5)}]  ${e.msg}`
+      })
       .join('\n')
 
     // navigator.clipboard requires a secure context; fall back to execCommand
@@ -51,7 +56,7 @@ export function DevPanel ({ debug, onClose }) {
           MSG&nbsp;{latency}&nbsp;ms
         </span>
         <button className="devpanel__btn" onClick={copyLog}>copy log</button>
-        <button className="devpanel__btn devpanel__btn--close" onClick={onClose}>✕</button>
+        <button className="devpanel__btn devpanel__btn--close" onClick={onClose} aria-label="Close DevPanel">✕</button>
       </div>
 
       <div className="devpanel__log">

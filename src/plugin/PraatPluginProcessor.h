@@ -72,9 +72,10 @@ public:
     // All methods below are MESSAGE-THREAD ONLY unless noted.
     //──────────────────────────────────────────────────────────────────────────
 
-    // Loads the audio file into memory.
+    // Starts an async load of the audio file into memory.
     // Replaces any previously loaded file.
-    // Returns true if the file was read successfully.
+    // Returns true if the load was successfully scheduled (false if the file
+    // format is unreadable).  The audio is not yet available when this returns.
     bool loadAudioFromFile (const juce::File& audioFile);
 
     //──────────────────────────────────────────────────────────────────────────

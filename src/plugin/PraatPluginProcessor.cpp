@@ -806,8 +806,10 @@ void PraatPluginProcessor::setStateInformation (const void* data, int sizeInByte
             // Reading a large WAV file synchronously here would stall the host's
             // main thread during session restore — callAsync posts this work
             // back onto the message thread queue without blocking the caller.
-            juce::MessageManager::callAsync ([this, lastAudioFile]
+            juce::MessageManager::callAsync ([this, lastAudioFile, aliveGuard = isAlive_]
             {
+                if (! aliveGuard->load())
+                    return;
                 loadAudioFromFile (lastAudioFile);
             });
         }
