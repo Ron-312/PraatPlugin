@@ -338,8 +338,8 @@ private:
     // isAlive_ is shared with callAsync lambdas posted by background load
     // threads.  Set to false in the destructor so any in-flight lambda
     // returns early rather than writing into freed members.
-    // Declared before all other members so it is constructed first and
-    // therefore destroyed last (C++ reverses construction/destruction order).
+    // Set to false as the very first action in the destructor body, before any
+    // member is torn down, so all in-flight lambdas bail out early.
     std::shared_ptr<std::atomic<bool>> isAlive_ {
         std::make_shared<std::atomic<bool>> (true) };
 

@@ -300,7 +300,11 @@ bool PraatPluginProcessor::loadAudioFromFile (const juce::File& audioFile)
                            audioFile, sampleRate, numSamples]
     {
         // This is the slow part — safely off the message thread.
-        readers->decode->read (buffer.get(), 0, numSamples, 0, true, true);
+        if (! readers->decode->read (buffer.get(), 0, numSamples, 0, true, true))
+        {
+            PRAAT_LOG_ERR ("loadAudioFromFile: read failed — " + audioFile.getFileName());
+            return;
+        }
 
         // Deliver the result back to the message thread.
         juce::MessageManager::callAsync ([this, readers, buffer, aliveRef,

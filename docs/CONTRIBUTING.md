@@ -129,7 +129,7 @@ cmake --build build/debug --target PraatPlugin_VST3
 ### Using the DevPanel
 
 1. Load the debug VST3 in your DAW.
-2. Press **Ctrl+Shift+D** (Windows/Linux) or **Cmd+Shift+D** (macOS) inside the plugin window.
+2. Click the **DEV** button in the plugin header (keyboard shortcuts are unreliable in DAW hosts).
 3. A panel slides up from the bottom:
 
 ```
