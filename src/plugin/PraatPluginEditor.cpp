@@ -15,7 +15,14 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& processor)
         addAndMakeVisible (*browser_);
 
         // Push state immediately when the page finishes loading.
-        browser_->onPageLoaded = [this] { pushStateToWebView(); };
+        // pageLoaded_ gates the 20fps timer so emitEventIfBrowserIsVisible()
+        // is never called before the page is ready — doing so can spin JUCE's
+        // WebView2 async-init queue and hang the DAW on Windows.
+        browser_->onPageLoaded = [this]
+        {
+            pageLoaded_ = true;
+            pushStateToWebView();
+        };
 
         // Surface any load failure as a visible error message.
         browser_->onLoadError = [this] (const juce::String& error)
@@ -78,7 +85,7 @@ void PraatPluginEditor::resized()
 
 void PraatPluginEditor::timerCallback()
 {
-    if (browser_)
+    if (browser_ && pageLoaded_)
         pushStateToWebView();
 }
 
@@ -177,6 +184,10 @@ juce::WebBrowserComponent::Options PraatPluginEditor::buildBrowserOptions()
         .withEventListener ("cancelAnalysis", [this] (const juce::var&)
         {
             praatProcessor_.cancelCurrentAnalysis();
+        })
+        .withEventListener ("browsePraatExecutable", [this] (const juce::var&)
+        {
+            onBrowsePraatExecutable();
         });
 
 #if JUCE_WINDOWS
@@ -615,6 +626,29 @@ void PraatPluginEditor::onExportProcessed()
 void PraatPluginEditor::onSetScriptParam (const juce::String& name, const juce::String& value)
 {
     currentParamValues_.set (name, value);
+}
+
+void PraatPluginEditor::onBrowsePraatExecutable()
+{
+    activeFileChooser_ = std::make_unique<juce::FileChooser> (
+        "Locate Praat Executable",
+        juce::File::getSpecialLocation (juce::File::userDesktopDirectory),
+#if JUCE_WINDOWS
+        "Praat.exe"
+#else
+        "Praat"
+#endif
+    );
+
+    activeFileChooser_->launchAsync (
+        juce::FileBrowserComponent::openMode |
+        juce::FileBrowserComponent::canSelectFiles,
+        [this] (const juce::FileChooser& chooser)
+        {
+            const auto chosen = chooser.getResult();
+            if (chosen.existsAsFile())
+                praatProcessor_.praatLocator().overrideExecutablePathWithUserChoice (chosen);
+        });
 }
 
 // ─── Fallback UI ──────────────────────────────────────────────────────────────

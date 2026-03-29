@@ -67,8 +67,31 @@ juce::File PraatInstallationLocator::tryFindingPraatInSystemApplicationsFolder()
 juce::File PraatInstallationLocator::tryFindingPraatInUserApplicationsFolder() const
 {
 #if JUCE_WINDOWS
+    // 1. Program Files (x86)
     const auto programFilesX86 = juce::File (juce::SystemStats::getEnvironmentVariable ("ProgramFiles(x86)", "C:\\Program Files (x86)"));
-    return programFilesX86.getChildFile ("Praat\\Praat.exe");
+    auto candidate = programFilesX86.getChildFile ("Praat\\Praat.exe");
+    if (candidate.existsAsFile()) return candidate;
+
+    // 2. Per-user install location (winget / manual drops)
+    const auto localAppData = juce::File (juce::SystemStats::getEnvironmentVariable ("LOCALAPPDATA", ""));
+    if (localAppData != juce::File{})
+    {
+        candidate = localAppData.getChildFile ("Programs\\Praat\\Praat.exe");
+        if (candidate.existsAsFile()) return candidate;
+    }
+
+    // 3. Desktop (users sometimes just drop Praat.exe there)
+    const auto desktop = juce::File::getSpecialLocation (juce::File::userDesktopDirectory);
+    candidate = desktop.getChildFile ("Praat.exe");
+    if (candidate.existsAsFile()) return candidate;
+
+    // 4. "Desktop Shortcuts" subfolder (common on some setups)
+    candidate = desktop.getChildFile ("Desktop Shortcuts\\Praat.exe");
+    if (candidate.existsAsFile()) return candidate;
+
+    // 5. User home directory
+    candidate = juce::File::getSpecialLocation (juce::File::userHomeDirectory).getChildFile ("Praat.exe");
+    return candidate;
 #else
     return juce::File::getSpecialLocation (juce::File::userHomeDirectory)
                .getChildFile ("Applications/Praat.app/Contents/MacOS/Praat");

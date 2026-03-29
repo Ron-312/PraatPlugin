@@ -111,7 +111,8 @@ private:
     void onSelectScript    (const juce::String& scriptName);
     void onSetRegion       (double startFraction, double endFraction);
     void onExportProcessed ();
-    void onSetScriptParam  (const juce::String& name, const juce::String& value);
+    void onSetScriptParam       (const juce::String& name, const juce::String& value);
+    void onBrowsePraatExecutable();
 
     // ── Windows fallback ──────────────────────────────────────────────────
     void showWebViewUnavailableMessage();
@@ -143,6 +144,10 @@ private:
     int       lastKnownScriptCount_  { -1 };
     int       lastKnownFolderCount_  { -1 };
     juce::var cachedScriptFolders_   { juce::Array<juce::var>{} };
+
+    // True once pageFinishedLoading() fires — guards the timer from emitting
+    // events before the WebView2 page is ready, which can deadlock the DAW.
+    bool pageLoaded_ { false };
 
     // ── Script parameter cache ─────────────────────────────────────────────
     // Re-parsed whenever the active script changes.
