@@ -33,6 +33,7 @@ public:
 
 };
 
+
 // ─── PraatPluginEditor ────────────────────────────────────────────────────────
 //
 // WebView-based plugin UI.  Replaces the original JUCE-component editor with
@@ -66,6 +67,7 @@ public:
 // See docs/adr/ for design rationale.
 // ─────────────────────────────────────────────────────────────────────────────
 class PraatPluginEditor  : public juce::AudioProcessorEditor,
+                            public  juce::FileDragAndDropTarget,
                             private juce::Timer
 {
 public:
@@ -78,6 +80,15 @@ public:
 private:
     // ── Timer (20fps) ─────────────────────────────────────────────────────
     void timerCallback() override;
+
+    // ── FileDragAndDropTarget (drop audio files onto the plugin) ──────────
+    // Covers the full window on macOS (WKWebView participates in the responder
+    // chain).  On Windows, WebView2 intercepts its own area — the
+    // NativeControlStrip below provides a reliable drop zone for both platforms.
+    bool isInterestedInFileDrag (const juce::StringArray& files)               override;
+    void fileDragEnter          (const juce::StringArray& files, int x, int y) override;
+    void fileDragExit           (const juce::StringArray& files)               override;
+    void filesDropped           (const juce::StringArray& files, int x, int y) override;
 
     // ── WebView setup ─────────────────────────────────────────────────────
 
@@ -107,15 +118,29 @@ private:
     void onPlayProcessed  ();
     void onStopPlayback   ();
     void onLoadScriptsDir  ();
-    void onAnalyze         ();
+    void onRun             ();
     void onSelectScript    (const juce::String& scriptName);
     void onSetRegion       (double startFraction, double endFraction);
     void onExportProcessed ();
+    void onStartDragExport ();
     void onSetScriptParam       (const juce::String& name, const juce::String& value);
     void onBrowsePraatExecutable();
 
     // ── Windows fallback ──────────────────────────────────────────────────
     void showWebViewUnavailableMessage();
+
+    // ── Windows drag-drop fix ─────────────────────────────────────────────
+    // WebView2 revokes JUCE's IDropTarget on init.  Called from pageLoaded
+    // to re-register our own IDropTarget on the parent HWND.
+    void registerWindowsDropTarget();
+
+    // ── macOS drag-drop fix ───────────────────────────────────────────────
+    // WKWebView registers for NSPasteboardTypeFileURL drags and eats them.
+    // A transparent AudioFileDropView overlay (see PraatPluginEditor_mac.mm)
+    // sits above WKWebView and intercepts audio-file drops instead.
+    void registerMacDropTarget();
+    void updateMacDropTargetBounds();
+    void unregisterMacDropTarget();
 
     // ── Members ───────────────────────────────────────────────────────────
 
@@ -123,6 +148,24 @@ private:
 
     // Null if WebView is unavailable (Windows without WebView2).
     std::unique_ptr<PraatWebBrowser> browser_;
+
+    // True while an audio file is being dragged over the editor window.
+    // Included in stateUpdate so React can show a drop-zone overlay.
+    // On Windows this is driven by AudioFileDropTarget; on macOS by the
+    // FileDragAndDropTarget callbacks on this class.
+    bool isDragOver_ { false };
+
+#if JUCE_WINDOWS
+    // Non-owning pointer to the COM drop target (COM manages its lifetime via
+    // AddRef/Release).  Null until registerWindowsDropTarget() is called.
+    class AudioFileDropTarget* windowsDropTarget_ { nullptr };
+#endif
+
+#if JUCE_MAC
+    // Owning pointer to the AudioFileDropView NSView overlay (void* to keep
+    // ObjC out of the header).  Null until registerMacDropTarget() is called.
+    void* macDropOverlay_ { nullptr };
+#endif
 
     // Shown instead of the browser when WebView2 is missing on Windows.
     juce::Label webViewUnavailableLabel_;

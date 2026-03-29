@@ -17,6 +17,7 @@ export function Transport({
   onPlayProcessed,
   onStopPlayback,
   onExportProcessed,
+  onStartDragExport,
 }) {
   const playingOriginal  = isPlaying && playingSource === 'original'
   const playingProcessed = isPlaying && playingSource === 'processed'
@@ -47,14 +48,25 @@ export function Transport({
         ■ STOP
       </button>
 
-      <button
-        className="btn transport__btn"
-        onClick={onExportProcessed}
-        disabled={!hasProcessedAudio}
-        title="Save processed audio to disk"
-      >
-        ↓ EXPORT
-      </button>
+      {/* Export group: click to save file, mousedown-drag to drop into DAW */}
+      <div className="transport__export-group">
+        <button
+          className="btn transport__export-btn"
+          onClick={onExportProcessed}
+          disabled={!hasProcessedAudio}
+          title="Save processed audio to disk"
+        >
+          ↓ EXPORT
+        </button>
+        <button
+          className={`btn transport__drag-btn ${!hasProcessedAudio ? 'transport__drag-btn--disabled' : ''}`}
+          onMouseDown={hasProcessedAudio ? onStartDragExport : undefined}
+          disabled={!hasProcessedAudio}
+          title="Drag processed audio into DAW"
+        >
+          ⠿
+        </button>
+      </div>
     </div>
   )
 }

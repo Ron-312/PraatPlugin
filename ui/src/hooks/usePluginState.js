@@ -30,15 +30,17 @@ const INITIAL_STATE = {
   fileName:         '',       // string    — loaded file basename
 
   isRecording:           false,    // bool      — live capture is active
-  isAnalyzing:           false,    // bool      — a Praat job is running
+  isRunning:             false,    // bool      — a Praat job is running
   isDownloadingScripts:  false,    // bool      — community scripts downloading
   isPlaying:             false,    // bool      — transport is playing
   playingSource:    'none',   // 'original' | 'processed' | 'none'
 
   praatFound:       false,    // bool      — Praat executable was located
 
+  isDragOver:       false,    // bool      — audio file is being dragged over the window
+
   status:           'Loading…',
-  // 'idle' | 'recording' | 'analyzing' | 'playing' | 'error'
+  // 'idle' | 'recording' | 'running' | 'playing' | 'error'
   statusType:       'idle',
 
   // null means no analysis has run yet.
@@ -101,7 +103,7 @@ export function usePluginState() {
     stopPlayback:     useCallback(() => sendToPlugin('stopPlayback'),         []),
     loadScriptsDir:   useCallback(() => sendToPlugin('loadScriptsDir'),       []),
     downloadScripts:  useCallback(() => sendToPlugin('downloadScripts'),      []),
-    analyze:          useCallback(() => sendToPlugin('analyze'),              []),
+    run:              useCallback(() => sendToPlugin('run'),                  []),
     cancelAnalysis:   useCallback(() => sendToPlugin('cancelAnalysis'),       []),
     selectScript:     useCallback(
       (scriptName) => sendToPlugin('selectScript', { name: scriptName }),     []
@@ -114,6 +116,7 @@ export function usePluginState() {
       (start, end) => sendToPlugin('setRegion', { startFraction: start, endFraction: end }), []
     ),
     exportProcessed:       useCallback(() => sendToPlugin('exportProcessed'),        []),
+    startDragExport:       useCallback(() => sendToPlugin('startDragExport'),        []),
     browsePraatExecutable: useCallback(() => sendToPlugin('browsePraatExecutable'), []),
   }
 
