@@ -17,7 +17,7 @@ import './StatusBar.css'
 const LED_MODIFIER = {
   idle:      'status-bar__led--idle',
   recording: 'status-bar__led--recording',
-  analyzing: 'status-bar__led--analyzing',
+  running:   'status-bar__led--running',
   playing:   'status-bar__led--playing',
   error:     'status-bar__led--error',
 }

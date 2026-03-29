@@ -7,6 +7,14 @@
   flex-shrink: 0;
 }
 
+/* ── Drag-over: LOAD FILE button becomes a drop target ───────────────────── */
+.audio-section__load-btn--drop {
+  border-color: var(--color-signal);
+  color: var(--color-signal);
+  background: rgba(224, 80, 144, 0.08);
+  letter-spacing: var(--label-tracking);
+}
+
 /* ── Top row: buttons + filename ─────────────────────────────────────────── */
 .audio-section__controls {
   display: flex;

@@ -22,6 +22,7 @@ export function Waveform({
   playbackFraction = 0,
   selectionFraction = null,
   onRegionChange = null,
+  onDragExport = null,
 }) {
   const canvasRef = useRef(null)
   const dragRef   = useRef({ active: false, start: 0 })
@@ -93,7 +94,7 @@ export function Waveform({
 
   const screenStyle = {
     height,
-    cursor: onRegionChange ? 'col-resize' : 'default',
+    cursor: onRegionChange ? 'col-resize' : onDragExport ? 'grab' : 'default',
   }
 
   return (
@@ -105,6 +106,7 @@ export function Waveform({
         onPointerDown={onRegionChange ? handlePointerDown : undefined}
         onPointerMove={onRegionChange ? handlePointerMove : undefined}
         onPointerUp={onRegionChange   ? handlePointerUp   : undefined}
+        onMouseDown={onDragExport ?? undefined}
       >
         <canvas ref={canvasRef} className="waveform__canvas" />
       </div>

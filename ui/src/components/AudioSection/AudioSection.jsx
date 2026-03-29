@@ -22,12 +22,18 @@ export function AudioSection({
   onRegionChange,
   onLoadAudioFile,
   onToggleRecord,
+  onStartDragExport,
+  isDragOver,
 }) {
   return (
     <section className="audio-section">
       <div className="audio-section__controls">
-        <button className="btn" onClick={onLoadAudioFile}>
-          LOAD FILE
+        <button
+          className={`btn ${isDragOver ? 'audio-section__load-btn--drop' : ''}`}
+          onClick={onLoadAudioFile}
+          title={isDragOver ? 'Drop audio file here' : 'Load audio file'}
+        >
+          {isDragOver ? 'v DROP HERE' : 'LOAD FILE'}
         </button>
 
         <button
@@ -61,6 +67,7 @@ export function AudioSection({
         height={52}
         isEmpty={!hasProcessedAudio}
         playbackFraction={playingSource === 'processed' ? playbackFraction : 0}
+        onDragExport={hasProcessedAudio ? onStartDragExport : null}
       />
     </section>
   )

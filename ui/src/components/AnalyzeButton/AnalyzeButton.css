@@ -33,17 +33,48 @@
   cursor: not-allowed;
 }
 
-/* Cancel state — red border/text, always clickable */
+/* ── Cancel / analyzing state ──────────────────────────────────────────────── */
+
 .analyze-button__btn--cancel {
-  background: #2a1010;
-  color: #f87171;
-  border: 1px solid #f87171;
+  position: relative;
+  overflow: hidden;
+  background: rgba(224, 80, 144, 0.08);
+  color: var(--color-signal);
+  border: 1px solid var(--color-signal);
 }
 
 .analyze-button__btn--cancel:hover {
-  background: #3d1515;
+  background: rgba(224, 80, 144, 0.15);
 }
 
 .analyze-button__btn--cancel:active {
-  background: #521a1a;
+  background: rgba(224, 80, 144, 0.22);
+}
+
+/* Indeterminate sweep — honest about unknown duration */
+.analyze-button__sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent       0%,
+    rgba(224, 80, 144, 0.18) 40%,
+    rgba(224, 80, 144, 0.18) 60%,
+    transparent       100%
+  );
+  background-size: 55% 100%;
+  animation: analyze-sweep 1.8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes analyze-sweep {
+  0%   { background-position: -55% 0; }
+  100% { background-position: 155% 0; }
+}
+
+/* Label sits above the sweep layer */
+.analyze-button__label {
+  position: relative;
+  z-index: 1;
+  letter-spacing: 1.5px;
 }
