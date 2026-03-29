@@ -169,6 +169,11 @@ PraatPluginEditor::PraatPluginEditor (PraatPluginProcessor& processor)
             // Re-register ours now that WebView2 is fully set up.
             registerWindowsDropTarget();
 #endif
+#if JUCE_MAC
+            // WKWebView eats file drops before JUCE's FileDragAndDropTarget
+            // sees them.  Add our transparent overlay above WKWebView.
+            registerMacDropTarget();
+#endif
         };
 
         // Surface any load failure as a visible error message.
@@ -213,6 +218,9 @@ PraatPluginEditor::~PraatPluginEditor()
         if (auto* hwnd = peer->getNativeHandle())
             RevokeDragDrop (static_cast<HWND> (hwnd));
 #endif
+#if JUCE_MAC
+    unregisterMacDropTarget();
+#endif
 }
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -230,7 +238,12 @@ void PraatPluginEditor::resized()
 
     if (browser_)
         browser_->setBounds (bounds);
-    else
+
+#if JUCE_MAC
+    updateMacDropTargetBounds();
+#endif
+
+    if (! browser_)
         webViewUnavailableLabel_.setBounds (bounds);
 }
 

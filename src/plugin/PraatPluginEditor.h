@@ -134,6 +134,14 @@ private:
     // to re-register our own IDropTarget on the parent HWND.
     void registerWindowsDropTarget();
 
+    // ── macOS drag-drop fix ───────────────────────────────────────────────
+    // WKWebView registers for NSPasteboardTypeFileURL drags and eats them.
+    // A transparent AudioFileDropView overlay (see PraatPluginEditor_mac.mm)
+    // sits above WKWebView and intercepts audio-file drops instead.
+    void registerMacDropTarget();
+    void updateMacDropTargetBounds();
+    void unregisterMacDropTarget();
+
     // ── Members ───────────────────────────────────────────────────────────
 
     PraatPluginProcessor& praatProcessor_;
@@ -151,6 +159,12 @@ private:
     // Non-owning pointer to the COM drop target (COM manages its lifetime via
     // AddRef/Release).  Null until registerWindowsDropTarget() is called.
     class AudioFileDropTarget* windowsDropTarget_ { nullptr };
+#endif
+
+#if JUCE_MAC
+    // Owning pointer to the AudioFileDropView NSView overlay (void* to keep
+    // ObjC out of the header).  Null until registerMacDropTarget() is called.
+    void* macDropOverlay_ { nullptr };
 #endif
 
     // Shown instead of the browser when WebView2 is missing on Windows.

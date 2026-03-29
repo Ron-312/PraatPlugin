@@ -102,6 +102,7 @@ juce_add_binary_data(PraatPlugin_BinaryData SOURCES
 target_sources(PraatPlugin PRIVATE
     src/plugin/PraatPluginProcessor.cpp
     src/plugin/PraatPluginEditor.cpp
+    $<$<PLATFORM_ID:Darwin>:src/plugin/PraatPluginEditor_mac.mm>
     src/ui/WaveformDisplay.cpp
     src/audio/AudioCapture.cpp
     src/audio/WavFileWriter.cpp
