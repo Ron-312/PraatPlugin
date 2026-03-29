@@ -25,11 +25,19 @@ import { ScriptParams }      from './components/ScriptParams/ScriptParams'
 import { AnalyzeButton }     from './components/AnalyzeButton/AnalyzeButton'
 import { Results }           from './components/Results/Results'
 import { StatusBar }         from './components/StatusBar/StatusBar'
+import { DevPanel }          from './components/DevPanel/DevPanel'
 import { useState, useCallback } from 'react'
 import './App.css'
 
 export function App() {
   const { state, actions } = usePluginState()
+
+  // DevPanel toggle.  The DEV button in the header is the primary trigger —
+  // keyboard shortcuts are unreliable in plugin hosts because the DAW often
+  // consumes them before WebView2 sees them.
+  // Only renders when debug data is present (debug builds only).
+  const [devPanelOpen, setDevPanelOpen] = useState(false)
+  const toggleDevPanel = state.debug ? () => setDevPanelOpen(v => !v) : null
 
   // Local state for the drag-selected region on the original waveform.
   // Kept here (not in C++ state) so the selection feels instant during drag.
@@ -54,6 +62,8 @@ export function App() {
       <Header
         praatFound={state.praatFound}
         onBrowsePraat={actions.browsePraatExecutable}
+        debugActive={devPanelOpen}
+        onToggleDevPanel={toggleDevPanel}
       />
 
       <AudioSection
@@ -110,6 +120,10 @@ export function App() {
         statusType={state.statusType}
         isDownloadingScripts={state.isDownloadingScripts}
       />
+
+      {devPanelOpen && (
+        <DevPanel debug={state.debug} onClose={() => setDevPanelOpen(false)} />
+      )}
     </div>
   )
 }

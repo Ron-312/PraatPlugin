@@ -1,4 +1,5 @@
 #include "plugin/PraatPluginEditor.h"
+#include "debug/DebugWatchdog.h"
 #include <BinaryData.h>
 
 // ─── Constructor / Destructor ─────────────────────────────────────────────────
@@ -277,6 +278,7 @@ void PraatPluginEditor::pushStateToWebView()
     if (activeScript != lastKnownScriptFile_)
     {
         lastKnownScriptFile_ = activeScript;
+        PRAAT_TIME_SCOPE ("parseExtraParams");
         currentParams_       = PraatFormParser::parseExtraParams (activeScript);
         currentParamValues_.clear();
         for (const auto& p : currentParams_)
@@ -418,6 +420,18 @@ void PraatPluginEditor::pushStateToWebView()
         state->setProperty ("playbackFraction", fraction);
     }
 
+    // ── DevPanel data (debug builds only) ────────────────────────────────────
+#ifdef PRAATPLUGIN_DEBUG_LOGGING
+    if (auto* wd = DebugWatchdog::instance())
+    {
+        auto dbg = std::make_unique<juce::DynamicObject>();
+        dbg->setProperty ("latencyMs", wd->lastLatencyMs());
+        dbg->setProperty ("logPath",   wd->logFilePath().getFullPathName());
+        dbg->setProperty ("entries",   wd->recentEntriesForUI());
+        state->setProperty ("_debug",  juce::var (dbg.release()));
+    }
+#endif
+
     browser_->emitEventIfBrowserIsVisible ("stateUpdate", juce::var (state.release()));
 }
 
@@ -488,7 +502,10 @@ void PraatPluginEditor::onLoadAudioFile()
         {
             const auto selected = chooser.getResult();
             if (selected.existsAsFile())
+            {
+                PRAAT_TIME_SCOPE ("loadAudioFromFile (file picker)");
                 praatProcessor_.loadAudioFromFile (selected);
+            }
         });
 }
 
