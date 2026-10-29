@@ -7,7 +7,6 @@
 //   PRAAT_SCRIPTS_DIR=~/Library/Application\ Support/PraatPlugin/community_scripts/Praat-plugin_AudioTools-main \
 //   PRAAT_COMPAT_REPORT=/tmp/compat.tsv \
 //   PRAAT_COMPAT_SHARD=0/8 \
-//   PRAAT_FULL_TRUST=1 \        (optional: pass --FULL-TRUST, needed by Praat 7)
 //   ./PraatPluginTests "[compat]"
 //
 // Default parameter values are used — what a user gets on first Run — except
@@ -144,7 +143,7 @@ TEST_CASE ("Every library script runs under the plugin's calling model", "[.][co
         }
 
         const auto t0 = juce::Time::getMillisecondCounter();
-        const auto outcome = PraatRunner (praat, env ("PRAAT_FULL_TRUST") == "1").launchPraatWithScript (toRun, args);
+        const auto outcome = PraatRunner (praat, PraatRunner::executableNeedsFullTrust (praat)).launchPraatWithScript (toRun, args);
         const auto ms = juce::Time::getMillisecondCounter() - t0;
 
         juce::String status, detail;

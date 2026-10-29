@@ -1,5 +1,7 @@
 #include "praat/PraatRunner.h"
 #include "debug/DebugWatchdog.h"
+#include <map>
+#include <mutex>
 
 PraatRunner::PraatRunner (juce::File praatExecutableFile, bool fullTrust)
     : praatExecutableFile_ (std::move (praatExecutableFile)),
@@ -82,4 +84,30 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
 bool PraatRunner::isPraatExecutableReachable() const
 {
     return praatExecutableFile_.existsAsFile();
+}
+
+bool PraatRunner::executableNeedsFullTrust (const juce::File& praatExecutableFile)
+{
+    static std::mutex cacheMutex;
+    static std::map<juce::String, bool> cache;
+
+    const auto key = praatExecutableFile.getFullPathName();
+    {
+        std::lock_guard<std::mutex> lock (cacheMutex);
+        if (auto it = cache.find (key); it != cache.end())
+            return it->second;
+    }
+
+    // "Praat 7.0.02 (August 26 2026)" → major version 7.
+    bool needsIt = false;
+    juce::ChildProcess proc;
+    if (proc.start (juce::StringArray { key, "--version" }) && proc.waitForProcessToFinish (5000))
+    {
+        const auto version = proc.readAllProcessOutput().fromFirstOccurrenceOf ("Praat ", false, false);
+        needsIt = version.getIntValue() >= 7;
+    }
+
+    std::lock_guard<std::mutex> lock (cacheMutex);
+    cache[key] = needsIt;
+    return needsIt;
 }

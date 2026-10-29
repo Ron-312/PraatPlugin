@@ -110,7 +110,8 @@ juce::String ScriptInvocation::buildWrapperScript (const juce::File&            
                 val = param.options[idx];
             w += ", \"" + praatStringEscape (val) + "\"";
         }
-        else if (param.type == "sentence" || param.type == "word" || param.type == "text")
+        else if (param.type == "sentence" || param.type == "word" || param.type == "text"
+                 || param.type == "infile" || param.type == "outfile" || param.type == "folder")
         {
             w += ", \"" + praatStringEscape (val) + "\"";
         }

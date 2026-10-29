@@ -78,25 +78,68 @@ TEST_CASE ("PraatFormParser returns nothing for missing or form-less scripts", "
     REQUIRE (PraatFormParser::parseAllFields (script.file).isEmpty());
 }
 
-// ── Known gaps, found by running the community library (see docs/script-compatibility.md).
-// These document current behaviour; flip them to REQUIRE when the parser is fixed.
+// ── Found by running the community library (see docs/script-compatibility.md).
 
-TEST_CASE ("KNOWN GAP: colon-syntax form fields are not parsed", "[PraatFormParser][!mayfail]")
+TEST_CASE ("PraatFormParser reads colon-syntax form fields", "[PraatFormParser]")
 {
     TempScript script ("form Echo\n"
+                       "    comment: \"Select a Sound\"\n"
                        "    real: \"Delay (s)\", \"0.25\"\n"
+                       "    optionMenu: \"Mode\", 2\n"
+                       "        option: \"Soft, warm\"\n"
+                       "        option: \"Hard\"\n"
                        "    boolean: \"Play result\", 1\n"
+                       "    sentence: \"Pitch range\", \"75 600\"\n"
+                       "    folder: \"Output folder\", \".\"\n"
                        "endform\n");
 
-    CHECK (PraatFormParser::parseAllFields (script.file).size() == 2);
+    const auto f = PraatFormParser::parseAllFields (script.file);
+    REQUIRE (f.size() == 5);
+    REQUIRE (f[0].name == "Delay");
+    REQUIRE (f[0].defaultValue == "0.25");
+    REQUIRE (f[1].type == "optionmenu");
+    REQUIRE (f[1].options == juce::StringArray { "Soft, warm", "Hard" });
+    REQUIRE (f[2].name == "Play_result");
+    REQUIRE (f[3].defaultValue == "75 600");
+    REQUIRE (f[4].type == "folder");
+    for (const auto& p : f)
+        REQUIRE_FALSE (p.isInputFilePath);
 }
 
-TEST_CASE ("KNOWN GAP: non-path word fields named like files are taken as file paths", "[PraatFormParser][!mayfail]")
+TEST_CASE ("PraatFormParser does not take named text fields for file paths", "[PraatFormParser]")
 {
     TempScript script ("form Montage\n"
                        "    word Output_name peephole_montage\n"
+                       "    sentence Sofa_file kemar\n"
                        "    real Gain 1\n"
                        "endform\n");
 
-    CHECK_FALSE (PraatFormParser::parseAllFields (script.file)[0].isInputFilePath);
+    for (const auto& p : PraatFormParser::parseAllFields (script.file))
+        REQUIRE_FALSE (p.isInputFilePath);
+}
+
+TEST_CASE ("PraatFormParser keeps the bundled path-default convention", "[PraatFormParser]")
+{
+    TempScript script ("form X\n"
+                       "    sentence inputFile /tmp/input.wav\n"
+                       "    sentence outputFile /tmp/output.wav\n"
+                       "endform\n");
+
+    const auto f = PraatFormParser::parseAllFields (script.file);
+    REQUIRE (f[0].isInputFilePath);
+    REQUIRE (f[1].isOutputFilePath);
+}
+
+TEST_CASE ("PraatFormParser handles form: headers, padded endform and hinted defaults", "[PraatFormParser]")
+{
+    TempScript script ("form: \"IR Analysis\"\n"
+                       "    integer Dots_line_1 5 (= top line, left-panned)\n"
+                       "endform   \r\n"
+                       "form Second\n"
+                       "    real Ignored 1\n"
+                       "endform\n");
+
+    const auto f = PraatFormParser::parseAllFields (script.file);
+    REQUIRE (f.size() == 1);
+    REQUIRE (f[0].defaultValue == "5");
 }

@@ -1,460 +1,460 @@
 folder	script	model	form_fields	status	ms	detail
-AI & Adaptive	Anti_Similarity_Spectral_Resistance.praat	wrapper	0	FAIL	303	Error: Found 0 arguments but expected more.
-AI & Adaptive	Bayesian_Drone_Weaver.praat	wrapper	6	TIMEOUT	30283	Praat timed out after 30 seconds.
-AI & Adaptive	CWT_Granular_Resampler.praat	wrapper	10	FAIL	399	Error: Please select exactly two Sound objects: an analysis source and a grain source.
-AI & Adaptive	Causal_Recomposer.praat	wrapper	11	PASS_AUDIO	500	ok
-AI & Adaptive	Chaotic_Neural_Map_Modulator.praat	wrapper	12	PASS_AUDIO	1233	ok
-AI & Adaptive	Cross-Entropy_Concatenative_Mosaicing.praat	wrapper	14	FAIL	394	Error: Please select exactly two Sound objects (Sound P and Sound Q) before running this script.
-AI & Adaptive	Genetic_Recomposer.praat	wrapper	11	PASS_AUDIO	6811	ok
-AI & Adaptive	Gestural_Accumulator.praat	wrapper	17	PASS_AUDIO	1444	ok
-AI & Adaptive	Gesture-Based_Hard_Quantization.praat	file-args	15	FAIL	233	Error: Cannot open folder /Users/ronhershkovitz/Library/Caches/PraatPluginTests/temp_7bd935be/input.wav.
-AI & Adaptive	Granular_Attention_Resynth.praat	wrapper	15	PASS_AUDIO	304	ok
-AI & Adaptive	HMM_Timbre_Sequencing.praat	wrapper	15	PASS_AUDIO	923	ok
-AI & Adaptive	KL_Divergence_Corpus_Resynthesis.praat	wrapper	15	TIMEOUT	30290	Praat timed out after 30 seconds.
-AI & Adaptive	LZ-Inspired_Audio_Variations.praat	wrapper	14	PASS_AUDIO	474	ok
-AI & Adaptive	MSE_Feature_Constrained_Variation.praat	wrapper	15	PASS_AUDIO	1858	ok
-AI & Adaptive	Markov_Soundscape_Weaver.praat	wrapper	15	PASS_AUDIO	1342	ok
-AI & Adaptive	Morphic_Form.praat	wrapper	10	PASS_AUDIO	223	ok
-AI & Adaptive	NMF_Spectral_Resynthesizer.praat	wrapper	17	PASS_AUDIO	1143	ok
-AI & Adaptive	NMF_Spectral_Resynthesizer_.praat	wrapper	17	PASS_AUDIO	1014	ok
-AI & Adaptive	Neural_Adaptive_Phonetic_Vibrato.praat	wrapper	11	PASS_AUDIO	542	ok
-AI & Adaptive	Neural_Ambient_Drone_Designer.praat	wrapper	14	PASS_AUDIO	766	ok
-AI & Adaptive	Neural_Audio_Mosaic.praat	wrapper	13	FAIL	300	Error: Please select exactly TWO Sound objects. (1=Target, 2=Source)
-AI & Adaptive	Neural_Delay_Control.praat	wrapper	11	PASS_AUDIO	310	ok
-AI & Adaptive	Neural_Granular_Texture_Morpher.praat	wrapper	14	PASS_AUDIO	883	ok
-AI & Adaptive	Neural_Phonetic_Harmonizer.praat	wrapper	15	PASS_AUDIO	509	ok
-AI & Adaptive	Neural_Phonetic_Speed_Mapper.praat	wrapper	9	PASS_AUDIO	373	ok
-AI & Adaptive	OT_CORPUS_CONCATENATOR.praat	wrapper	13	TIMEOUT	30273	Praat timed out after 30 seconds.
-AI & Adaptive	PCA_Timbre_Selector.praat	wrapper	14	PASS_AUDIO	277	ok
-AI & Adaptive	PCA_Tone_Shaper.praat	wrapper	16	PASS_AUDIO	478	ok
-AI & Adaptive	Parametric_Autoencoder_Resynthesis_with_Variations.praat	wrapper	19	PASS_AUDIO	837	ok
-AI & Adaptive	Perceptual_Graph.praat	wrapper	8	PASS_AUDIO	237	ok
-AI & Adaptive	Perceptual_Synchrony.praat	wrapper	12	FAIL	180	Error: Please select exactly TWO Sound objects.
-AI & Adaptive	Self_Attention_Recomposer.praat	wrapper	16	PASS_AUDIO	265	ok
-AI & Adaptive	Timbral_Similarity_Browser.praat	wrapper	14	FAIL	172	Error: Found 3 arguments but expected more.
-AI & Adaptive	Tournament_Grid_Recomposer.praat	wrapper	24	PASS_AUDIO	314	ok
-Analysis	ASA Demos.praat	wrapper	4	PASS_AUDIO	216	ok
-Analysis	Acoustic Pedagogy.praat	wrapper	8	PASS_TEXT	2466	=== Acoustic Pedagogy v0.5.1 ===
-Analysis	Acoustic_Features_Batch_Extraction.praat	wrapper	3	PASS_TEXT	980	AudioTools batch analysis v0.2
-Analysis	Adaptive Transient Decomposition.praat	wrapper	11	PASS_AUDIO	387	ok
-Analysis	Audio_Descriptions_and_Global_Statistics.praat	wrapper	3	PASS_TEXT	929	Audio Descriptions and Global Statistics v0.3
-Analysis	Audio_File_Properties.praat	wrapper	3	PASS_TEXT	164	=== AUDIO FILE PROPERTIES / TECHNICAL QC ===
-Analysis	Batch_Channel_Format_Exporter.praat	file-args	9	FAIL	219	Error: No Sound objects are selected. Select one or more Sounds in the Praat object list, then run the script again.
+AI & Adaptive	Anti_Similarity_Spectral_Resistance.praat	wrapper	8	PASS_AUDIO	518	ok
+AI & Adaptive	Bayesian_Drone_Weaver.praat	wrapper	6	TIMEOUT	30320	Praat timed out after 30 seconds.
+AI & Adaptive	CWT_Granular_Resampler.praat	wrapper	10	FAIL	365	Error: Please select exactly two Sound objects: an analysis source and a grain source.
+AI & Adaptive	Causal_Recomposer.praat	wrapper	11	PASS_AUDIO	472	ok
+AI & Adaptive	Chaotic_Neural_Map_Modulator.praat	wrapper	12	PASS_AUDIO	1357	ok
+AI & Adaptive	Cross-Entropy_Concatenative_Mosaicing.praat	wrapper	14	FAIL	358	Error: Please select exactly two Sound objects (Sound P and Sound Q) before running this script.
+AI & Adaptive	Genetic_Recomposer.praat	wrapper	11	PASS_AUDIO	6808	ok
+AI & Adaptive	Gestural_Accumulator.praat	wrapper	17	PASS_AUDIO	1438	ok
+AI & Adaptive	Gesture-Based_Hard_Quantization.praat	file-args	15	FAIL	353	Error: Cannot open folder /Users/ronhershkovitz/Library/Caches/PraatPluginTests/temp_7d5910b1/input.wav.
+AI & Adaptive	Granular_Attention_Resynth.praat	wrapper	15	PASS_AUDIO	323	ok
+AI & Adaptive	HMM_Timbre_Sequencing.praat	wrapper	15	PASS_AUDIO	912	ok
+AI & Adaptive	KL_Divergence_Corpus_Resynthesis.praat	wrapper	15	TIMEOUT	30252	Praat timed out after 30 seconds.
+AI & Adaptive	LZ-Inspired_Audio_Variations.praat	wrapper	14	PASS_AUDIO	538	ok
+AI & Adaptive	MSE_Feature_Constrained_Variation.praat	wrapper	15	PASS_AUDIO	2024	ok
+AI & Adaptive	Markov_Soundscape_Weaver.praat	wrapper	15	PASS_AUDIO	1346	ok
+AI & Adaptive	Morphic_Form.praat	wrapper	10	PASS_AUDIO	222	ok
+AI & Adaptive	NMF_Spectral_Resynthesizer.praat	wrapper	17	PASS_AUDIO	1042	ok
+AI & Adaptive	NMF_Spectral_Resynthesizer_.praat	wrapper	17	PASS_AUDIO	1083	ok
+AI & Adaptive	Neural_Adaptive_Phonetic_Vibrato.praat	wrapper	11	PASS_AUDIO	577	ok
+AI & Adaptive	Neural_Ambient_Drone_Designer.praat	wrapper	14	PASS_AUDIO	775	ok
+AI & Adaptive	Neural_Audio_Mosaic.praat	wrapper	13	FAIL	228	Error: Please select exactly TWO Sound objects. (1=Target, 2=Source)
+AI & Adaptive	Neural_Delay_Control.praat	wrapper	11	PASS_AUDIO	356	ok
+AI & Adaptive	Neural_Granular_Texture_Morpher.praat	wrapper	14	PASS_AUDIO	933	ok
+AI & Adaptive	Neural_Phonetic_Harmonizer.praat	wrapper	15	PASS_AUDIO	531	ok
+AI & Adaptive	Neural_Phonetic_Speed_Mapper.praat	wrapper	9	PASS_AUDIO	413	ok
+AI & Adaptive	OT_CORPUS_CONCATENATOR.praat	wrapper	13	TIMEOUT	30239	Praat timed out after 30 seconds.
+AI & Adaptive	PCA_Timbre_Selector.praat	wrapper	14	PASS_AUDIO	266	ok
+AI & Adaptive	PCA_Tone_Shaper.praat	wrapper	16	PASS_AUDIO	675	ok
+AI & Adaptive	Parametric_Autoencoder_Resynthesis_with_Variations.praat	wrapper	19	PASS_AUDIO	840	ok
+AI & Adaptive	Perceptual_Graph.praat	wrapper	8	PASS_AUDIO	253	ok
+AI & Adaptive	Perceptual_Synchrony.praat	wrapper	12	FAIL	190	Error: Please select exactly TWO Sound objects.
+AI & Adaptive	Self_Attention_Recomposer.praat	wrapper	16	PASS_AUDIO	222	ok
+AI & Adaptive	Timbral_Similarity_Browser.praat	wrapper	14	TIMEOUT	30266	Praat timed out after 30 seconds.
+AI & Adaptive	Tournament_Grid_Recomposer.praat	wrapper	24	PASS_AUDIO	323	ok
+Analysis	ASA Demos.praat	wrapper	4	PASS_AUDIO	281	ok
+Analysis	Acoustic Pedagogy.praat	wrapper	8	PASS_TEXT	2477	=== Acoustic Pedagogy v0.5.1 ===
+Analysis	Acoustic_Features_Batch_Extraction.praat	wrapper	3	PASS_TEXT	968	AudioTools batch analysis v0.2
+Analysis	Adaptive Transient Decomposition.praat	wrapper	11	PASS_AUDIO	446	ok
+Analysis	Audio_Descriptions_and_Global_Statistics.praat	wrapper	3	PASS_TEXT	934	Audio Descriptions and Global Statistics v0.3
+Analysis	Audio_File_Properties.praat	wrapper	3	PASS_TEXT	219	=== AUDIO FILE PROPERTIES / TECHNICAL QC ===
+Analysis	Batch_Channel_Format_Exporter.praat	file-args	9	FAIL	189	Error: No Sound objects are selected. Select one or more Sounds in the Praat object list, then run the script again.
 Analysis	BrightnessClassifier.praat	wrapper	16	PASS_TEXT	1913	Brightness Analyzer v1.1
-Analysis	CHORD DETECTION.praat	wrapper	20	PASS_AUDIO	468	ok
-Analysis	CWT_Scalogram.praat	wrapper	15	PASS_AUDIO	1956	ok
-Analysis	Chladni_Resonance_Lab.praat	wrapper	5	NO_OUTPUT	509	
-Analysis	Climax_Profile_Matcher.praat	wrapper	16	FAIL	217	Error: Please select exactly TWO Sound objects.
-Analysis	Continuous Pitch over MIDI Grid Visualizer.praat	wrapper	19	PASS_AUDIO	190	ok
-Analysis	Correlation-Based Pitch Class Extraction.praat	wrapper	16	PASS_AUDIO	263	ok
-Analysis	Correlation-Based_Pitch_Class_Extraction.praat	wrapper	11	PASS_AUDIO	313	ok
-Analysis	DTW-Aligned Multi-Feature Audio Analysis (MFCC, Loudness, Pitch).praat	wrapper	11	FAIL	172	Error: Please select exactly TWO Sound objects.
-Analysis	Extract_Segment.praat	wrapper	14	PASS_AUDIO	180	ok
-Analysis	Formant_to_MIDI_Chord_Converter.praat	wrapper	19	PASS_AUDIO	1009	ok
-Analysis	Formant_to_MusicXML_Chord_Converter.praat	wrapper	15	TIMEOUT	30322	Praat timed out after 30 seconds.
-Analysis	IR_Analysis.praat	wrapper	0	FAIL	169	Error: Found 0 arguments but expected more.
-Analysis	Kick_detector_and_bass_adder.praat	wrapper	12	FAIL	241	Error: Please select exactly TWO Sounds: 1) Drum loop, 2) Bass sample
-Analysis	Krumhansl-Schmuckler Key Profiler.praat	wrapper	20	PASS_AUDIO	231	ok
-Analysis	MFCC.praat	wrapper	4	PASS_AUDIO	396	ok
-Analysis	Media_ffmpeg_tools.praat	file-args	17	FAIL	217	Error: FFmpeg not found at:
-Analysis	Melodic_Contour_Parsons_Code.praat	wrapper	14	PASS_TEXT	216	==============================================
-Analysis	Multi-Band_Onset_Detector.praat	wrapper	12	PASS_AUDIO	255	ok
-Analysis	Multi-Layer Audio Visualizer (EAnalysis Style).praat	wrapper	20	PASS_AUDIO	307	ok
-Analysis	Musikalisches_Würfelspiel_Audio_Game.praat	wrapper	16	PASS_AUDIO	234	ok
-Analysis	OM_Score_Transformer.praat	file-args	19	FAIL	234	Error: No notes found in the score.
-Analysis	OT_Grammar_Learning_from_Audio.praat	wrapper	13	FAIL	212	Error: Could not extract enough notes from the source. Check pitch-tracker settings or minimum note duration.
-Analysis	Pitch Loop Finder.praat	wrapper	10	FAIL	192	Error: Cannot edit a TextGrid from batch.
-Analysis	Pitch_Contour_Graphic_Score.praat	wrapper	12	PASS_AUDIO	2040	ok
-Analysis	Pitch_Loop_Finder.praat	wrapper	13	FAIL	194	Error: Cannot edit a TextGrid from batch.
-Analysis	Pitch_and_Loudness_Comparison_Two_Sounds.praat	wrapper	6	FAIL	171	Error: Please select exactly two Sound objects (Teacher/Reference first, Student/Comparison second).
-Analysis	Prosodic_Reiterant_Speech.praat	wrapper	21	PASS_AUDIO	309	ok
-Analysis	Recursive WAV opener.praat	wrapper	5	TIMEOUT	30294	Praat timed out after 30 seconds.
-Analysis	SPEAR_Par-Text-Frame_Format_Parser_for_Praat.praat	file-args	22	FAIL	160	Error: Not a par-text-frame-format file (first line was: RIFF,WAVEJUNK4fmt D¨àXdataÃ%.8BLU_gow}Éáãéêíììîîîîïñòöù°•´∞∑Ω≈Ã”€‚ËÓÙ¯¸ˇ˛˚¯ÙÒÌÍÁÂ„‚‚‚„ÂËÎÔÛ¯¸ 
-Analysis	Scala_Scale_Auralizer.praat	wrapper	19	TIMEOUT	30281	Praat timed out after 30 seconds.
-Analysis	Self-Similarity_Matrix_Calculator.praat	wrapper	6	PASS_TEXT	277	=== Self-Similarity Matrix v1.5.0 ===
-Analysis	Sonic_Syntax.praat	file-args	14	FAIL	208	Error: No Sound selected.
-Analysis	Spatial trajectory tracker.praat	wrapper	8	FAIL	211	Error: Input sound must be Stereo (2 channels).
-Analysis	SpectraScore.praat	wrapper	9	PASS_TEXT	1283	=== SpectraScore Orchestration Matcher v0.9.0 ===
-Analysis	Speech_to_MusicXML_Rhythm_Converter.praat	wrapper	11	PASS_TEXT	263	Warning: The loudest and softest part in your sound differ by only 3.190382995783068 dB.
-Analysis	Stereo Channel Similarity Meter.praat	wrapper	3	FAIL	171	Error: This is not a stereo file. It has 1 channel(s).
-Analysis	Tempo Curve (IOI) Estimator.praat	wrapper	10	PASS_TEXT	243	=== Tempo Curve Estimator v0.6.2 ===
-Analysis	Universal_Audio_Export.praat	wrapper	0	FAIL	230	Error: Found 0 arguments but expected more.
-Analysis	Universal_Audio_IO.praat	wrapper	0	FAIL	203	Error: Found 0 arguments but expected more.
-Analysis	Zero_Crossing_Rate.praat	wrapper	7	PASS_AUDIO	196	ok
-Analysis	Zero_DC_Offset.praat	wrapper	3	PASS_AUDIO	204	ok
-Distortion	Adaptive_Wave_Shaper.praat	wrapper	12	PASS_AUDIO	208	ok
-Distortion	Asymmetric_Soft_Clipping.praat	wrapper	10	PASS_AUDIO	232	ok
-Distortion	Chaos_Distortion.praat	wrapper	16	PASS_AUDIO	258	ok
-Distortion	Distortion_Bit-Crusher.praat	wrapper	15	PASS_AUDIO	173	ok
-Distortion	Dynamic_Distortion.praat	wrapper	12	PASS_AUDIO	248	ok
-Distortion	Full-Wave_Rectifier_Abs.praat	wrapper	8	PASS_AUDIO	164	ok
-Distortion	Hard_Clip.praat	wrapper	11	PASS_AUDIO	385	ok
-Distortion	Hysteresis_Distortion.praat	wrapper	13	PASS_AUDIO	184	ok
-Distortion	Math_Operations.praat	wrapper	16	FAIL	165	Error: Please select exactly 2 Sound objects.
-Distortion	Multiband_Distortion.praat	wrapper	14	PASS_AUDIO	345	ok
-Distortion	Sidechain_Feedback_VCA.praat	wrapper	16	NO_OUTPUT	337	
-Distortion	Tanh.praat	wrapper	12	PASS_AUDIO	272	ok
-Distortion	VanDerPol_Tube_Distortion.praat	wrapper	10	PASS_AUDIO	326	ok
-Distortion	Virtual_Subharmonic_Generator.praat	wrapper	8	PASS_AUDIO	337	ok
-Distortion	Wave_Shaper_Distortion.praat	wrapper	8	PASS_AUDIO	363	ok
-Distortion	Wavefolder__Foldback_.praat	wrapper	12	PASS_AUDIO	212	ok
-Dynamics & Envelope	Audio_Quantizer.praat	wrapper	17	FAIL	231	Error: No note onsets were detected (0 candidates). No output was created.
-Dynamics & Envelope	Auto-Swell.praat	wrapper	14	PASS_AUDIO	189	ok
-Dynamics & Envelope	Auto-Trim_Silence.praat	wrapper	11	PASS_AUDIO	188	ok
-Dynamics & Envelope	Compressor.praat	wrapper	11	PASS_AUDIO	316	ok
-Dynamics & Envelope	Concatenate_with_crossfade.praat	wrapper	20	PASS_AUDIO	244	ok
-Dynamics & Envelope	Draw_Intensity_Envelope.praat	wrapper	0	FAIL	164	Error: Found 0 arguments but expected more.
-Dynamics & Envelope	Envelope_Application.praat	wrapper	20	PASS_AUDIO	253	ok
-Dynamics & Envelope	Fast_Waveset_Distortion.praat	wrapper	10	PASS_AUDIO	273	ok
-Dynamics & Envelope	Intelligent_Mastering_Maximizer.praat	wrapper	12	PASS_AUDIO	605	ok
-Dynamics & Envelope	Intensity_Envelope_Processor.praat	wrapper	6	PASS_AUDIO	260	ok
-Dynamics & Envelope	Kinematic_Physics_Envelope.praat	wrapper	16	PASS_AUDIO	391	ok
-Dynamics & Envelope	LUFS_Tool.praat	wrapper	7	PASS_AUDIO	274	ok
-Dynamics & Envelope	Limiter.praat	wrapper	9	PASS_AUDIO	703	ok
-Dynamics & Envelope	Linear_Fade-In.praat	wrapper	10	PASS_AUDIO	230	ok
-Dynamics & Envelope	Linear_Fade-Out.praat	wrapper	10	PASS_AUDIO	215	ok
-Dynamics & Envelope	Multiband_Compressor.praat	wrapper	18	PASS_AUDIO	681	ok
-Dynamics & Envelope	Noise_Gate.praat	wrapper	12	PASS_AUDIO	264	ok
-Dynamics & Envelope	OM_Rhythm_Tree_Slicer.praat	wrapper	0	FAIL	172	Error: Found 0 arguments but expected more.
-Dynamics & Envelope	Polynomial_Sound_Shaper.praat	wrapper	19	PASS_AUDIO	250	ok
-Dynamics & Envelope	Sample-and-Hold_Processor.praat	wrapper	16	PASS_AUDIO	174	ok
-Dynamics & Envelope	Sound_Duplicator.praat	wrapper	14	PASS_AUDIO	245	ok
-Dynamics & Envelope	Symmetric_Group_Permuter.praat	wrapper	13	PASS_AUDIO	190	ok
-Dynamics & Envelope	Time-domain_RMS_envelope_follower.praat	wrapper	10	PASS_AUDIO	222	ok
-Dynamics & Envelope	Vintage_Glue_Compressor.praat	wrapper	15	PASS_AUDIO	208	ok
-Dynamics & Envelope	Waveset_Distortion.praat	wrapper	13	PASS_AUDIO	265	ok
-Filter & Color	Adaptive_Filter.praat	wrapper	14	PASS_AUDIO	300	ok
-Filter & Color	Adaptive_Spectral_Resonance_Suppressor.praat	wrapper	13	PASS_AUDIO	780	ok
-Filter & Color	Amplitude-Varying_Ring_Modulation.praat	wrapper	10	PASS_AUDIO	231	ok
-Filter & Color	Autocorrelation-Based_Self-Filtering.praat	wrapper	12	PASS_AUDIO	352	ok
-Filter & Color	Band-Based_Concatenative_Synthesis.praat	wrapper	11	FAIL	183	Error: Please select exactly 2 Sound objects: Source (1) and Target (2)
-Filter & Color	Bit_Crusher__8-Bit_Arcade_.praat	wrapper	14	PASS_AUDIO	169	ok
-Filter & Color	Classic_FIR_Filter_Bank.praat	wrapper	14	PASS_AUDIO	307	ok
-Filter & Color	Classic_IIR_Filter_Bank.praat	wrapper	11	PASS_AUDIO	564	ok
-Filter & Color	Creative_Formant_Manipulations.praat	wrapper	12	PASS_AUDIO	334	ok
-Filter & Color	Cross_Synthesis.praat	wrapper	11	FAIL	165	Error: Please select exactly 2 Sound objects:
-Filter & Color	Dynamic_Formant_Sweeper.praat	wrapper	14	PASS_AUDIO	389	ok
-Filter & Color	ENTROPY_SMART_DE-ESSER.praat	wrapper	14	PASS_AUDIO	273	ok
-Filter & Color	Electrical_Hum_Removal.praat	wrapper	9	PASS_AUDIO	331	ok
-Filter & Color	Frequency_Shifter.praat	wrapper	9	PASS_AUDIO	289	ok
-Filter & Color	GRM-Style_Resonator.praat	wrapper	17	PASS_AUDIO	313	ok
-Filter & Color	Golden_Ratio_Processor.praat	wrapper	14	PASS_AUDIO	377	ok
-Filter & Color	Harmonic_Formant_Locking.praat	wrapper	15	PASS_AUDIO	439	ok
-Filter & Color	Harmonic_Remover.praat	wrapper	13	PASS_AUDIO	253	ok
-Filter & Color	Hilbert_Transform_for_drums.praat	wrapper	8	PASS_AUDIO	193	ok
-Filter & Color	Individual_Formant_Stretcher.praat	wrapper	17	PASS_AUDIO	187	ok
-Filter & Color	Intelligent_EQ_Adaptive_Bandpass.praat	wrapper	15	PASS_AUDIO	214	ok
-Filter & Color	Jitter-Shimmer_Formant_Mapping.praat	wrapper	10	PASS_AUDIO	415	ok
-Filter & Color	LPC_Excitation_Lab.praat	wrapper	24	PASS_AUDIO	198	ok
-Filter & Color	MFCC TRANSFORMER.praat	wrapper	14	PASS_AUDIO	248	ok
-Filter & Color	Moog_Ladder_Filter.praat	wrapper	12	PASS_AUDIO	255	ok
-Filter & Color	Onset-Based_Oscillator_Bank.praat	wrapper	15	FAIL	180	=== Onset-Based Oscillator Bank v2.3 ===
-Filter & Color	Panning_filter.praat	wrapper	7	PASS_AUDIO	208	ok
-Filter & Color	Pitch-Based_Spectral_Notch.praat	wrapper	10	PASS_AUDIO	219	ok
-Filter & Color	Resonant.praat	wrapper	11	PASS_AUDIO	242	ok
-Filter & Color	Spectral_Band_EQ.praat	wrapper	9	PASS_AUDIO	215	ok
-Filter & Color	Spectral_Filtering_Effect.praat	wrapper	10	PASS_AUDIO	193	ok
-Filter & Color	Spectral_Morph.praat	wrapper	11	FAIL	196	Error: Please select exactly TWO Sound objects.
-Filter & Color	Voice_Quality_Sonification.praat	wrapper	15	PASS_AUDIO	325	ok
-Filter & Color	Wah-Wah_Effect.praat	wrapper	15	PASS_AUDIO	532	ok
-Filter & Color	Whisper Morph.praat	wrapper	8	PASS_AUDIO	227	ok
-Filter & Color	Whisper_Morph.praat	wrapper	11	PASS_AUDIO	275	ok
-Filter & Color	XMod.praat	wrapper	11	PASS_AUDIO	185	ok
-Filter & Color	a-e-i-o_filter.praat	wrapper	9	PASS_AUDIO	516	ok
-Generative & Synthesis	AM_Additive_Synthesis_Generator.praat	wrapper	15	PASS_AUDIO	253	ok
-Generative & Synthesis	Accelerating_Polyrhythm.praat	wrapper	18	PASS_AUDIO	2495	ok
-Generative & Synthesis	Advanced_Brownian_Synthesis.praat	wrapper	16	PASS_AUDIO	1749	ok
-Generative & Synthesis	Advanced_Chaotic_Modulation.praat	wrapper	21	PASS_AUDIO	3525	ok
-Generative & Synthesis	Advanced_Formula_Synthesis.praat	wrapper	16	PASS_AUDIO	481	ok
-Generative & Synthesis	Advanced_Poisson_Synthesis.praat	wrapper	18	PASS_AUDIO	5617	ok
-Generative & Synthesis	Algorithmic_Metallic_Synthesis.praat	wrapper	17	PASS_AUDIO	720	ok
-Generative & Synthesis	Analogique_B_Stochastic_Mass.praat	wrapper	14	PASS_AUDIO	28302	ok
-Generative & Synthesis	Audiovisual_Sonification.praat	wrapper	0	NO_OUTPUT	333	
-Generative & Synthesis	Babbitt_s_Combinatorial_Arrays.praat	wrapper	7	PASS_AUDIO	796	ok
-Generative & Synthesis	Cellular_Automata_Synthesis.praat	wrapper	16	PASS_AUDIO	759	ok
-Generative & Synthesis	Chaotic_Function_Generator.praat	wrapper	14	PASS_AUDIO	201	ok
-Generative & Synthesis	Chaotic_Granular_Synthesis.praat	wrapper	17	PASS_AUDIO	1340	ok
-Generative & Synthesis	ChirikovStandardMap.praat	wrapper	14	PASS_AUDIO	724	ok
-Generative & Synthesis	Competing_Modulators.praat	wrapper	14	PASS_AUDIO	619	ok
-Generative & Synthesis	Convolution_Synthesis.praat	wrapper	15	PASS_AUDIO	185	ok
-Generative & Synthesis	Coupled_Mesh_String.praat	wrapper	9	PASS_AUDIO	378	ok
-Generative & Synthesis	Dynamic_Stochastic_Synthesis.praat	wrapper	12	PASS_AUDIO	1190	ok
-Generative & Synthesis	Dynamic_Vowel_Transitions.praat	wrapper	9	PASS_AUDIO	383	ok
-Generative & Synthesis	Evolving_Grain_Mass.praat	wrapper	13	PASS_AUDIO	577	ok
-Generative & Synthesis	FM_Texture_Generator.praat	wrapper	12	PASS_AUDIO	265	ok
-Generative & Synthesis	Flute_KlattGrid.praat	wrapper	12	PASS_AUDIO	301	ok
-Generative & Synthesis	Formant_Grain_Texture.praat	wrapper	10	PASS_AUDIO	736	ok
-Generative & Synthesis	Formant_Synthesis.praat	wrapper	10	PASS_AUDIO	214	ok
-Generative & Synthesis	Formula_Markov_Synthesis.praat	wrapper	13	PASS_AUDIO	413	ok
-Generative & Synthesis	GENDYN_Synthesis.praat	wrapper	13	PASS_AUDIO	3194	ok
-Generative & Synthesis	Generative_Sound_System.praat	wrapper	12	PASS_AUDIO	967	ok
-Generative & Synthesis	Grisey_Spectral_Becoming_Engine.praat	wrapper	18	PASS_AUDIO	10022	ok
-Generative & Synthesis	Ikeda_audiovisual.praat	wrapper	9	PASS_AUDIO	23991	ok
-Generative & Synthesis	Karplus-Strong_Texture_Generator.praat	wrapper	13	PASS_AUDIO	284	ok
-Generative & Synthesis	Kotoński_FSM_Event_Generator.praat	wrapper	12	PASS_AUDIO	495	ok
-Generative & Synthesis	Layered_Markov_Texture.praat	wrapper	16	PASS_AUDIO	390	ok
-Generative & Synthesis	Logistic_Map_Synthesis.praat	wrapper	14	PASS_AUDIO	587	ok
-Generative & Synthesis	Lorenz_Deep_Analog.praat	wrapper	13	PASS_AUDIO	1364	ok
-Generative & Synthesis	Markov_Rhythm_Generator.praat	wrapper	13	PASS_AUDIO	366	ok
-Generative & Synthesis	Organic_No-Input_Mixer.praat	wrapper	14	PASS_AUDIO	808	ok
-Generative & Synthesis	Percussive_Image_Sonification.praat	wrapper	0	FAIL	212	Error: Found 0 arguments but expected more.
-Generative & Synthesis	Photo_Brightness-Controlled_Pitch_Sonification.praat	wrapper	0	FAIL	220	Error: Found 0 arguments but expected more.
-Generative & Synthesis	Photo_sonification.praat	wrapper	15	FAIL	162	Error: Please select one Photo object first.
-Generative & Synthesis	Poisson_Point_Process_Synthesis.praat	wrapper	10	FAIL	172	Error: Found 7 arguments but expected more.
-Generative & Synthesis	Poisson_Rhythm_Synthesis.praat	wrapper	11	FAIL	162	Error: Found 7 arguments but expected more.
-Generative & Synthesis	PolyrhythmsFromDots.praat	wrapper	9	FAIL	173	Error: Found 2 arguments but expected more.
-Generative & Synthesis	Pulsar_Synthesis_Engine.praat	wrapper	10	PASS_AUDIO	241	ok
-Generative & Synthesis	Random_Walk_Melody.praat	wrapper	10	PASS_AUDIO	965	ok
-Generative & Synthesis	Random_Walk_Rhythm.praat	wrapper	12	PASS_AUDIO	621	ok
-Generative & Synthesis	Rich_Formant_Grains.praat	wrapper	9	PASS_AUDIO	1149	ok
-Generative & Synthesis	Risset's_Mutations.praat	wrapper	5	PASS_AUDIO	6350	ok
-Generative & Synthesis	Self_Oscillating_FDN_Synthesizer.praat	wrapper	0	FAIL	170	Error: Found 0 arguments but expected more.
-Generative & Synthesis	Spectral_Image_Sonification.praat	wrapper	6	FAIL	161	Error: Please select exactly one Photo object.
-Generative & Synthesis	Stockhausen_Studie_II_Generator.praat	wrapper	5	PASS_AUDIO	813	ok
-Generative & Synthesis	Subtractive_Synthesis_Generator.praat	wrapper	14	PASS_AUDIO	315	ok
-Generative & Synthesis	UPIC_Draw_Synthesis.praat	wrapper	11	NO_OUTPUT	219	
-Generative & Synthesis	Vector_Synthesis.praat	wrapper	8	PASS_AUDIO	432	ok
-Generative & Synthesis	Visual_Game_of_Life_Synthesis.praat	wrapper	10	PASS_AUDIO	1173	ok
-Generative & Synthesis	Wave_Terrain_Synthesis.praat	wrapper	10	PASS_AUDIO	424	ok
-Generative & Synthesis	Waveguide_Klangmaschine.praat	wrapper	8	PASS_AUDIO	2377	ok
-Generative & Synthesis	Waveguide_Modal_Synthesis.praat	wrapper	9	PASS_AUDIO	268	ok
-Modulation	Amplitude-Following_Wah-Wah.praat	wrapper	11	PASS_AUDIO	191	ok
-Modulation	Barber-Pole_Orbit.praat	wrapper	14	PASS_AUDIO	376	ok
-Modulation	Chaotic_Prosody_Manipulation.praat	wrapper	18	PASS_AUDIO	216	ok
-Modulation	Dual-Mode Tremolo Generator.praat	wrapper	11	PASS_AUDIO	199	ok
-Modulation	Fractal_Convolution_Swarm.praat	wrapper	11	PASS_AUDIO	181	ok
-Modulation	Golden-chaos_vibrato.praat	wrapper	12	PASS_AUDIO	242	ok
-Modulation	Hexaphonic Serial Audio Processor.praat	wrapper	10	PASS_AUDIO	184	ok
-Modulation	Hilbert_Audio_Processor.praat	wrapper	13	PASS_AUDIO	223	ok
-Modulation	Karplus-Strong Modulator .praat	wrapper	9	PASS_AUDIO	191	ok
-Modulation	Metamodulator.praat	wrapper	12	PASS_AUDIO	178	ok
-Modulation	Phonetic_Tremolo_Glitch_Effect.praat	wrapper	10	PASS_AUDIO	214	ok
-Modulation	Rhythmic LFO Wah-Wah.praat	wrapper	12	PASS_AUDIO	191	ok
-Modulation	Spectral-Driven Intensity Modulation.praat	wrapper	9	PASS_AUDIO	216	ok
-Modulation	Spectral_Driven_Vibrato.praat	wrapper	13	PASS_AUDIO	232	ok
-Modulation	Stereo Flanger.praat	wrapper	10	PASS_AUDIO	277	ok
-Modulation	Stereo Phaser.praat	wrapper	11	PASS_AUDIO	342	ok
-Modulation	Stereo Rotary Speaker.praat	wrapper	9	PASS_AUDIO	336	ok
-Modulation	Stereo_Swirl_Vibrato.praat	wrapper	9	PASS_AUDIO	232	ok
-Modulation	Stretch-Tremolo Ambience.praat	wrapper	10	PASS_AUDIO	225	ok
-Modulation	Time_Varying_Spectral_Vibrato.praat	wrapper	9	PASS_AUDIO	174	ok
-Modulation	Unified Chorus Generator.praat	wrapper	13	PASS_AUDIO	207	ok
-Modulation	Unified Multi-Mode Vibrato.praat	wrapper	10	PASS_AUDIO	216	ok
-Modulation	XY_SHAPE_LFO_-_FREQUENCY_MODULATION.praat	wrapper	12	PASS_AUDIO	260	ok
-Pitch	Adaptive Pitch Shifter.praat	wrapper	12	PASS_AUDIO	246	ok
-Pitch	Adaptive_Pitch_Shifter.praat	wrapper	12	PASS_AUDIO	216	ok
-Pitch	Auto-Harmonic_Layering.praat	wrapper	9	PASS_AUDIO	222	ok
-Pitch	BFG_Pitch_Time_Modulation.praat	wrapper	21	PASS_AUDIO	2014	ok
-Pitch	Bimodal_Contour_Grammar.praat	wrapper	17	PASS_AUDIO	185	ok
-Pitch	Breathing_Pitch_Waves.praat	wrapper	11	PASS_AUDIO	192	ok
-Pitch	Chord Generator from Audio.praat	wrapper	9	PASS_AUDIO	248	ok
-Pitch	Doppler_Effect_Simulator.praat	wrapper	10	PASS_AUDIO	201	ok
-Pitch	Exponential_Glide_Up.praat	wrapper	9	PASS_AUDIO	193	ok
-Pitch	Formula_Audio_Manipulation.praat	wrapper	12	PASS_AUDIO	235	ok
-Pitch	Fractal_Pitch_Terrain.praat	wrapper	11	PASS_AUDIO	215	ok
-Pitch	Gesture_Convolution_Transform.praat	wrapper	19	PASS_AUDIO	502	ok
-Pitch	L-System_Granular_Pitch.praat	wrapper	18	PASS_AUDIO	197	ok
-Pitch	Messagesquisse_Opening.praat	wrapper	12	PASS_AUDIO	447	ok
-Pitch	Microtonal_Harmonic_Field_Engine.praat	wrapper	13	PASS_AUDIO	326	ok
-Pitch	Pitch_Contour_Transfer.praat	wrapper	9	FAIL	158	Error: Please select exactly 2 Sound objects (A=source, B=target)
-Pitch	Pitch_Correction.praat	wrapper	10	PASS_AUDIO	209	ok
-Pitch	Pitch_Morphing_Between_Targets.praat	wrapper	12	PASS_AUDIO	191	ok
-Pitch	Pitch_Processor.praat	wrapper	6	PASS_AUDIO	214	ok
-Pitch	Pitch_Shift_Semitones.praat	wrapper	4	PASS_AUDIO	167	ok
-Pitch	Pitch_Stylization_and_Shift.praat	wrapper	9	PASS_AUDIO	207	ok
-Pitch	Quantum_Pitch_Jumps.praat	wrapper	15	PASS_AUDIO	222	ok
-Pitch	Rhythmic_Pitch_Percussion.praat	wrapper	12	PASS_AUDIO	218	ok
-Pitch	Spectral_Pitch_Shifter.praat	wrapper	10	PASS_AUDIO	240	ok
-Pitch	Spiral_Pitch_Dance.praat	wrapper	9	PASS_AUDIO	223	ok
-Pitch	Spiral_Segmentation.praat	wrapper	12	PASS_AUDIO	210	ok
-Pitch	Tempo-Pitch Curves (Accelerando & Ritardando).praat	wrapper	7	PASS_AUDIO	233	ok
-Pitch	Undertone Field.praat	wrapper	12	PASS_AUDIO	367	ok
-Pitch	Undertone_Field.praat	wrapper	10	PASS_AUDIO	465	ok
-Pitch	Voice_Transformation.praat	wrapper	11	PASS_AUDIO	267	ok
-Pitch	flip or expand the F0 contours.praat	wrapper	8	PASS_TEXT	227	=== F0 Contour Manipulation v0.7.1 ===
-Reverb	Artificial_Room.praat	wrapper	9	PASS_AUDIO	248	ok
-Reverb	CA_Reverb_IR.praat	wrapper	13	PASS_AUDIO	205	ok
-Reverb	Cascading_Echoes.praat	wrapper	12	PASS_AUDIO	248	ok
+Analysis	CHORD DETECTION.praat	wrapper	20	PASS_AUDIO	476	ok
+Analysis	CWT_Scalogram.praat	wrapper	15	PASS_AUDIO	2029	ok
+Analysis	Chladni_Resonance_Lab.praat	wrapper	5	NO_OUTPUT	515	
+Analysis	Climax_Profile_Matcher.praat	wrapper	16	FAIL	311	Error: Please select exactly TWO Sound objects.
+Analysis	Continuous Pitch over MIDI Grid Visualizer.praat	wrapper	19	PASS_AUDIO	206	ok
+Analysis	Correlation-Based Pitch Class Extraction.praat	wrapper	16	PASS_AUDIO	302	ok
+Analysis	Correlation-Based_Pitch_Class_Extraction.praat	wrapper	11	PASS_AUDIO	317	ok
+Analysis	DTW-Aligned Multi-Feature Audio Analysis (MFCC, Loudness, Pitch).praat	wrapper	11	FAIL	189	Error: Please select exactly TWO Sound objects.
+Analysis	Extract_Segment.praat	wrapper	14	PASS_AUDIO	187	ok
+Analysis	Formant_to_MIDI_Chord_Converter.praat	wrapper	19	PASS_AUDIO	1019	ok
+Analysis	Formant_to_MusicXML_Chord_Converter.praat	wrapper	15	TIMEOUT	30217	Praat timed out after 30 seconds.
+Analysis	IR_Analysis.praat	wrapper	9	PASS_AUDIO	1112	ok
+Analysis	Kick_detector_and_bass_adder.praat	wrapper	12	FAIL	210	Error: Please select exactly TWO Sounds: 1) Drum loop, 2) Bass sample
+Analysis	Krumhansl-Schmuckler Key Profiler.praat	wrapper	20	PASS_AUDIO	236	ok
+Analysis	MFCC.praat	wrapper	4	PASS_AUDIO	370	ok
+Analysis	Media_ffmpeg_tools.praat	wrapper	17	FAIL	270	Error: FFmpeg not found at:
+Analysis	Melodic_Contour_Parsons_Code.praat	wrapper	14	PASS_TEXT	199	==============================================
+Analysis	Multi-Band_Onset_Detector.praat	wrapper	12	PASS_AUDIO	263	ok
+Analysis	Multi-Layer Audio Visualizer (EAnalysis Style).praat	wrapper	20	PASS_AUDIO	342	ok
+Analysis	Musikalisches_Würfelspiel_Audio_Game.praat	wrapper	16	PASS_AUDIO	228	ok
+Analysis	OM_Score_Transformer.praat	file-args	19	FAIL	244	Error: No notes found in the score.
+Analysis	OT_Grammar_Learning_from_Audio.praat	wrapper	13	FAIL	171	Error: Could not extract enough notes from the source. Check pitch-tracker settings or minimum note duration.
+Analysis	Pitch Loop Finder.praat	wrapper	10	FAIL	250	Error: Cannot edit a TextGrid from batch.
+Analysis	Pitch_Contour_Graphic_Score.praat	wrapper	12	PASS_AUDIO	2002	ok
+Analysis	Pitch_Loop_Finder.praat	wrapper	13	FAIL	275	Error: Cannot edit a TextGrid from batch.
+Analysis	Pitch_and_Loudness_Comparison_Two_Sounds.praat	wrapper	6	FAIL	184	Error: Please select exactly two Sound objects (Teacher/Reference first, Student/Comparison second).
+Analysis	Prosodic_Reiterant_Speech.praat	wrapper	21	PASS_AUDIO	283	ok
+Analysis	Recursive WAV opener.praat	wrapper	5	TIMEOUT	30201	Praat timed out after 30 seconds.
+Analysis	SPEAR_Par-Text-Frame_Format_Parser_for_Praat.praat	file-args	22	FAIL	234	Error: Not a par-text-frame-format file (first line was: RIFF,WAVEJUNK4fmt D¨àXdataÃ%.8BLU_gow}Éáãéêíììîîîîïñòöù°•´∞∑Ω≈Ã”€‚ËÓÙ¯¸ˇ˛˚¯ÙÒÌÍÁÂ„‚‚‚„ÂËÎÔÛ¯¸ 
+Analysis	Scala_Scale_Auralizer.praat	wrapper	19	TIMEOUT	30230	Praat timed out after 30 seconds.
+Analysis	Self-Similarity_Matrix_Calculator.praat	wrapper	6	PASS_TEXT	274	=== Self-Similarity Matrix v1.5.0 ===
+Analysis	Sonic_Syntax.praat	wrapper	14	PASS_TEXT	318	=== Sonic Syntax v2.2 — Input-Adaptive Phrase Boundary Detection ===
+Analysis	Spatial trajectory tracker.praat	wrapper	8	FAIL	180	Error: Input sound must be Stereo (2 channels).
+Analysis	SpectraScore.praat	wrapper	9	PASS_TEXT	1379	=== SpectraScore Orchestration Matcher v0.9.0 ===
+Analysis	Speech_to_MusicXML_Rhythm_Converter.praat	wrapper	11	PASS_TEXT	227	Warning: The loudest and softest part in your sound differ by only 3.190382995783068 dB.
+Analysis	Stereo Channel Similarity Meter.praat	wrapper	3	FAIL	234	Error: This is not a stereo file. It has 1 channel(s).
+Analysis	Tempo Curve (IOI) Estimator.praat	wrapper	10	PASS_TEXT	251	=== Tempo Curve Estimator v0.6.2 ===
+Analysis	Universal_Audio_Export.praat	file-args	6	FAIL	214	Error: Select one or more Sound objects before running Universal Audio Export.
+Analysis	Universal_Audio_IO.praat	file-args	13	FAIL	198	Error: Select one or more Sound objects before running Export selected Sound objects.
+Analysis	Zero_Crossing_Rate.praat	wrapper	7	PASS_AUDIO	207	ok
+Analysis	Zero_DC_Offset.praat	wrapper	3	PASS_AUDIO	262	ok
+Distortion	Adaptive_Wave_Shaper.praat	wrapper	12	PASS_AUDIO	274	ok
+Distortion	Asymmetric_Soft_Clipping.praat	wrapper	10	PASS_AUDIO	198	ok
+Distortion	Chaos_Distortion.praat	wrapper	16	PASS_AUDIO	237	ok
+Distortion	Distortion_Bit-Crusher.praat	wrapper	15	PASS_AUDIO	186	ok
+Distortion	Dynamic_Distortion.praat	wrapper	12	PASS_AUDIO	197	ok
+Distortion	Full-Wave_Rectifier_Abs.praat	wrapper	8	PASS_AUDIO	200	ok
+Distortion	Hard_Clip.praat	wrapper	11	PASS_AUDIO	432	ok
+Distortion	Hysteresis_Distortion.praat	wrapper	13	PASS_AUDIO	278	ok
+Distortion	Math_Operations.praat	wrapper	16	FAIL	237	Error: Please select exactly 2 Sound objects.
+Distortion	Multiband_Distortion.praat	wrapper	14	PASS_AUDIO	360	ok
+Distortion	Sidechain_Feedback_VCA.praat	wrapper	16	NO_OUTPUT	410	
+Distortion	Tanh.praat	wrapper	12	PASS_AUDIO	275	ok
+Distortion	VanDerPol_Tube_Distortion.praat	wrapper	10	PASS_AUDIO	332	ok
+Distortion	Virtual_Subharmonic_Generator.praat	wrapper	8	PASS_AUDIO	383	ok
+Distortion	Wave_Shaper_Distortion.praat	wrapper	8	PASS_AUDIO	330	ok
+Distortion	Wavefolder__Foldback_.praat	wrapper	12	PASS_AUDIO	215	ok
+Dynamics & Envelope	Audio_Quantizer.praat	wrapper	17	FAIL	263	Error: No note onsets were detected (0 candidates). No output was created.
+Dynamics & Envelope	Auto-Swell.praat	wrapper	14	PASS_AUDIO	279	ok
+Dynamics & Envelope	Auto-Trim_Silence.praat	wrapper	11	PASS_AUDIO	198	ok
+Dynamics & Envelope	Compressor.praat	wrapper	11	PASS_AUDIO	311	ok
+Dynamics & Envelope	Concatenate_with_crossfade.praat	wrapper	20	PASS_AUDIO	237	ok
+Dynamics & Envelope	Draw_Intensity_Envelope.praat	wrapper	3	NO_OUTPUT	257	
+Dynamics & Envelope	Envelope_Application.praat	wrapper	20	PASS_AUDIO	233	ok
+Dynamics & Envelope	Fast_Waveset_Distortion.praat	wrapper	10	PASS_AUDIO	285	ok
+Dynamics & Envelope	Intelligent_Mastering_Maximizer.praat	wrapper	12	PASS_AUDIO	651	ok
+Dynamics & Envelope	Intensity_Envelope_Processor.praat	wrapper	6	PASS_AUDIO	297	ok
+Dynamics & Envelope	Kinematic_Physics_Envelope.praat	wrapper	16	PASS_AUDIO	403	ok
+Dynamics & Envelope	LUFS_Tool.praat	wrapper	7	PASS_AUDIO	285	ok
+Dynamics & Envelope	Limiter.praat	wrapper	9	PASS_AUDIO	791	ok
+Dynamics & Envelope	Linear_Fade-In.praat	wrapper	10	PASS_AUDIO	274	ok
+Dynamics & Envelope	Linear_Fade-Out.praat	wrapper	10	PASS_AUDIO	213	ok
+Dynamics & Envelope	Multiband_Compressor.praat	wrapper	18	PASS_AUDIO	664	ok
+Dynamics & Envelope	Noise_Gate.praat	wrapper	12	PASS_AUDIO	280	ok
+Dynamics & Envelope	OM_Rhythm_Tree_Slicer.praat	wrapper	19	PASS_AUDIO	288	ok
+Dynamics & Envelope	Polynomial_Sound_Shaper.praat	wrapper	19	PASS_AUDIO	272	ok
+Dynamics & Envelope	Sample-and-Hold_Processor.praat	wrapper	16	PASS_AUDIO	226	ok
+Dynamics & Envelope	Sound_Duplicator.praat	wrapper	14	PASS_AUDIO	219	ok
+Dynamics & Envelope	Symmetric_Group_Permuter.praat	wrapper	13	PASS_AUDIO	228	ok
+Dynamics & Envelope	Time-domain_RMS_envelope_follower.praat	wrapper	10	PASS_AUDIO	301	ok
+Dynamics & Envelope	Vintage_Glue_Compressor.praat	wrapper	15	PASS_AUDIO	216	ok
+Dynamics & Envelope	Waveset_Distortion.praat	wrapper	13	PASS_AUDIO	289	ok
+Filter & Color	Adaptive_Filter.praat	wrapper	14	PASS_AUDIO	292	ok
+Filter & Color	Adaptive_Spectral_Resonance_Suppressor.praat	wrapper	13	PASS_AUDIO	745	ok
+Filter & Color	Amplitude-Varying_Ring_Modulation.praat	wrapper	10	PASS_AUDIO	195	ok
+Filter & Color	Autocorrelation-Based_Self-Filtering.praat	wrapper	12	PASS_AUDIO	407	ok
+Filter & Color	Band-Based_Concatenative_Synthesis.praat	wrapper	11	FAIL	185	Error: Please select exactly 2 Sound objects: Source (1) and Target (2)
+Filter & Color	Bit_Crusher__8-Bit_Arcade_.praat	wrapper	14	PASS_AUDIO	181	ok
+Filter & Color	Classic_FIR_Filter_Bank.praat	wrapper	14	PASS_AUDIO	369	ok
+Filter & Color	Classic_IIR_Filter_Bank.praat	wrapper	11	PASS_AUDIO	583	ok
+Filter & Color	Creative_Formant_Manipulations.praat	wrapper	12	PASS_AUDIO	413	ok
+Filter & Color	Cross_Synthesis.praat	wrapper	11	FAIL	179	Error: Please select exactly 2 Sound objects:
+Filter & Color	Dynamic_Formant_Sweeper.praat	wrapper	14	PASS_AUDIO	346	ok
+Filter & Color	ENTROPY_SMART_DE-ESSER.praat	wrapper	14	PASS_AUDIO	293	ok
+Filter & Color	Electrical_Hum_Removal.praat	wrapper	9	PASS_AUDIO	339	ok
+Filter & Color	Frequency_Shifter.praat	wrapper	9	PASS_AUDIO	298	ok
+Filter & Color	GRM-Style_Resonator.praat	wrapper	17	PASS_AUDIO	378	ok
+Filter & Color	Golden_Ratio_Processor.praat	wrapper	14	PASS_AUDIO	386	ok
+Filter & Color	Harmonic_Formant_Locking.praat	wrapper	15	PASS_AUDIO	483	ok
+Filter & Color	Harmonic_Remover.praat	wrapper	13	PASS_AUDIO	314	ok
+Filter & Color	Hilbert_Transform_for_drums.praat	wrapper	8	PASS_AUDIO	250	ok
+Filter & Color	Individual_Formant_Stretcher.praat	wrapper	17	PASS_AUDIO	220	ok
+Filter & Color	Intelligent_EQ_Adaptive_Bandpass.praat	wrapper	15	PASS_AUDIO	230	ok
+Filter & Color	Jitter-Shimmer_Formant_Mapping.praat	wrapper	10	PASS_AUDIO	434	ok
+Filter & Color	LPC_Excitation_Lab.praat	wrapper	24	PASS_AUDIO	217	ok
+Filter & Color	MFCC TRANSFORMER.praat	wrapper	14	PASS_AUDIO	305	ok
+Filter & Color	Moog_Ladder_Filter.praat	wrapper	12	PASS_AUDIO	226	ok
+Filter & Color	Onset-Based_Oscillator_Bank.praat	wrapper	15	FAIL	191	=== Onset-Based Oscillator Bank v2.3 ===
+Filter & Color	Panning_filter.praat	wrapper	7	PASS_AUDIO	271	ok
+Filter & Color	Pitch-Based_Spectral_Notch.praat	wrapper	10	PASS_AUDIO	223	ok
+Filter & Color	Resonant.praat	wrapper	11	PASS_AUDIO	245	ok
+Filter & Color	Spectral_Band_EQ.praat	wrapper	9	PASS_AUDIO	200	ok
+Filter & Color	Spectral_Filtering_Effect.praat	wrapper	10	PASS_AUDIO	206	ok
+Filter & Color	Spectral_Morph.praat	wrapper	11	FAIL	225	Error: Please select exactly TWO Sound objects.
+Filter & Color	Voice_Quality_Sonification.praat	wrapper	15	PASS_AUDIO	417	ok
+Filter & Color	Wah-Wah_Effect.praat	wrapper	15	PASS_AUDIO	465	ok
+Filter & Color	Whisper Morph.praat	wrapper	8	PASS_AUDIO	266	ok
+Filter & Color	Whisper_Morph.praat	wrapper	11	PASS_AUDIO	244	ok
+Filter & Color	XMod.praat	wrapper	11	PASS_AUDIO	198	ok
+Filter & Color	a-e-i-o_filter.praat	wrapper	9	PASS_AUDIO	586	ok
+Generative & Synthesis	AM_Additive_Synthesis_Generator.praat	wrapper	15	PASS_AUDIO	277	ok
+Generative & Synthesis	Accelerating_Polyrhythm.praat	wrapper	18	PASS_AUDIO	2569	ok
+Generative & Synthesis	Advanced_Brownian_Synthesis.praat	wrapper	16	PASS_AUDIO	1742	ok
+Generative & Synthesis	Advanced_Chaotic_Modulation.praat	wrapper	21	PASS_AUDIO	3479	ok
+Generative & Synthesis	Advanced_Formula_Synthesis.praat	wrapper	16	PASS_AUDIO	476	ok
+Generative & Synthesis	Advanced_Poisson_Synthesis.praat	wrapper	18	PASS_AUDIO	5752	ok
+Generative & Synthesis	Algorithmic_Metallic_Synthesis.praat	wrapper	17	PASS_AUDIO	659	ok
+Generative & Synthesis	Analogique_B_Stochastic_Mass.praat	wrapper	14	PASS_AUDIO	28349	ok
+Generative & Synthesis	Audiovisual_Sonification.praat	wrapper	0	NO_OUTPUT	328	
+Generative & Synthesis	Babbitt_s_Combinatorial_Arrays.praat	wrapper	7	PASS_AUDIO	836	ok
+Generative & Synthesis	Cellular_Automata_Synthesis.praat	wrapper	16	PASS_AUDIO	777	ok
+Generative & Synthesis	Chaotic_Function_Generator.praat	wrapper	14	PASS_AUDIO	248	ok
+Generative & Synthesis	Chaotic_Granular_Synthesis.praat	wrapper	17	PASS_AUDIO	1359	ok
+Generative & Synthesis	ChirikovStandardMap.praat	wrapper	14	PASS_AUDIO	754	ok
+Generative & Synthesis	Competing_Modulators.praat	wrapper	14	PASS_AUDIO	633	ok
+Generative & Synthesis	Convolution_Synthesis.praat	wrapper	15	PASS_AUDIO	199	ok
+Generative & Synthesis	Coupled_Mesh_String.praat	wrapper	9	PASS_AUDIO	384	ok
+Generative & Synthesis	Dynamic_Stochastic_Synthesis.praat	wrapper	12	PASS_AUDIO	1235	ok
+Generative & Synthesis	Dynamic_Vowel_Transitions.praat	wrapper	9	PASS_AUDIO	372	ok
+Generative & Synthesis	Evolving_Grain_Mass.praat	wrapper	13	PASS_AUDIO	572	ok
+Generative & Synthesis	FM_Texture_Generator.praat	wrapper	12	PASS_AUDIO	283	ok
+Generative & Synthesis	Flute_KlattGrid.praat	wrapper	12	PASS_AUDIO	306	ok
+Generative & Synthesis	Formant_Grain_Texture.praat	wrapper	10	PASS_AUDIO	835	ok
+Generative & Synthesis	Formant_Synthesis.praat	wrapper	10	PASS_AUDIO	223	ok
+Generative & Synthesis	Formula_Markov_Synthesis.praat	wrapper	13	PASS_AUDIO	513	ok
+Generative & Synthesis	GENDYN_Synthesis.praat	wrapper	13	PASS_AUDIO	2499	ok
+Generative & Synthesis	Generative_Sound_System.praat	wrapper	12	PASS_AUDIO	1003	ok
+Generative & Synthesis	Grisey_Spectral_Becoming_Engine.praat	wrapper	18	PASS_AUDIO	9903	ok
+Generative & Synthesis	Ikeda_audiovisual.praat	wrapper	9	PASS_AUDIO	24037	ok
+Generative & Synthesis	Karplus-Strong_Texture_Generator.praat	wrapper	13	PASS_AUDIO	253	ok
+Generative & Synthesis	Kotoński_FSM_Event_Generator.praat	wrapper	12	PASS_AUDIO	529	ok
+Generative & Synthesis	Layered_Markov_Texture.praat	wrapper	16	PASS_AUDIO	373	ok
+Generative & Synthesis	Logistic_Map_Synthesis.praat	wrapper	14	PASS_AUDIO	625	ok
+Generative & Synthesis	Lorenz_Deep_Analog.praat	wrapper	13	PASS_AUDIO	1334	ok
+Generative & Synthesis	Markov_Rhythm_Generator.praat	wrapper	13	PASS_AUDIO	363	ok
+Generative & Synthesis	Organic_No-Input_Mixer.praat	wrapper	14	PASS_AUDIO	801	ok
+Generative & Synthesis	Percussive_Image_Sonification.praat	wrapper	15	FAIL	182	Error: Please select one Photo object first.
+Generative & Synthesis	Photo_Brightness-Controlled_Pitch_Sonification.praat	wrapper	11	FAIL	232	Error: Please select one Photo object first.
+Generative & Synthesis	Photo_sonification.praat	wrapper	15	FAIL	179	Error: Please select one Photo object first.
+Generative & Synthesis	Poisson_Point_Process_Synthesis.praat	wrapper	10	PASS_AUDIO	2721	ok
+Generative & Synthesis	Poisson_Rhythm_Synthesis.praat	wrapper	11	PASS_AUDIO	2465	ok
+Generative & Synthesis	PolyrhythmsFromDots.praat	wrapper	9	PASS_AUDIO	370	ok
+Generative & Synthesis	Pulsar_Synthesis_Engine.praat	wrapper	10	PASS_AUDIO	251	ok
+Generative & Synthesis	Random_Walk_Melody.praat	wrapper	10	PASS_AUDIO	1034	ok
+Generative & Synthesis	Random_Walk_Rhythm.praat	wrapper	12	PASS_AUDIO	661	ok
+Generative & Synthesis	Rich_Formant_Grains.praat	wrapper	9	PASS_AUDIO	1176	ok
+Generative & Synthesis	Risset's_Mutations.praat	wrapper	5	PASS_AUDIO	6384	ok
+Generative & Synthesis	Self_Oscillating_FDN_Synthesizer.praat	wrapper	11	PASS_AUDIO	3532	ok
+Generative & Synthesis	Spectral_Image_Sonification.praat	wrapper	6	FAIL	222	Error: Please select exactly one Photo object.
+Generative & Synthesis	Stockhausen_Studie_II_Generator.praat	wrapper	5	PASS_AUDIO	719	ok
+Generative & Synthesis	Subtractive_Synthesis_Generator.praat	wrapper	14	PASS_AUDIO	333	ok
+Generative & Synthesis	UPIC_Draw_Synthesis.praat	wrapper	11	NO_OUTPUT	247	
+Generative & Synthesis	Vector_Synthesis.praat	wrapper	8	PASS_AUDIO	511	ok
+Generative & Synthesis	Visual_Game_of_Life_Synthesis.praat	wrapper	10	PASS_AUDIO	1196	ok
+Generative & Synthesis	Wave_Terrain_Synthesis.praat	wrapper	10	PASS_AUDIO	438	ok
+Generative & Synthesis	Waveguide_Klangmaschine.praat	wrapper	8	PASS_AUDIO	3362	ok
+Generative & Synthesis	Waveguide_Modal_Synthesis.praat	wrapper	9	PASS_AUDIO	271	ok
+Modulation	Amplitude-Following_Wah-Wah.praat	wrapper	11	PASS_AUDIO	203	ok
+Modulation	Barber-Pole_Orbit.praat	wrapper	14	PASS_AUDIO	386	ok
+Modulation	Chaotic_Prosody_Manipulation.praat	wrapper	18	PASS_AUDIO	233	ok
+Modulation	Dual-Mode Tremolo Generator.praat	wrapper	11	PASS_AUDIO	273	ok
+Modulation	Fractal_Convolution_Swarm.praat	wrapper	11	PASS_AUDIO	199	ok
+Modulation	Golden-chaos_vibrato.praat	wrapper	12	PASS_AUDIO	266	ok
+Modulation	Hexaphonic Serial Audio Processor.praat	wrapper	10	PASS_AUDIO	191	ok
+Modulation	Hilbert_Audio_Processor.praat	wrapper	13	PASS_AUDIO	244	ok
+Modulation	Karplus-Strong Modulator .praat	wrapper	9	PASS_AUDIO	197	ok
+Modulation	Metamodulator.praat	wrapper	12	PASS_AUDIO	190	ok
+Modulation	Phonetic_Tremolo_Glitch_Effect.praat	wrapper	10	PASS_AUDIO	244	ok
+Modulation	Rhythmic LFO Wah-Wah.praat	wrapper	12	PASS_AUDIO	209	ok
+Modulation	Spectral-Driven Intensity Modulation.praat	wrapper	9	PASS_AUDIO	228	ok
+Modulation	Spectral_Driven_Vibrato.praat	wrapper	13	PASS_AUDIO	254	ok
+Modulation	Stereo Flanger.praat	wrapper	10	PASS_AUDIO	287	ok
+Modulation	Stereo Phaser.praat	wrapper	11	PASS_AUDIO	393	ok
+Modulation	Stereo Rotary Speaker.praat	wrapper	9	PASS_AUDIO	253	ok
+Modulation	Stereo_Swirl_Vibrato.praat	wrapper	9	PASS_AUDIO	240	ok
+Modulation	Stretch-Tremolo Ambience.praat	wrapper	10	PASS_AUDIO	253	ok
+Modulation	Time_Varying_Spectral_Vibrato.praat	wrapper	9	PASS_AUDIO	196	ok
+Modulation	Unified Chorus Generator.praat	wrapper	13	PASS_AUDIO	227	ok
+Modulation	Unified Multi-Mode Vibrato.praat	wrapper	10	PASS_AUDIO	201	ok
+Modulation	XY_SHAPE_LFO_-_FREQUENCY_MODULATION.praat	wrapper	12	PASS_AUDIO	271	ok
+Pitch	Adaptive Pitch Shifter.praat	wrapper	12	PASS_AUDIO	224	ok
+Pitch	Adaptive_Pitch_Shifter.praat	wrapper	12	PASS_AUDIO	262	ok
+Pitch	Auto-Harmonic_Layering.praat	wrapper	9	PASS_AUDIO	271	ok
+Pitch	BFG_Pitch_Time_Modulation.praat	wrapper	21	PASS_AUDIO	2179	ok
+Pitch	Bimodal_Contour_Grammar.praat	wrapper	17	PASS_AUDIO	276	ok
+Pitch	Breathing_Pitch_Waves.praat	wrapper	11	PASS_AUDIO	202	ok
+Pitch	Chord Generator from Audio.praat	wrapper	9	PASS_AUDIO	264	ok
+Pitch	Doppler_Effect_Simulator.praat	wrapper	10	PASS_AUDIO	218	ok
+Pitch	Exponential_Glide_Up.praat	wrapper	9	PASS_AUDIO	247	ok
+Pitch	Formula_Audio_Manipulation.praat	wrapper	12	PASS_AUDIO	252	ok
+Pitch	Fractal_Pitch_Terrain.praat	wrapper	11	PASS_AUDIO	225	ok
+Pitch	Gesture_Convolution_Transform.praat	wrapper	19	PASS_AUDIO	537	ok
+Pitch	L-System_Granular_Pitch.praat	wrapper	18	PASS_AUDIO	213	ok
+Pitch	Messagesquisse_Opening.praat	wrapper	12	PASS_AUDIO	474	ok
+Pitch	Microtonal_Harmonic_Field_Engine.praat	wrapper	13	PASS_AUDIO	342	ok
+Pitch	Pitch_Contour_Transfer.praat	wrapper	9	FAIL	228	Error: Please select exactly 2 Sound objects (A=source, B=target)
+Pitch	Pitch_Correction.praat	wrapper	10	PASS_AUDIO	238	ok
+Pitch	Pitch_Morphing_Between_Targets.praat	wrapper	12	PASS_AUDIO	200	ok
+Pitch	Pitch_Processor.praat	wrapper	6	PASS_AUDIO	223	ok
+Pitch	Pitch_Shift_Semitones.praat	wrapper	4	PASS_AUDIO	179	ok
+Pitch	Pitch_Stylization_and_Shift.praat	wrapper	9	PASS_AUDIO	227	ok
+Pitch	Quantum_Pitch_Jumps.praat	wrapper	15	PASS_AUDIO	204	ok
+Pitch	Rhythmic_Pitch_Percussion.praat	wrapper	12	PASS_AUDIO	228	ok
+Pitch	Spectral_Pitch_Shifter.praat	wrapper	10	PASS_AUDIO	253	ok
+Pitch	Spiral_Pitch_Dance.praat	wrapper	9	PASS_AUDIO	243	ok
+Pitch	Spiral_Segmentation.praat	wrapper	12	PASS_AUDIO	274	ok
+Pitch	Tempo-Pitch Curves (Accelerando & Ritardando).praat	wrapper	7	PASS_AUDIO	234	ok
+Pitch	Undertone Field.praat	wrapper	12	PASS_AUDIO	397	ok
+Pitch	Undertone_Field.praat	wrapper	10	PASS_AUDIO	529	ok
+Pitch	Voice_Transformation.praat	wrapper	11	PASS_AUDIO	207	ok
+Pitch	flip or expand the F0 contours.praat	wrapper	8	PASS_TEXT	195	=== F0 Contour Manipulation v0.7.1 ===
+Reverb	Artificial_Room.praat	wrapper	9	PASS_AUDIO	260	ok
+Reverb	CA_Reverb_IR.praat	wrapper	13	PASS_AUDIO	259	ok
+Reverb	Cascading_Echoes.praat	wrapper	12	PASS_AUDIO	221	ok
 Reverb	Chaotic_Bloom.praat	wrapper	11	PASS_AUDIO	643	ok
-Reverb	Convolve_Bursts_Taps.praat	wrapper	15	PASS_AUDIO	209	ok
-Reverb	Convolve_Stereo_Fibonacci.praat	wrapper	18	PASS_AUDIO	218	ok
-Reverb	Creative_Convolution.praat	wrapper	0	FAIL	170	Error: Found 0 arguments but expected more.
-Reverb	Crystalline_Cascade.praat	wrapper	14	PASS_AUDIO	274	ok
-Reverb	ENTROPY-MODULATED DYNAMIC REVERB.praat	wrapper	10	PASS_AUDIO	4872	ok
-Reverb	Entropy_Modulated_Reverb.praat	wrapper	15	PASS_AUDIO	537	ok
-Reverb	Feedback_Aware_Convolution.praat	wrapper	11	PASS_AUDIO	266	ok
+Reverb	Convolve_Bursts_Taps.praat	wrapper	15	PASS_AUDIO	218	ok
+Reverb	Convolve_Stereo_Fibonacci.praat	wrapper	18	PASS_AUDIO	220	ok
+Reverb	Creative_Convolution.praat	wrapper	7	FAIL	182	Error: Please select exactly two Sounds: the source and the kernel (IR).
+Reverb	Crystalline_Cascade.praat	wrapper	14	PASS_AUDIO	290	ok
+Reverb	ENTROPY-MODULATED DYNAMIC REVERB.praat	wrapper	10	PASS_AUDIO	4866	ok
+Reverb	Entropy_Modulated_Reverb.praat	wrapper	15	PASS_AUDIO	503	ok
+Reverb	Feedback_Aware_Convolution.praat	wrapper	11	PASS_AUDIO	318	ok
 Reverb	Fractal_Feedback.praat	wrapper	9	PASS_AUDIO	196	ok
-Reverb	Fractal_Feedback_Reverb.praat	wrapper	12	PASS_AUDIO	796	ok
-Reverb	Granular_Displacement.praat	wrapper	11	PASS_AUDIO	210	ok
-Reverb	Gravitational_Lens__Reverb.praat	wrapper	18	PASS_AUDIO	558	ok
-Reverb	Harmonic_Comb.praat	wrapper	11	PASS_AUDIO	314	ok
-Reverb	Harmonic_Decay_Reverb.praat	wrapper	12	PASS_AUDIO	702	ok
-Reverb	Historic_Reverberators.praat	wrapper	7	PASS_AUDIO	898	ok
-Reverb	Ligeti_Micropolyphonic_Choir_Machine.praat	wrapper	13	PASS_AUDIO	763	ok
-Reverb	Morphing_Resonance.praat	wrapper	15	PASS_AUDIO	437	ok
-Reverb	Ping_Pong_Field.praat	wrapper	14	PASS_AUDIO	785	ok
-Reverb	Quantum_Flutter.praat	wrapper	13	PASS_AUDIO	282	ok
-Reverb	Quantum_Uncertainty_Reverb.praat	wrapper	16	PASS_AUDIO	682	ok
-Reverb	Ray_Tracing_Room_Acoustics.praat	wrapper	21	PASS_AUDIO	310	ok
-Reverb	Ribbon_Shimmer.praat	wrapper	12	PASS_AUDIO	796	ok
+Reverb	Fractal_Feedback_Reverb.praat	wrapper	12	PASS_AUDIO	811	ok
+Reverb	Granular_Displacement.praat	wrapper	11	PASS_AUDIO	205	ok
+Reverb	Gravitational_Lens__Reverb.praat	wrapper	18	PASS_AUDIO	448	ok
+Reverb	Harmonic_Comb.praat	wrapper	11	PASS_AUDIO	329	ok
+Reverb	Harmonic_Decay_Reverb.praat	wrapper	12	PASS_AUDIO	756	ok
+Reverb	Historic_Reverberators.praat	wrapper	7	PASS_AUDIO	901	ok
+Reverb	Ligeti_Micropolyphonic_Choir_Machine.praat	wrapper	13	PASS_AUDIO	784	ok
+Reverb	Morphing_Resonance.praat	wrapper	15	PASS_AUDIO	445	ok
+Reverb	Ping_Pong_Field.praat	wrapper	14	PASS_AUDIO	806	ok
+Reverb	Quantum_Flutter.praat	wrapper	13	PASS_AUDIO	277	ok
+Reverb	Quantum_Uncertainty_Reverb.praat	wrapper	16	PASS_AUDIO	724	ok
+Reverb	Ray_Tracing_Room_Acoustics.praat	wrapper	21	PASS_AUDIO	324	ok
+Reverb	Ribbon_Shimmer.praat	wrapper	12	PASS_AUDIO	787	ok
 Reverb	Simple_Experimental_Reverberation.praat	wrapper	16	PASS_AUDIO	840	ok
-Reverb	Smooth_Cosmic_Reverb.praat	wrapper	16	PASS_AUDIO	877	ok
-Reverb	Spectral_Decay.praat	wrapper	12	PASS_AUDIO	391	ok
-Reverb	Spectral_Drift.praat	wrapper	9	PASS_AUDIO	216	ok
-Reverb	Spectral_Smearing Reverb.praat	wrapper	11	PASS_AUDIO	519	ok
-Reverb	Stereo_Ping-Pong_Impulses .praat	wrapper	9	PASS_AUDIO	205	ok
-Reverb	Stereo_Velvet_Noise_Reverb.praat	wrapper	0	FAIL	169	Error: Found 0 arguments but expected more.
+Reverb	Smooth_Cosmic_Reverb.praat	wrapper	16	PASS_AUDIO	876	ok
+Reverb	Spectral_Decay.praat	wrapper	12	PASS_AUDIO	396	ok
+Reverb	Spectral_Drift.praat	wrapper	9	PASS_AUDIO	229	ok
+Reverb	Spectral_Smearing Reverb.praat	wrapper	11	PASS_AUDIO	539	ok
+Reverb	Stereo_Ping-Pong_Impulses .praat	wrapper	9	PASS_AUDIO	212	ok
+Reverb	Stereo_Velvet_Noise_Reverb.praat	wrapper	9	PASS_AUDIO	317	ok
 Reverb	Temporal_Erosion.praat	wrapper	12	PASS_AUDIO	495	ok
-Reverb	Temporal_Warping.praat	wrapper	8	PASS_AUDIO	1050	ok
-Reverb	The_Lucier_Machine.praat	wrapper	10	PASS_AUDIO	389	ok
-Reverb	Universal Convolution Generator.praat	wrapper	0	NO_OUTPUT	267	
-Reverb	convolve_PING-PONG.praat	wrapper	13	PASS_AUDIO	181	ok
-Reverb	convolve_STEREO.praat	wrapper	16	PASS_AUDIO	222	ok
-Reverb	stereo_shimmer.praat	wrapper	12	PASS_AUDIO	945	ok
-Spatial & Surround	22_2_Stem_Renderer.praat	wrapper	9	PASS_AUDIO	333	ok
-Spatial & Surround	3D_Audio_Room_Simulator_with_Distance-Based_Panning.praat	wrapper	13	FAIL	160	Error: Crossfade too long. With 16 positions over 1.50 s the hop is 0.094 s, so Crossfade_time must be <= 0.094 s. Reduce Crossfade_time or Num_positions, or use a longer source.
-Spatial & Surround	4-Channel Canon.praat	wrapper	14	FAIL	164	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	4-Channel_Canon.praat	wrapper	14	FAIL	244	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-Channel Spectral Shift.praat	wrapper	12	FAIL	171	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-Channel movements.praat	wrapper	14	FAIL	173	Error: Unknown value "8" for option menu "Pattern".
-Spatial & Surround	8-Channel_Canon.praat	wrapper	22	FAIL	238	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-Channel_Comb_Delay.praat	wrapper	14	FAIL	171	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-Channel_Movements.praat	wrapper	16	FAIL	168	Error: Unknown value "8" for option menu "Pattern".
-Spatial & Surround	8-Channel_Spectral_Shift.praat	wrapper	14	FAIL	167	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-Channel_Speech-Driven_Spatialization.praat	wrapper	15	FAIL	207	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-Channels_Time_Polyphony.praat	wrapper	19	FAIL	163	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-channel_I_Ching.praat	wrapper	20	FAIL	160	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	8-channel_speed_deviations.praat	wrapper	0	FAIL	168	Error: Found 0 arguments but expected more.
-Spatial & Surround	8_Channels_Time_Polyphony.praat	wrapper	11	FAIL	159	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	Advanced_Stereo_Panner.praat	wrapper	22	FAIL	171	Error: Unknown value "1" for option menu "Pan_mode".
-Spatial & Surround	Ambisonic_Bed_Mixer.praat	file-args	14	FAIL	172	Error: Select 2 to 8 B-format Sound objects (same order, same sample rate, same time grid).
-Spatial & Surround	BPM_Panning.praat	wrapper	11	FAIL	156	Error: Unknown value "4" for option menu "Subdivision".
-Spatial & Surround	BPM_SURROUND _Panning.praat	wrapper	16	FAIL	218	Error: Unknown value "1" for option menu "Rate_mode".
-Spatial & Surround	DBAP_with_Movement_Control.praat	file-args	19	FAIL	157	Error: Unknown value "2" for option menu "Movement_type".
-Spatial & Surround	Distance-Based_Amplitude_Panning__DBAP_.praat	wrapper	9	FAIL	220	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	Distribute_sounds_in_stereo_field.praat	wrapper	8	FAIL	166	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	Even-Odd_Harmonic_Binaural_Separation.praat	wrapper	10	FAIL	158	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	Hamasaki_Square_Ambience.praat	wrapper	11	PASS_AUDIO	200	ok
-Spatial & Surround	Higher-Order_Ambisonic_Decoder.praat	wrapper	6	FAIL	167	Error: Unknown symbol «Combined» in formula (variables start with nonupper case; object names contain an underscore).
-Spatial & Surround	Higher-Order_Ambisonic_Encoder.praat	wrapper	17	FAIL	235	Error: Unknown symbol «Point» in formula (variables start with nonupper case; object names contain an underscore).
-Spatial & Surround	Knight's Tour Sonification.praat	wrapper	10	PASS_AUDIO	13567	ok
-Spatial & Surround	MCMC_Musical_Variation.praat	wrapper	17	PASS_AUDIO	370	ok
-Spatial & Surround	Microphone_Simulation.praat	wrapper	10	PASS_AUDIO	252	ok
-Spatial & Surround	Mid-Side_Matrix.praat	wrapper	4	FAIL	168	Error: Input must be a 2-channel (stereo) Sound. Channels: 1
-Spatial & Surround	Mix_Multi-Channel_to_Stereo.praat	wrapper	7	FAIL	207	Error: Selected Sound has only 1 channel(s).
-Spatial & Surround	Multi-channel_Random_Slice_Time-Stretcher.praat	wrapper	18	FAIL	170	Error: Unknown value "1" for option menu "Preset".
-Spatial & Surround	Multitrack_Router.praat	wrapper	14	PASS_AUDIO	1961	ok
-Spatial & Surround	Panning_variations.praat	wrapper	10	PASS_AUDIO	219	ok
-Spatial & Surround	Partial_Panner.praat	wrapper	12	PASS_AUDIO	238	ok
-Spatial & Surround	Perceptual_Fugue.praat	wrapper	16	PASS_AUDIO	20821	ok
-Spatial & Surround	Physics-Based_Stereo_Dynamics.praat	file-args	14	FAIL	172	Error: Please select a Sound object first.
-Spatial & Surround	Random_DurationTier_Multichannel_Generator.praat	file-args	16	FAIL	167	Error: Please select exactly ONE Sound before running this script.
-Spatial & Surround	Simple Rate Panning.praat	wrapper	9	PASS_AUDIO	252	ok
-Spatial & Surround	Spatial_Dramaturgy_Composer.praat	wrapper	0	FAIL	169	Error: Found 0 arguments but expected more.
-Spatial & Surround	Spatial_Trajectory_Painter.praat	file-args	7	FAIL	178	Error: Select exactly one Sound.
-Spatial & Surround	Spectral_Panning_Mapper.praat	wrapper	12	PASS_AUDIO	444	ok
-Spatial & Surround	Spectral_Swirl_Multi-Channel.praat	wrapper	9	PASS_AUDIO	467	ok
-Spatial & Surround	Stereo_Mixer.praat	wrapper	14	PASS_AUDIO	188	ok
-Spectral	AllpassDiffuser.praat	wrapper	9	PASS_AUDIO	200	ok
-Spectral	Basic_Mirror.praat	wrapper	7	PASS_AUDIO	280	ok
-Spectral	Bell_curve_envelope.praat	wrapper	9	PASS_AUDIO	220	ok
-Spectral	Beltrami_Inspired_Spectral_Melter.praat	wrapper	7	PASS_AUDIO	652	ok
-Spectral	Doppler_shift.praat	wrapper	10	PASS_AUDIO	215	ok
-Spectral	Dynamic_Tremolo_Effect.praat	wrapper	10	PASS_AUDIO	191	ok
-Spectral	Evolving_Convolution_Field.praat	wrapper	17	PASS_AUDIO	1791	ok
-Spectral	Fractal_Spectral_Hologram.praat	wrapper	12	PASS_AUDIO	338	ok
-Spectral	Frequency-Dependent_Phase_Manipulation.praat	wrapper	9	PASS_AUDIO	4803	ok
-Spectral	Giant_FFT_Recomposer.praat	wrapper	21	PASS_AUDIO	319	ok
-Spectral	Gizmo_Pitch_Shift.praat	wrapper	9	PASS_AUDIO	558	ok
-Spectral	Harmonic_Resonance_Boost.praat	wrapper	12	PASS_AUDIO	240	ok
-Spectral	Hilbert_Transform.praat	wrapper	8	PASS_AUDIO	239	ok
-Spectral	LPC Voice Generator.praat	wrapper	0	PASS_AUDIO	1969	ok
-Spectral	LPC_Voice_Morphing.praat	wrapper	14	PASS_AUDIO	172	ok
-Spectral	Non-Linear_Frequency_Folding.praat	wrapper	12	PASS_AUDIO	206	ok
-Spectral	Partial_Editing_Resynthesis.praat	wrapper	13	PASS_AUDIO	675	ok
-Spectral	Phase_History_Swap.praat	wrapper	9	PASS_AUDIO	4263	ok
-Spectral	Phase_Shaper.praat	wrapper	9	PASS_AUDIO	207	ok
-Spectral	Pitch_Class_Spectral_Gravity.praat	wrapper	13	PASS_AUDIO	287	ok
-Spectral	Self-Similarity Spectral Resynthesis.praat	wrapper	19	PASS_AUDIO	272	ok
-Spectral	Self-Similarity_Spectral_Resynthesis.praat	wrapper	6	PASS_AUDIO	298	ok
-Spectral	Self_Adaptive_Sieve_Convolution.praat	wrapper	16	PASS_AUDIO	239	ok
-Spectral	Spectral Painter.praat	wrapper	16	PASS_AUDIO	197	ok
-Spectral	Spectral_Blur.praat	wrapper	10	PASS_AUDIO	346	ok
-Spectral	Spectral_Effects_Suite.praat	wrapper	17	PASS_AUDIO	248	ok
-Spectral	Spectral_Freeze_Synthesis.praat	wrapper	17	PASS_AUDIO	517	ok
-Spectral	Spectral_Painter.praat	wrapper	16	PASS_AUDIO	339	ok
-Spectral	Spectral_swirl_effect.praat	wrapper	11	PASS_AUDIO	902	ok
-Spectral	Stepped_Notch_Filter.praat	wrapper	13	PASS_AUDIO	528	ok
-Spectral	Subtle_Random_Texture.praat	wrapper	11	PASS_AUDIO	491	ok
-Spectral	Vocoding.praat	wrapper	13	PASS_AUDIO	564	ok
-Spectral	Wave_Interference_Pattern.praat	wrapper	12	PASS_AUDIO	479	ok
-Time & Granular	Adaptive_Grain_Cloud_Synthesis.praat	wrapper	11	PASS_AUDIO	210	ok
-Time & Granular	Additive_Particle_Field.praat	wrapper	16	PASS_AUDIO	362	ok
-Time & Granular	BP_Slice_Remapper.praat	wrapper	8	PASS_AUDIO	196	ok
-Time & Granular	Beat-Synced_ZigZag.praat	wrapper	10	PASS_AUDIO	206	ok
-Time & Granular	Beat_Repeat.praat	wrapper	15	PASS_AUDIO	173	ok
-Time & Granular	Bigram_Stutter_Effect.praat	wrapper	8	PASS_AUDIO	388	ok
-Time & Granular	Brightness_Sorted_Grains.praat	wrapper	17	PASS_AUDIO	255	ok
-Time & Granular	Brownian_Motion_Texture_Generator.praat	wrapper	18	PASS_AUDIO	426	ok
-Time & Granular	Constraint-Based_Duration_Control.praat	wrapper	10	PASS_AUDIO	177	ok
-Time & Granular	Delay_Array.praat	wrapper	14	PASS_AUDIO	229	ok
-Time & Granular	Dramaturgical_Structure_Composer.praat	wrapper	20	FAIL	161	Error: Sound too short (< 20 s). Need longer material for structural analysis.
-Time & Granular	Evolving_Granular.praat	wrapper	14	PASS_AUDIO	272	ok
-Time & Granular	Fractal_Convolution_Matrix.praat	wrapper	10	PASS_AUDIO	387	ok
-Time & Granular	Fuzzy_Time_Recomposer.praat	wrapper	17	PASS_AUDIO	281	ok
-Time & Granular	Granular_Particle_Field.praat	wrapper	16	PASS_AUDIO	293	ok
-Time & Granular	HFD-Driven_Time_Warping.praat	wrapper	5	PASS_AUDIO	689	ok
-Time & Granular	Harmonic_Resonance.praat	wrapper	19	PASS_AUDIO	429	ok
-Time & Granular	Harmonic_Tension_Sorted_Grains.praat	wrapper	14	PASS_AUDIO	191	ok
-Time & Granular	In-Place_Paulstretch_Slicer__Multi-channel.praat	wrapper	12	PASS_AUDIO	503	ok
-Time & Granular	L-Logic_Symbolic_Granular_Recomposition.praat	wrapper	20	PASS_AUDIO	5025	ok
-Time & Granular	LZ-Inspired Audio Variations.praat	wrapper	12	PASS_AUDIO	293	ok
-Time & Granular	MDS_Space_Navigator.praat	wrapper	11	FAIL	166	Error: Need at least 2 word segments! Found: 1
-Time & Granular	Magnetic_Tape_Degradation.praat	wrapper	6	PASS_AUDIO	668	ok
-Time & Granular	Multi-channel Random Slice Time-Stretcher.praat	wrapper	5	FAIL	165	Error: Unknown symbol «Normal» in formula (variables start with nonupper case; object names contain an underscore).
-Time & Granular	Paulstretch.praat	wrapper	9	PASS_AUDIO	712	ok
-Time & Granular	Peephole_montage.praat	file-args	5	FAIL	203	Error: Select 1 Sound (optionally with 1 PointProcess of marks to start from).
-Time & Granular	Percussive Audio Groove Creator.praat	wrapper	14	PASS_AUDIO	409	ok
-Time & Granular	Phase_Magnet.praat	wrapper	12	FAIL	171	Error: Please select exactly two Sound objects, then run Phase Magnet.
-Time & Granular	Phase_Modulation_Matrix.praat	wrapper	16	PASS_AUDIO	257	ok
-Time & Granular	Polyphonic_Improviser.praat	wrapper	13	NO_OUTPUT	255	
-Time & Granular	Quantum_State_Superposition.praat	wrapper	16	PASS_AUDIO	218	ok
-Time & Granular	Reich_Generator.praat	wrapper	14	PASS_AUDIO	444	ok
-Time & Granular	Rhythmatist.praat	wrapper	16	PASS_AUDIO	185	ok
-Time & Granular	Rhythmic_Fractal_Granulator.praat	wrapper	9	FAIL	198	Error: Unknown variable:
-Time & Granular	Segment_Mixer.praat	wrapper	9	FAIL	160	Error: Please select at least two Sound objects.
-Time & Granular	Sound_atom_composer.praat	wrapper	14	TIMEOUT	30281	Praat timed out after 30 seconds.
-Time & Granular	Sound_to_Grain.praat	wrapper	11	PASS_AUDIO	175	ok
-Time & Granular	Spectral_Echo_Cascade.praat	wrapper	12	PASS_AUDIO	403	ok
-Time & Granular	Spectral_Freeze_&_Glitch.praat	wrapper	15	PASS_AUDIO	305	ok
-Time & Granular	Stereo_Delay_Splitter.praat	wrapper	19	PASS_AUDIO	267	ok
-Time & Granular	Stereo_Micro_Macro_Time_Collapser.praat	wrapper	6	PASS_AUDIO	2415	ok
-Time & Granular	Stereo_Mosaic.praat	wrapper	10	FAIL	202	Error: Please select at least two Sound objects.
-Time & Granular	Stochastic_Time_Folding.praat	wrapper	17	PASS_AUDIO	207	ok
-Time & Granular	Symmetric_Group_Permuter.praat	wrapper	13	PASS_AUDIO	170	ok
-Time & Granular	Temporal_Turing_Morph.praat	wrapper	20	PASS_AUDIO	193	ok
-Time & Granular	Time_Manipulation.praat	wrapper	12	PASS_AUDIO	306	ok
-Time & Granular	Total_Serialism_Machine.praat	wrapper	15	PASS_AUDIO	462	ok
-Time & Granular	ZigZag_Effect.praat	wrapper	14	PASS_AUDIO	263	ok
-Vector Chain	Clean_Ableton_Bridge.praat	wrapper	2	FAIL	170	Error: Nothing deleted.
-Vector Chain	Composition_1.praat	wrapper	0	FAIL	170	Error: Found 13 arguments but expected more.
-Vector Chain	Composition_2.praat	wrapper	0	FAIL	257	Error: Found 13 arguments but expected more.
-Vector Chain	Live_1.praat	wrapper	1	FAIL	5419	Error: Found 13 arguments but expected more.
-Vector Chain	Live_1_Random.praat	wrapper	2	FAIL	5435	Error: Found 13 arguments but expected more.
-Vector Chain	Live_2.praat	wrapper	1	FAIL	5470	Error: No usable voiced pitch was detected in the selected analysis range.
-Vector Chain	Live_2_Random.praat	wrapper	2	FAIL	5436	Error: No usable voiced pitch was detected in the selected analysis range.
-Vector Chain	Live_3.praat	wrapper	1	FAIL	5482	Error: Input is silent.
-Vector Chain	Live_3_Random.praat	wrapper	2	FAIL	5457	Error: Input is silent.
-Vector Chain	Live_4.praat	wrapper	1	BAD_AUDIO	21313	silent
-Vector Chain	Live_5.praat	wrapper	1	BAD_AUDIO	24114	silent
-Vector Chain	Live_6.praat	wrapper	1	BAD_AUDIO	23506	silent
-Vector Chain	Matrix_Chain.praat	wrapper	0	FAIL	162	Error: Cannot find matrix_chain.py.
-Vector Chain	Send_to_Ableton.praat	wrapper	0	FAIL	166	Error: Send_to_Ableton v1.0 currently supports Windows only.
-Vector Chain	chain_1.praat	wrapper	0	FAIL	170	Error: Need at least 2 word segments! Found: 1
-Vector Chain	chain_2.praat	wrapper	0	FAIL	220	Error: Found 13 arguments but expected more.
-Vector Chain	chain_3.praat	wrapper	0	FAIL	238	Error: Found 16 arguments but expected more.
-Vector Chain	chain_4.praat	wrapper	0	PASS_AUDIO	2112	ok
-Vector Chain	chain_5.praat	wrapper	0	PASS_AUDIO	8827	ok
-Vector Chain	chain_6.praat	wrapper	0	PASS_AUDIO	5887	ok
-Vector Chain	chain_7.praat	wrapper	0	TIMEOUT	30269	Praat timed out after 30 seconds.
-audiotools	setup.praat	wrapper	0	NO_OUTPUT	245	
+Reverb	Temporal_Warping.praat	wrapper	8	PASS_AUDIO	1064	ok
+Reverb	The_Lucier_Machine.praat	wrapper	10	PASS_AUDIO	403	ok
+Reverb	Universal Convolution Generator.praat	wrapper	0	NO_OUTPUT	288	
+Reverb	convolve_PING-PONG.praat	wrapper	13	PASS_AUDIO	187	ok
+Reverb	convolve_STEREO.praat	wrapper	16	PASS_AUDIO	210	ok
+Reverb	stereo_shimmer.praat	wrapper	12	PASS_AUDIO	921	ok
+Spatial & Surround	22_2_Stem_Renderer.praat	wrapper	9	PASS_AUDIO	349	ok
+Spatial & Surround	3D_Audio_Room_Simulator_with_Distance-Based_Panning.praat	wrapper	13	FAIL	228	Error: Crossfade too long. With 16 positions over 1.50 s the hop is 0.094 s, so Crossfade_time must be <= 0.094 s. Reduce Crossfade_time or Num_positions, or use a longer source.
+Spatial & Surround	4-Channel Canon.praat	wrapper	14	PASS_AUDIO	269	ok
+Spatial & Surround	4-Channel_Canon.praat	wrapper	14	PASS_AUDIO	248	ok
+Spatial & Surround	8-Channel Spectral Shift.praat	wrapper	12	PASS_AUDIO	287	ok
+Spatial & Surround	8-Channel movements.praat	wrapper	14	PASS_AUDIO	208	ok
+Spatial & Surround	8-Channel_Canon.praat	wrapper	22	PASS_AUDIO	327	ok
+Spatial & Surround	8-Channel_Comb_Delay.praat	wrapper	14	PASS_AUDIO	250	ok
+Spatial & Surround	8-Channel_Movements.praat	wrapper	16	PASS_AUDIO	500	ok
+Spatial & Surround	8-Channel_Spectral_Shift.praat	wrapper	14	PASS_AUDIO	269	ok
+Spatial & Surround	8-Channel_Speech-Driven_Spatialization.praat	wrapper	15	PASS_AUDIO	302	ok
+Spatial & Surround	8-Channels_Time_Polyphony.praat	wrapper	19	PASS_AUDIO	312	ok
+Spatial & Surround	8-channel_I_Ching.praat	wrapper	20	PASS_AUDIO	333	ok
+Spatial & Surround	8-channel_speed_deviations.praat	wrapper	15	PASS_AUDIO	314	ok
+Spatial & Surround	8_Channels_Time_Polyphony.praat	wrapper	11	PASS_AUDIO	301	ok
+Spatial & Surround	Advanced_Stereo_Panner.praat	wrapper	22	PASS_AUDIO	241	ok
+Spatial & Surround	Ambisonic_Bed_Mixer.praat	file-args	14	FAIL	178	Error: Select 2 to 8 B-format Sound objects (same order, same sample rate, same time grid).
+Spatial & Surround	BPM_Panning.praat	wrapper	11	PASS_AUDIO	210	ok
+Spatial & Surround	BPM_SURROUND _Panning.praat	wrapper	16	PASS_AUDIO	603	ok
+Spatial & Surround	DBAP_with_Movement_Control.praat	wrapper	19	PASS_AUDIO	2161	ok
+Spatial & Surround	Distance-Based_Amplitude_Panning__DBAP_.praat	wrapper	9	PASS_AUDIO	251	ok
+Spatial & Surround	Distribute_sounds_in_stereo_field.praat	wrapper	8	PASS_AUDIO	193	ok
+Spatial & Surround	Even-Odd_Harmonic_Binaural_Separation.praat	wrapper	10	PASS_AUDIO	406	ok
+Spatial & Surround	Hamasaki_Square_Ambience.praat	wrapper	11	PASS_AUDIO	266	ok
+Spatial & Surround	Higher-Order_Ambisonic_Decoder.praat	wrapper	6	FAIL	228	Error: Unknown symbol «Combined» in formula (variables start with nonupper case; object names contain an underscore).
+Spatial & Surround	Higher-Order_Ambisonic_Encoder.praat	wrapper	17	FAIL	176	Error: Unknown symbol «Point» in formula (variables start with nonupper case; object names contain an underscore).
+Spatial & Surround	Knight's Tour Sonification.praat	wrapper	10	PASS_AUDIO	13636	ok
+Spatial & Surround	MCMC_Musical_Variation.praat	wrapper	17	PASS_AUDIO	395	ok
+Spatial & Surround	Microphone_Simulation.praat	wrapper	10	PASS_AUDIO	219	ok
+Spatial & Surround	Mid-Side_Matrix.praat	wrapper	4	FAIL	180	Error: Input must be a 2-channel (stereo) Sound. Channels: 1
+Spatial & Surround	Mix_Multi-Channel_to_Stereo.praat	wrapper	7	FAIL	171	Error: Selected Sound has only 1 channel(s).
+Spatial & Surround	Multi-channel_Random_Slice_Time-Stretcher.praat	wrapper	18	PASS_AUDIO	254	ok
+Spatial & Surround	Multitrack_Router.praat	wrapper	14	PASS_AUDIO	1963	ok
+Spatial & Surround	Panning_variations.praat	wrapper	10	PASS_AUDIO	197	ok
+Spatial & Surround	Partial_Panner.praat	wrapper	12	PASS_AUDIO	260	ok
+Spatial & Surround	Perceptual_Fugue.praat	wrapper	16	PASS_AUDIO	20764	ok
+Spatial & Surround	Physics-Based_Stereo_Dynamics.praat	wrapper	14	PASS_AUDIO	449	ok
+Spatial & Surround	Random_DurationTier_Multichannel_Generator.praat	wrapper	16	PASS_AUDIO	314	ok
+Spatial & Surround	Simple Rate Panning.praat	wrapper	9	PASS_AUDIO	210	ok
+Spatial & Surround	Spatial_Dramaturgy_Composer.praat	wrapper	10	PASS_AUDIO	646	ok
+Spatial & Surround	Spatial_Trajectory_Painter.praat	wrapper	7	NO_OUTPUT	242	
+Spatial & Surround	Spectral_Panning_Mapper.praat	wrapper	12	PASS_AUDIO	413	ok
+Spatial & Surround	Spectral_Swirl_Multi-Channel.praat	wrapper	9	PASS_AUDIO	498	ok
+Spatial & Surround	Stereo_Mixer.praat	wrapper	14	PASS_AUDIO	200	ok
+Spectral	AllpassDiffuser.praat	wrapper	9	PASS_AUDIO	251	ok
+Spectral	Basic_Mirror.praat	wrapper	7	PASS_AUDIO	295	ok
+Spectral	Bell_curve_envelope.praat	wrapper	9	PASS_AUDIO	238	ok
+Spectral	Beltrami_Inspired_Spectral_Melter.praat	wrapper	7	PASS_AUDIO	676	ok
+Spectral	Doppler_shift.praat	wrapper	10	PASS_AUDIO	217	ok
+Spectral	Dynamic_Tremolo_Effect.praat	wrapper	10	PASS_AUDIO	193	ok
+Spectral	Evolving_Convolution_Field.praat	wrapper	17	PASS_AUDIO	1850	ok
+Spectral	Fractal_Spectral_Hologram.praat	wrapper	12	PASS_AUDIO	332	ok
+Spectral	Frequency-Dependent_Phase_Manipulation.praat	wrapper	9	PASS_AUDIO	4750	ok
+Spectral	Giant_FFT_Recomposer.praat	wrapper	21	PASS_AUDIO	325	ok
+Spectral	Gizmo_Pitch_Shift.praat	wrapper	9	PASS_AUDIO	571	ok
+Spectral	Harmonic_Resonance_Boost.praat	wrapper	12	PASS_AUDIO	263	ok
+Spectral	Hilbert_Transform.praat	wrapper	8	PASS_AUDIO	242	ok
+Spectral	LPC Voice Generator.praat	wrapper	0	PASS_AUDIO	1964	ok
+Spectral	LPC_Voice_Morphing.praat	wrapper	14	PASS_AUDIO	213	ok
+Spectral	Non-Linear_Frequency_Folding.praat	wrapper	12	PASS_AUDIO	236	ok
+Spectral	Partial_Editing_Resynthesis.praat	wrapper	13	PASS_AUDIO	755	ok
+Spectral	Phase_History_Swap.praat	wrapper	9	PASS_AUDIO	4247	ok
+Spectral	Phase_Shaper.praat	wrapper	9	PASS_AUDIO	275	ok
+Spectral	Pitch_Class_Spectral_Gravity.praat	wrapper	13	PASS_AUDIO	365	ok
+Spectral	Self-Similarity Spectral Resynthesis.praat	wrapper	19	PASS_AUDIO	281	ok
+Spectral	Self-Similarity_Spectral_Resynthesis.praat	wrapper	6	PASS_AUDIO	315	ok
+Spectral	Self_Adaptive_Sieve_Convolution.praat	wrapper	16	PASS_AUDIO	258	ok
+Spectral	Spectral Painter.praat	wrapper	16	PASS_AUDIO	224	ok
+Spectral	Spectral_Blur.praat	wrapper	10	PASS_AUDIO	426	ok
+Spectral	Spectral_Effects_Suite.praat	wrapper	17	PASS_AUDIO	224	ok
+Spectral	Spectral_Freeze_Synthesis.praat	wrapper	17	PASS_AUDIO	553	ok
+Spectral	Spectral_Painter.praat	wrapper	16	PASS_AUDIO	326	ok
+Spectral	Spectral_swirl_effect.praat	wrapper	11	PASS_AUDIO	870	ok
+Spectral	Stepped_Notch_Filter.praat	wrapper	13	PASS_AUDIO	490	ok
+Spectral	Subtle_Random_Texture.praat	wrapper	11	PASS_AUDIO	508	ok
+Spectral	Vocoding.praat	wrapper	13	PASS_AUDIO	603	ok
+Spectral	Wave_Interference_Pattern.praat	wrapper	12	PASS_AUDIO	532	ok
+Time & Granular	Adaptive_Grain_Cloud_Synthesis.praat	wrapper	11	PASS_AUDIO	251	ok
+Time & Granular	Additive_Particle_Field.praat	wrapper	16	PASS_AUDIO	346	ok
+Time & Granular	BP_Slice_Remapper.praat	wrapper	8	PASS_AUDIO	251	ok
+Time & Granular	Beat-Synced_ZigZag.praat	wrapper	10	PASS_AUDIO	187	ok
+Time & Granular	Beat_Repeat.praat	wrapper	15	PASS_AUDIO	183	ok
+Time & Granular	Bigram_Stutter_Effect.praat	wrapper	8	PASS_AUDIO	348	ok
+Time & Granular	Brightness_Sorted_Grains.praat	wrapper	17	PASS_AUDIO	263	ok
+Time & Granular	Brownian_Motion_Texture_Generator.praat	wrapper	18	PASS_AUDIO	393	ok
+Time & Granular	Constraint-Based_Duration_Control.praat	wrapper	10	PASS_AUDIO	195	ok
+Time & Granular	Delay_Array.praat	wrapper	14	PASS_AUDIO	204	ok
+Time & Granular	Dramaturgical_Structure_Composer.praat	wrapper	20	FAIL	177	Error: Sound too short (< 20 s). Need longer material for structural analysis.
+Time & Granular	Evolving_Granular.praat	wrapper	14	PASS_AUDIO	289	ok
+Time & Granular	Fractal_Convolution_Matrix.praat	wrapper	10	PASS_AUDIO	398	ok
+Time & Granular	Fuzzy_Time_Recomposer.praat	wrapper	17	PASS_AUDIO	255	ok
+Time & Granular	Granular_Particle_Field.praat	wrapper	16	PASS_AUDIO	300	ok
+Time & Granular	HFD-Driven_Time_Warping.praat	wrapper	5	PASS_AUDIO	614	ok
+Time & Granular	Harmonic_Resonance.praat	wrapper	19	PASS_AUDIO	387	ok
+Time & Granular	Harmonic_Tension_Sorted_Grains.praat	wrapper	14	PASS_AUDIO	207	ok
+Time & Granular	In-Place_Paulstretch_Slicer__Multi-channel.praat	wrapper	12	PASS_AUDIO	631	ok
+Time & Granular	L-Logic_Symbolic_Granular_Recomposition.praat	wrapper	20	PASS_AUDIO	5036	ok
+Time & Granular	LZ-Inspired Audio Variations.praat	wrapper	12	PASS_AUDIO	313	ok
+Time & Granular	MDS_Space_Navigator.praat	wrapper	11	FAIL	248	Error: Need at least 2 word segments! Found: 1
+Time & Granular	Magnetic_Tape_Degradation.praat	wrapper	6	PASS_AUDIO	740	ok
+Time & Granular	Multi-channel Random Slice Time-Stretcher.praat	wrapper	5	FAIL	180	Error: Unknown symbol «Normal» in formula (variables start with nonupper case; object names contain an underscore).
+Time & Granular	Paulstretch.praat	wrapper	9	PASS_AUDIO	732	ok
+Time & Granular	Peephole_montage.praat	wrapper	5	NO_OUTPUT	224	
+Time & Granular	Percussive Audio Groove Creator.praat	wrapper	14	PASS_AUDIO	477	ok
+Time & Granular	Phase_Magnet.praat	wrapper	12	FAIL	193	Error: Please select exactly two Sound objects, then run Phase Magnet.
+Time & Granular	Phase_Modulation_Matrix.praat	wrapper	16	PASS_AUDIO	262	ok
+Time & Granular	Polyphonic_Improviser.praat	wrapper	13	NO_OUTPUT	291	
+Time & Granular	Quantum_State_Superposition.praat	wrapper	16	PASS_AUDIO	273	ok
+Time & Granular	Reich_Generator.praat	wrapper	14	PASS_AUDIO	398	ok
+Time & Granular	Rhythmatist.praat	wrapper	16	PASS_AUDIO	193	ok
+Time & Granular	Rhythmic_Fractal_Granulator.praat	wrapper	9	FAIL	174	Error: Unknown variable:
+Time & Granular	Segment_Mixer.praat	wrapper	9	FAIL	246	Error: Please select at least two Sound objects.
+Time & Granular	Sound_atom_composer.praat	wrapper	14	TIMEOUT	30226	Praat timed out after 30 seconds.
+Time & Granular	Sound_to_Grain.praat	wrapper	11	PASS_AUDIO	195	ok
+Time & Granular	Spectral_Echo_Cascade.praat	wrapper	12	PASS_AUDIO	351	ok
+Time & Granular	Spectral_Freeze_&_Glitch.praat	wrapper	15	PASS_AUDIO	375	ok
+Time & Granular	Stereo_Delay_Splitter.praat	wrapper	19	PASS_AUDIO	276	ok
+Time & Granular	Stereo_Micro_Macro_Time_Collapser.praat	wrapper	6	PASS_AUDIO	2420	ok
+Time & Granular	Stereo_Mosaic.praat	wrapper	10	FAIL	208	Error: Please select at least two Sound objects.
+Time & Granular	Stochastic_Time_Folding.praat	wrapper	17	PASS_AUDIO	217	ok
+Time & Granular	Symmetric_Group_Permuter.praat	wrapper	13	PASS_AUDIO	203	ok
+Time & Granular	Temporal_Turing_Morph.praat	wrapper	20	PASS_AUDIO	216	ok
+Time & Granular	Time_Manipulation.praat	wrapper	12	PASS_AUDIO	326	ok
+Time & Granular	Total_Serialism_Machine.praat	wrapper	15	PASS_AUDIO	476	ok
+Time & Granular	ZigZag_Effect.praat	wrapper	14	PASS_AUDIO	230	ok
+Vector Chain	Clean_Ableton_Bridge.praat	wrapper	2	FAIL	181	Error: Nothing deleted.
+Vector Chain	Composition_1.praat	wrapper	0	FAIL	174	Error: Found 13 arguments but expected more.
+Vector Chain	Composition_2.praat	wrapper	0	FAIL	279	Error: Found 13 arguments but expected more.
+Vector Chain	Live_1.praat	wrapper	1	FAIL	5499	Error: Found 13 arguments but expected more.
+Vector Chain	Live_1_Random.praat	wrapper	2	FAIL	5467	Error: Found 13 arguments but expected more.
+Vector Chain	Live_2.praat	wrapper	1	FAIL	5644	Error: Found 13 arguments but expected more.
+Vector Chain	Live_2_Random.praat	wrapper	2	FAIL	5574	Error: Found 13 arguments but expected more.
+Vector Chain	Live_3.praat	wrapper	1	FAIL	5670	Error: Found 16 arguments but expected more.
+Vector Chain	Live_3_Random.praat	wrapper	2	FAIL	5607	Error: Found 16 arguments but expected more.
+Vector Chain	Live_4.praat	wrapper	1	PASS_AUDIO	11630	ok
+Vector Chain	Live_5.praat	wrapper	1	PASS_AUDIO	14142	ok
+Vector Chain	Live_6.praat	wrapper	1	PASS_AUDIO	12469	ok
+Vector Chain	Matrix_Chain.praat	wrapper	0	FAIL	178	Error: Cannot find matrix_chain.py.
+Vector Chain	Send_to_Ableton.praat	wrapper	0	FAIL	227	Error: Send_to_Ableton v1.0 currently supports Windows only.
+Vector Chain	chain_1.praat	wrapper	0	FAIL	176	Error: Need at least 2 word segments! Found: 1
+Vector Chain	chain_2.praat	wrapper	0	FAIL	219	Error: Found 13 arguments but expected more.
+Vector Chain	chain_3.praat	wrapper	0	FAIL	260	Error: Found 16 arguments but expected more.
+Vector Chain	chain_4.praat	wrapper	0	PASS_AUDIO	2147	ok
+Vector Chain	chain_5.praat	wrapper	0	PASS_AUDIO	8895	ok
+Vector Chain	chain_6.praat	wrapper	0	PASS_AUDIO	5941	ok
+Vector Chain	chain_7.praat	wrapper	0	TIMEOUT	30230	Praat timed out after 30 seconds.
+audiotools	setup.praat	wrapper	0	NO_OUTPUT	251	

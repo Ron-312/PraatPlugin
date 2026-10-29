@@ -41,6 +41,10 @@ public:
                                       const juce::StringArray& scriptArguments = {},
                                       std::function<bool()> shouldCancel = nullptr);
 
+    // True if this Praat build needs --FULL-TRUST to let --run scripts write
+    // files (Praat 7+).  Runs `Praat --version` once per path and caches it.
+    static bool executableNeedsFullTrust (const juce::File& praatExecutableFile);
+
     // Returns true if the stored executable path points to a file that exists
     // and appears executable. Does not actually launch Praat.
     bool isPraatExecutableReachable() const;

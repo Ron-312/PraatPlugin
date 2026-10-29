@@ -118,7 +118,10 @@ void JobDispatcher::runPraatScript (AnalysisJob& job)
 
     PRAAT_LOG ("Running script: " + job.praatScriptFile.getFileName());
 
-    PraatRunner praatRunner (job.praatExecutableFile);
+    // Praat 7 blocks file writes from --run scripts without --FULL-TRUST, and
+    // every script must save its result WAV.  The user chose the script.
+    PraatRunner praatRunner (job.praatExecutableFile,
+                             PraatRunner::executableNeedsFullTrust (job.praatExecutableFile));
     ResultParser resultParser;
 
     // Detect which calling model the script uses.
