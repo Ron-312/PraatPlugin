@@ -96,3 +96,7 @@
   border-color: var(--color-signal);
   color: #fff;
 }
+
+.script-params__browse {
+  flex-shrink: 0;
+}

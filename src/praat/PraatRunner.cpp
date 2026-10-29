@@ -1,8 +1,11 @@
 #include "praat/PraatRunner.h"
 #include "debug/DebugWatchdog.h"
+#include <map>
+#include <mutex>
 
-PraatRunner::PraatRunner (juce::File praatExecutableFile)
-    : praatExecutableFile_ (std::move (praatExecutableFile))
+PraatRunner::PraatRunner (juce::File praatExecutableFile, bool fullTrust)
+    : praatExecutableFile_ (std::move (praatExecutableFile)),
+      fullTrust_ (fullTrust)
 {
 }
 
@@ -16,6 +19,8 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
     juce::StringArray commandLine;
     commandLine.add (praatExecutableFile_.getFullPathName());
     commandLine.add ("--run");
+    if (fullTrust_)
+        commandLine.add ("--FULL-TRUST");
     commandLine.add (scriptFile.getFullPathName());
     commandLine.addArray (scriptArguments);
 
@@ -47,16 +52,16 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
             return { false, -2, {}, "Analysis cancelled." };
         }
 
-        if (totalWaitedMs >= processTimeoutMilliseconds)
+        if (totalWaitedMs >= timeoutMs_)
         {
             praatProcess.kill();
             PRAAT_LOG_ERR ("PraatRunner: script timed out after "
-                           + juce::String (processTimeoutMilliseconds / 1000) + " s — "
+                           + juce::String (timeoutMs_ / 1000) + " s — "
                            + scriptFile.getFileName());
             return { false, -1,
                      {},
                      "Praat timed out after " +
-                         juce::String (processTimeoutMilliseconds / 1000) + " seconds." };
+                         juce::String (timeoutMs_ / 1000) + " seconds." };
         }
     }
 
@@ -79,4 +84,30 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
 bool PraatRunner::isPraatExecutableReachable() const
 {
     return praatExecutableFile_.existsAsFile();
+}
+
+bool PraatRunner::executableNeedsFullTrust (const juce::File& praatExecutableFile)
+{
+    static std::mutex cacheMutex;
+    static std::map<juce::String, bool> cache;
+
+    const auto key = praatExecutableFile.getFullPathName();
+    {
+        std::lock_guard<std::mutex> lock (cacheMutex);
+        if (auto it = cache.find (key); it != cache.end())
+            return it->second;
+    }
+
+    // "Praat 7.0.02 (August 26 2026)" → major version 7.
+    bool needsIt = false;
+    juce::ChildProcess proc;
+    if (proc.start (juce::StringArray { key, "--version" }) && proc.waitForProcessToFinish (5000))
+    {
+        const auto version = proc.readAllProcessOutput().fromFirstOccurrenceOf ("Praat ", false, false);
+        needsIt = version.getIntValue() >= 7;
+    }
+
+    std::lock_guard<std::mutex> lock (cacheMutex);
+    cache[key] = needsIt;
+    return needsIt;
 }

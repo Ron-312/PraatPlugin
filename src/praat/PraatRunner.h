@@ -29,7 +29,9 @@ public:
         juce::String standardError;       // Praat error messages, if any
     };
 
-    explicit PraatRunner (juce::File praatExecutableFile);
+    // fullTrust adds --FULL-TRUST.  Praat 7 refuses file writes (Save as WAV
+    // file, …) from --run scripts without it; Praat 6 does not know the flag.
+    explicit PraatRunner (juce::File praatExecutableFile, bool fullTrust = false);
 
     // Launches Praat and waits for it to complete (up to processTimeoutMilliseconds).
     // scriptArguments are appended after the script file path on the command line.
@@ -39,13 +41,20 @@ public:
                                       const juce::StringArray& scriptArguments = {},
                                       std::function<bool()> shouldCancel = nullptr);
 
+    // True if this Praat build needs --FULL-TRUST to let --run scripts write
+    // files (Praat 7+).  Runs `Praat --version` once per path and caches it.
+    static bool executableNeedsFullTrust (const juce::File& praatExecutableFile);
+
     // Returns true if the stored executable path points to a file that exists
     // and appears executable. Does not actually launch Praat.
     bool isPraatExecutableReachable() const;
 
     // How long we wait for Praat before killing the process and returning an error.
     static constexpr int processTimeoutMilliseconds { 30'000 };
+    void setTimeoutMilliseconds (int ms) noexcept { timeoutMs_ = ms; }
 
 private:
     juce::File praatExecutableFile_;
+    bool       fullTrust_;
+    int        timeoutMs_ { processTimeoutMilliseconds };
 };

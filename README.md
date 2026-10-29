@@ -51,7 +51,9 @@ Great for voice and speech work, music production, phonetics research, or anywhe
 
 - **Load or record audio** directly inside the plugin window
 - **Drag a region** on the waveform to process only a subset
-- **Browse 300+ community scripts** organized by category — pitch, distortion, reverb, spectral, spatial, granular, and more
+- **Browse 450+ community scripts** organized by category — pitch, distortion, reverb, spectral, spatial, granular, and more. 404 of 459 are verified to run from the plugin ([compatibility map](docs/script-compatibility.md))
+- **Two-Sound scripts**: cross-synthesis, morphing, convolution and more take a second input via **LOAD SOUND B**
+- **Folder pickers** for corpus scripts that work on a folder of clips
 - **Adjust script parameters** live with sliders, toggles, and dropdowns — values are read directly from the script's `form` block
 - **Run** — runs Praat in headless mode and shows the result waveform
 - **Compare** original and processed audio with the built-in transport
@@ -77,7 +79,7 @@ After downloading, copy the plugin to your DAW's plugin folder and rescan.
 | Dependency | Notes |
 |---|---|
 | **macOS 12+ / Windows 10+** | See [Download](#download) for format details |
-| **Praat** | Download free from [praat.org](https://www.praat.org). The plugin searches standard locations automatically. |
+| **Praat** | Download free from [praat.org](https://www.praat.org). The plugin searches standard locations automatically. Praat 7 is supported: the plugin passes `--FULL-TRUST` so scripts can write their output audio, which also means the scripts you run get full file access. |
 | **DAW** | Any DAW that loads VST3 or AU plugins (Ableton Live, Logic Pro, Reaper, etc.) |
 
 ### Build requirements
@@ -156,7 +158,7 @@ The VST3 is output to `build\PraatPlugin_artefacts\Release\VST3\PraatPlugin.vst3
 
 ## Scripts
 
-### Community library (300+ scripts)
+### Community library (450+ scripts)
 
 On first run the plugin automatically downloads the full [Praat-plugin_AudioTools](https://github.com/ShaiCohen-ops/Praat-plugin_AudioTools) library by Shai Cohen directly from GitHub. Scripts are saved to `~/Library/Application Support/PraatPlugin/community_scripts/` and loaded organized by category:
 
@@ -201,6 +203,19 @@ Click the script selector button to open the **Script Browser** — a searchable
 
 Use **BROWSE** to load scripts from any local folder on your machine (useful if you have your own `.praat` files or a local clone of another script collection).
 
+Some scripts carry a tag in the browser:
+
+| Tag | Meaning |
+|---|---|
+| `2 SOUNDS` | Reads a second Sound: a **LOAD SOUND B** row appears. Sound A is your take, Sound B goes in second |
+| `FOLDER` | Works on a folder of clips: use **BROWSE** next to the folder field before running |
+| `DIALOG` / `WINDOW` | Some options open a Praat dialog or interactive window, which can't be shown from the plugin |
+| `UNSUPPORTED` | Can't run from the plugin (needs an image, FFmpeg, Python or Windows). The reason is shown under the selector |
+
+"Play…" and "…editor" options start switched **off**, so Praat doesn't play through your speakers or try to open editor windows during a run.
+
+See [docs/script-compatibility.md](docs/script-compatibility.md) for which library scripts work and why the rest don't.
+
 ---
 
 ## Writing your own scripts
@@ -236,11 +251,11 @@ appendInfoLine: "duration: ", Get total duration
 
 1. The script must have a `form`/`endform` block
 2. The first two fields must be `sentence inputFile` and `sentence outputFile` — the plugin fills these in automatically
-3. Any additional fields become interactive controls in the plugin UI:
+3. Any additional fields become interactive controls in the plugin UI. Both the classic (`real Gain 0.5`) and colon (`real: "Gain", "0.5"`) form syntax work:
    - `real` / `positive` / `natural` / `integer` → slider + number input
    - `boolean` → ON/OFF toggle
    - `choice` / `optionmenu` → dropdown menu
-   - `sentence` / `word` / `text` → text input
+   - `sentence` / `word` / `text` / `folder` → text input (with **BROWSE** for file and folder fields)
 4. Write the processed audio to `outputFile$` — the plugin reads it back and shows it as the processed waveform
 5. Print results as `KEY: value` lines to the Praat info window — they appear in the Results panel
 
@@ -323,6 +338,24 @@ See `docs/adr/` for detailed architecture decision records.
 ---
 
 ## Contributing
+
+### Running the tests
+
+```bash
+cmake -B build-tests -G Ninja -DBUILD_TESTS=ON
+cmake --build build-tests --target PraatPluginTests
+./build-tests/tests/PraatPluginTests                      # unit tests
+
+# Run a whole script library through real Praat (hidden [compat] suite)
+PRAAT_EXE=/Applications/Praat.app/Contents/MacOS/Praat \
+PRAAT_SCRIPTS_DIR=~/Library/Application\ Support/PraatPlugin/community_scripts/Praat-plugin_AudioTools-main \
+PRAAT_COMPAT_REPORT=/tmp/compat.tsv \
+  ./build-tests/tests/PraatPluginTests "[compat]"
+```
+
+Options: `PRAAT_COMPAT_SHARD=i/n` (parallel shards), `PRAAT_COMPAT_CHANNELS=2`, `PRAAT_COMPAT_TIMEOUT_S`, `PRAAT_COMPAT_ONLY=<path substring>`.
+
+### Reporting issues
 
 Bug reports, feature requests, and pull requests are welcome. Open an issue at [Ron-312/PraatPlugin](https://github.com/Ron-312/PraatPlugin/issues) to start a discussion before submitting large changes.
 

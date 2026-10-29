@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22...4.3)
 
 project(PraatPlugin
-    VERSION 1.5.0
+    VERSION 1.6.0
     DESCRIPTION "DAW plugin that runs Praat speech-analysis scripts"
     LANGUAGES C CXX
 )
@@ -110,12 +110,14 @@ target_sources(PraatPlugin PRIVATE
     src/praat/PraatFormParser.cpp
     src/praat/PraatInstallationLocator.cpp
     src/praat/PraatScriptInvoker.cpp
+    src/praat/ScriptInvocation.cpp
     src/jobs/AnalysisJob.cpp
     src/jobs/JobQueue.cpp
     src/jobs/JobDispatcher.cpp
     src/scripts/ScriptManager.cpp
     src/scripts/ScriptDownloader.cpp
     src/scripts/ScriptParameterParser.cpp
+    src/scripts/ScriptCapabilities.cpp
     src/results/ResultParser.cpp
 )
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "scripts/ScriptCapabilities.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_gui_extra/juce_gui_extra.h>
@@ -125,6 +126,12 @@ private:
     void onStartDragExport ();
     void onSetScriptParam       (const juce::String& name, const juce::String& value);
     void onBrowsePraatExecutable();
+    void onLoadSoundB           ();
+    void onBrowseParamPath      (const juce::String& paramName);
+
+    // Static scan of a script, cached per path (scripts don't change while open).
+    const ScriptCapabilities& capabilitiesFor (const juce::File& script);
+    std::map<juce::String, ScriptCapabilities> capabilitiesCache_;
 
     // ── Windows fallback ──────────────────────────────────────────────────
     void showWebViewUnavailableMessage();

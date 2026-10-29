@@ -1,5 +1,6 @@
 # Build output
 build/
+build-tests/
 cmake-build-*/
 *.vst3
 *.component

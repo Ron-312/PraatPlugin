@@ -16,6 +16,10 @@ add_executable(PraatPluginTests
     test_ResultParser.cpp
     test_JobQueue.cpp
     test_PraatInstallationLocator.cpp
+    test_PraatFormParser.cpp
+    test_ScriptInvocation.cpp
+    test_ScriptCompatibility.cpp
+    test_ScriptCapabilities.cpp
 )
 
 target_include_directories(PraatPluginTests PRIVATE
@@ -36,8 +40,13 @@ target_link_libraries(PraatPluginTests
 target_sources(PraatPluginTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/results/ResultParser.cpp
     ${CMAKE_SOURCE_DIR}/src/jobs/AnalysisJob.cpp
+    ${CMAKE_SOURCE_DIR}/src/jobs/JobQueue.cpp
     ${CMAKE_SOURCE_DIR}/src/praat/PraatInstallationLocator.cpp
     ${CMAKE_SOURCE_DIR}/src/scripts/ScriptManager.cpp
+    ${CMAKE_SOURCE_DIR}/src/praat/PraatFormParser.cpp
+    ${CMAKE_SOURCE_DIR}/src/praat/PraatRunner.cpp
+    ${CMAKE_SOURCE_DIR}/src/praat/ScriptInvocation.cpp
+    ${CMAKE_SOURCE_DIR}/src/scripts/ScriptCapabilities.cpp
 )
 
 # ─── Register with CTest ──────────────────────────────────────────────────────

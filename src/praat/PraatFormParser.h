@@ -7,7 +7,8 @@ struct FormParam
     juce::String      name;         // e.g. "stretchFactor"
     juce::String      type;         // "real" | "positive" | "natural" | "integer" |
                                     // "boolean" | "choice" | "optionmenu" |
-                                    // "sentence" | "word" | "text"
+                                    // "sentence" | "word" | "text" |
+                                    // "infile" | "outfile" | "folder"
     juce::String      defaultValue; // raw string from the form line
     juce::StringArray options;      // populated for choice / optionmenu; empty otherwise
 

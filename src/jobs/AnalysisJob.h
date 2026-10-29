@@ -50,6 +50,10 @@ struct AnalysisJob
     // The .praat script to run against capturedAudioWavFile.
     juce::File praatScriptFile;
 
+    // Optional "Sound B" for scripts that read two selected Sounds (cross-
+    // synthesis, morphing, convolution).  Read by Praat straight from disk.
+    juce::File secondaryAudioFile;
+
     // User-controlled parameter values for the script, keyed by field name.
     // JobDispatcher uses PraatFormParser::parseAllFields() to build the final
     // positional CLI argument list in form order, substituting file paths for

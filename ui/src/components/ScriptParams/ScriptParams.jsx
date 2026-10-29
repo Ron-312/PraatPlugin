@@ -7,14 +7,14 @@
 //   real, positive, natural, integer  →  range slider + number input
 //   boolean                           →  ON / OFF toggle button
 //   choice, optionmenu                →  select dropdown
-//   sentence, word, text              →  text input
+//   sentence, word, text, folder…     →  text input (+ BROWSE for path fields)
 //
 // Hidden when there are no extra parameters.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import './ScriptParams.css'
 
-export function ScriptParams ({ params, onParamChange }) {
+export function ScriptParams ({ params, onParamChange, pathFields = [], onBrowsePath }) {
   if (!params || params.length === 0) return null
 
   return (
@@ -22,7 +22,12 @@ export function ScriptParams ({ params, onParamChange }) {
       <span className="section-label script-params__label">PARAMETERS</span>
       <div className="script-params__list">
         {params.map(param => (
-          <ParamRow key={param.name} param={param} onChange={onParamChange} />
+          <ParamRow
+            key={param.name}
+            param={param}
+            onChange={onParamChange}
+            onBrowse={pathFields.includes(param.name) ? () => onBrowsePath(param.name) : null}
+          />
         ))}
       </div>
     </div>
@@ -31,7 +36,7 @@ export function ScriptParams ({ params, onParamChange }) {
 
 // ── Individual parameter row ──────────────────────────────────────────────────
 
-function ParamRow ({ param, onChange }) {
+function ParamRow ({ param, onChange, onBrowse }) {
   const { name, type, value, options } = param
 
   // Boolean → ON / OFF toggle
@@ -69,8 +74,8 @@ function ParamRow ({ param, onChange }) {
     )
   }
 
-  // String types → text input
-  if (type === 'sentence' || type === 'word' || type === 'text') {
+  // String types → text input (+ BROWSE for file/folder fields)
+  if (['sentence', 'word', 'text', 'folder', 'infile', 'outfile'].includes(type)) {
     return (
       <div className="script-params__row">
         <span className="script-params__name">{name}</span>
@@ -80,6 +85,9 @@ function ParamRow ({ param, onChange }) {
           value={value}
           onChange={e => onChange(name, e.target.value)}
         />
+        {onBrowse && (
+          <button className="btn script-params__browse" onClick={onBrowse}>BROWSE</button>
+        )}
       </div>
     )
   }

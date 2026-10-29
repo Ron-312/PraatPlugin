@@ -31,9 +31,12 @@ TEST_CASE ("PraatInstallationLocator isPraatInstalled reflects filesystem realit
 {
     PraatInstallationLocator locator;
 
-    // Override with a path we know doesn't exist — isPraatInstalled must return false.
-    locator.overrideExecutablePathWithUserChoice (
-        juce::File ("/nonexistent/path/Praat"));
+    // An override that doesn't exist must never be returned; the locator falls
+    // back to the standard locations, so the answer depends on this machine.
+    const juce::File bogus ("/nonexistent/path/Praat");
+    locator.overrideExecutablePathWithUserChoice (bogus);
 
-    REQUIRE_FALSE (locator.isPraatInstalled());
+    const auto found = locator.locatePraatExecutable();
+    REQUIRE (found != bogus);
+    REQUIRE (locator.isPraatInstalled() == found.existsAsFile());
 }

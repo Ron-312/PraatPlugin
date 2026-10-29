@@ -218,3 +218,25 @@
   background: var(--color-border);
   border-radius: 2px;
 }
+
+/* Script needs: "2 SOUNDS", "FOLDER", "DIALOG", "WINDOW", "UNSUPPORTED" */
+.script-browser__badge {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0 4px;
+  letter-spacing: 0.3px;
+}
+
+.script-browser__badge--warn {
+  color: var(--color-signal);
+  border-color: var(--color-signal);
+}
+
+.script-browser__script-item--unsupported .script-browser__script-name {
+  color: var(--color-text-dim);
+}

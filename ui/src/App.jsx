@@ -55,7 +55,8 @@ export function App() {
   }, [actions])
 
   // Morph is only meaningful when audio is loaded and a script is selected.
-  const canRun = state.hasAudio && state.selectedScript.length > 0
+  const info   = state.scriptInfo || {}
+  const canRun = state.hasAudio && state.selectedScript.length > 0 && !info.unsupportedReason
 
   return (
     <div className="app">
@@ -85,6 +86,10 @@ export function App() {
         onToggleRecord={actions.toggleRecord}
         onStartDragExport={actions.startDragExport}
         isDragOver={state.isDragOver}
+        showSoundB={!!info.usesSecondSound}
+        soundBFileName={state.soundBFileName}
+        onLoadSoundB={actions.loadSoundB}
+        onClearSoundB={actions.clearSoundB}
       />
 
       <Transport
@@ -107,9 +112,19 @@ export function App() {
         onDownloadScripts={actions.downloadScripts}
       />
 
+      {(info.unsupportedReason || info.warning) && (
+        <div className={`app__script-note ${info.unsupportedReason ? 'app__script-note--error' : ''}`}>
+          {info.unsupportedReason
+            ? `Can't run in the plugin: ${info.unsupportedReason}`
+            : info.warning}
+        </div>
+      )}
+
       <ScriptParams
         params={state.scriptParams}
         onParamChange={handleParamChange}
+        pathFields={info.pathFields || []}
+        onBrowsePath={actions.browseParamPath}
       />
 
       <AnalyzeButton

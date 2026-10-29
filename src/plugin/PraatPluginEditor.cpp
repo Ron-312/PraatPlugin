@@ -358,6 +358,18 @@ juce::WebBrowserComponent::Options PraatPluginEditor::buildBrowserOptions()
         .withEventListener ("browsePraatExecutable", [this] (const juce::var&)
         {
             onBrowsePraatExecutable();
+        })
+        .withEventListener ("loadSoundB", [this] (const juce::var&)
+        {
+            onLoadSoundB();
+        })
+        .withEventListener ("clearSoundB", [this] (const juce::var&)
+        {
+            praatProcessor_.setSecondaryAudioFile ({});
+        })
+        .withEventListener ("browseParamPath", [this] (const juce::var& data)
+        {
+            onBrowseParamPath (data["name"].toString());
         });
 
 #if JUCE_WINDOWS
@@ -411,9 +423,16 @@ void PraatPluginEditor::pushStateToWebView()
                 folderObj->setProperty ("name", sm.folderNameAtIndex (fi));
 
                 juce::Array<juce::var> scriptNames;
+                auto badges = std::make_unique<juce::DynamicObject>();   // name → "2 SOUNDS" etc.
                 for (int si = 0; si < sm.numberOfScriptsInFolder (fi); ++si)
-                    scriptNames.add (sm.scriptInFolder (fi, si).getFileNameWithoutExtension());
+                {
+                    const auto script = sm.scriptInFolder (fi, si);
+                    scriptNames.add (script.getFileNameWithoutExtension());
+                    if (const auto badge = capabilitiesFor (script).badge(); badge.isNotEmpty())
+                        badges->setProperty (script.getFileNameWithoutExtension(), badge);
+                }
                 folderObj->setProperty ("scripts", juce::var (scriptNames));
+                folderObj->setProperty ("badges",  juce::var (badges.release()));
 
                 foldersArray.add (juce::var (folderObj.release()));
             }
@@ -451,7 +470,7 @@ void PraatPluginEditor::pushStateToWebView()
         currentParams_       = PraatFormParser::parseExtraParams (activeScript);
         currentParamValues_.clear();
         for (const auto& p : currentParams_)
-            currentParamValues_.set (p.name, p.defaultValue);
+            currentParamValues_.set (p.name, ScriptCapabilities::headlessDefault (p));
     }
 
     {
@@ -475,6 +494,31 @@ void PraatPluginEditor::pushStateToWebView()
             paramsArray.add (juce::var (obj.release()));
         }
         state->setProperty ("scriptParams", juce::var (paramsArray));
+    }
+
+    // ── What the active script needs (Sound B, folders, warnings) ─────────
+    {
+        auto info = std::make_unique<juce::DynamicObject>();
+        if (activeScript.existsAsFile())
+        {
+            const auto& caps = capabilitiesFor (activeScript);
+            info->setProperty ("usesSecondSound",   caps.usesSecondSound);
+            info->setProperty ("unsupportedReason", caps.unsupportedReason);
+
+            juce::Array<juce::var> pathFields;
+            for (const auto& n : caps.pathFieldNames)
+                pathFields.add (n);
+            info->setProperty ("pathFields", juce::var (pathFields));
+
+            juce::String warning;
+            if (caps.mayOpenWindow)
+                warning = "This script may open an interactive Praat window, which can't be used from the plugin.";
+            else if (caps.opensFileDialog && caps.pathFieldNames.isEmpty())
+                warning = "Some options of this script open a Praat file dialog, which can't be shown from the plugin.";
+            info->setProperty ("warning", warning);
+        }
+        state->setProperty ("scriptInfo", juce::var (info.release()));
+        state->setProperty ("soundBFileName", praatProcessor_.secondaryAudioFile().getFileName());
     }
 
     // ── Audio ─────────────────────────────────────────────────────────────
@@ -984,4 +1028,61 @@ void PraatPluginEditor::showWebViewUnavailableMessage()
     webViewUnavailableLabel_.setColour (juce::Label::textColourId,       juce::Colour (0xffe8e8e8));
     webViewUnavailableLabel_.setColour (juce::Label::backgroundColourId, juce::Colour (0xff181818));
     addAndMakeVisible (webViewUnavailableLabel_);
+}
+
+// ─── Script capabilities ─────────────────────────────────────────────────────
+
+const ScriptCapabilities& PraatPluginEditor::capabilitiesFor (const juce::File& script)
+{
+    const auto key = script.getFullPathName();
+    auto it = capabilitiesCache_.find (key);
+    if (it == capabilitiesCache_.end())
+        it = capabilitiesCache_.emplace (key, ScriptCapabilities::analyse (script)).first;
+    return it->second;
+}
+
+void PraatPluginEditor::onLoadSoundB()
+{
+    activeFileChooser_ = std::make_unique<juce::FileChooser> (
+        "Load Sound B",
+        juce::File::getSpecialLocation (juce::File::userMusicDirectory),
+        "*.wav;*.aif;*.aiff;*.mp3;*.flac");
+
+    activeFileChooser_->launchAsync (
+        juce::FileBrowserComponent::openMode |
+        juce::FileBrowserComponent::canSelectFiles,
+        [this] (const juce::FileChooser& chooser)
+        {
+            const auto selected = chooser.getResult();
+            if (selected.existsAsFile())
+                praatProcessor_.setSecondaryAudioFile (selected);
+        });
+}
+
+void PraatPluginEditor::onBrowseParamPath (const juce::String& paramName)
+{
+    // Folder fields pick a directory; file fields pick a file.
+    FormParam field;
+    for (const auto& p : currentParams_)
+        if (p.name == paramName)
+            field = p;
+
+    const auto lower      = field.name.toLowerCase();
+    const bool wantsFolder = field.type == "folder" || lower.contains ("folder")
+                          || lower.contains ("director") || lower.endsWith ("_dir");
+
+    activeFileChooser_ = std::make_unique<juce::FileChooser> (
+        "Choose " + paramName.replaceCharacter ('_', ' '),
+        juce::File::getSpecialLocation (juce::File::userMusicDirectory));
+
+    const int flags = juce::FileBrowserComponent::openMode
+                    | (wantsFolder ? juce::FileBrowserComponent::canSelectDirectories
+                                   : juce::FileBrowserComponent::canSelectFiles);
+
+    activeFileChooser_->launchAsync (flags, [this, paramName] (const juce::FileChooser& chooser)
+    {
+        const auto chosen = chooser.getResult();
+        if (chosen != juce::File())
+            currentParamValues_.set (paramName, chosen.getFullPathName());
+    });
 }

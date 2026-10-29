@@ -25,8 +25,9 @@ export function ScriptBrowser({ scriptFolders, selectedScript, onSelect, onClose
   const searchRef                 = useRef(null)
 
   // Flatten all scripts into a searchable list: [{qualified, folder, name}]
+  // badge: '2 SOUNDS' | 'FOLDER' | 'DIALOG' | 'WINDOW' | 'UNSUPPORTED' | undefined
   const allScripts = scriptFolders.flatMap((f) =>
-    f.scripts.map((s) => ({ qualified: `${f.name}/${s}`, folder: f.name, name: s }))
+    f.scripts.map((s) => ({ qualified: `${f.name}/${s}`, folder: f.name, name: s, badge: f.badges?.[s] }))
   )
 
   const visibleScripts = allScripts.filter(({ folder, name }) => {
@@ -109,13 +110,16 @@ export function ScriptBrowser({ scriptFolders, selectedScript, onSelect, onClose
               <span className="script-browser__empty">No scripts match</span>
             )}
 
-            {visibleScripts.map(({ qualified, folder, name }) => (
+            {visibleScripts.map(({ qualified, folder, name, badge }) => (
               <button
                 key={qualified}
-                className={`script-browser__script-item ${selectedScript === qualified ? 'active' : ''}`}
+                className={`script-browser__script-item ${selectedScript === qualified ? 'active' : ''} ${badge === 'UNSUPPORTED' ? 'script-browser__script-item--unsupported' : ''}`}
                 onClick={() => onSelect(qualified)}
               >
                 <span className="script-browser__script-name">{name}</span>
+                {badge && (
+                  <span className={`script-browser__badge ${badge === 'UNSUPPORTED' ? 'script-browser__badge--warn' : ''}`}>{badge}</span>
+                )}
                 {/* Show folder badge when browsing ALL or searching across folders */}
                 {(activeFolder === 'ALL' || search !== '') && (
                   <span className="script-browser__script-folder">{folder}</span>
