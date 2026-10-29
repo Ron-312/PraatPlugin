@@ -1,8 +1,9 @@
 #include "praat/PraatRunner.h"
 #include "debug/DebugWatchdog.h"
 
-PraatRunner::PraatRunner (juce::File praatExecutableFile)
-    : praatExecutableFile_ (std::move (praatExecutableFile))
+PraatRunner::PraatRunner (juce::File praatExecutableFile, bool fullTrust)
+    : praatExecutableFile_ (std::move (praatExecutableFile)),
+      fullTrust_ (fullTrust)
 {
 }
 
@@ -16,6 +17,8 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
     juce::StringArray commandLine;
     commandLine.add (praatExecutableFile_.getFullPathName());
     commandLine.add ("--run");
+    if (fullTrust_)
+        commandLine.add ("--FULL-TRUST");
     commandLine.add (scriptFile.getFullPathName());
     commandLine.addArray (scriptArguments);
 

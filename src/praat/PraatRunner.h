@@ -29,7 +29,9 @@ public:
         juce::String standardError;       // Praat error messages, if any
     };
 
-    explicit PraatRunner (juce::File praatExecutableFile);
+    // fullTrust adds --FULL-TRUST.  Praat 7 refuses file writes (Save as WAV
+    // file, …) from --run scripts without it; Praat 6 does not know the flag.
+    explicit PraatRunner (juce::File praatExecutableFile, bool fullTrust = false);
 
     // Launches Praat and waits for it to complete (up to processTimeoutMilliseconds).
     // scriptArguments are appended after the script file path on the command line.
@@ -48,4 +50,5 @@ public:
 
 private:
     juce::File praatExecutableFile_;
+    bool       fullTrust_;
 };

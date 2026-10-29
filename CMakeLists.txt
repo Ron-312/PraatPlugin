@@ -110,6 +110,7 @@ target_sources(PraatPlugin PRIVATE
     src/praat/PraatFormParser.cpp
     src/praat/PraatInstallationLocator.cpp
     src/praat/PraatScriptInvoker.cpp
+    src/praat/ScriptInvocation.cpp
     src/jobs/AnalysisJob.cpp
     src/jobs/JobQueue.cpp
     src/jobs/JobDispatcher.cpp
