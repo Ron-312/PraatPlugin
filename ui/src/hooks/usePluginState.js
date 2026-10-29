@@ -22,7 +22,7 @@ import { sendToPlugin, onPluginEvent } from '../bridge/juceBridge'
 // Every key here must have a matching property emitted by pushStateToWebView()
 // in PraatPluginEditor.cpp.
 const INITIAL_STATE = {
-  scriptFolders:    [],       // {name: string, scripts: string[]}[]  — folder-organized
+  scriptFolders:    [],       // {name, scripts: string[], badges: {script: badge}}[]
   selectedScript:   '',       // string    — "FOLDER/scriptName" or ''
 
   hasAudio:         false,    // bool      — an audio file is loaded
@@ -53,6 +53,11 @@ const INITIAL_STATE = {
   playbackFraction: 0,        // 0–1       — cursor position in the playing clip
 
   scriptParams:     [],       // FormParam[]  — extra form fields for current script
+
+  // What the active script needs — see ScriptCapabilities.h
+  // { usesSecondSound, unsupportedReason, warning, pathFields: string[] }
+  scriptInfo:       {},
+  soundBFileName:   '',       // string    — loaded "Sound B" basename
 
   // Populated only in debug builds (-DPRAATPLUGIN_DEBUG_LOGGING=ON).
   // Shape: { latencyMs: number, logPath: string, entries: {t,msg,kind}[] }
@@ -118,6 +123,9 @@ export function usePluginState() {
     exportProcessed:       useCallback(() => sendToPlugin('exportProcessed'),        []),
     startDragExport:       useCallback(() => sendToPlugin('startDragExport'),        []),
     browsePraatExecutable: useCallback(() => sendToPlugin('browsePraatExecutable'), []),
+    loadSoundB:            useCallback(() => sendToPlugin('loadSoundB'),            []),
+    clearSoundB:           useCallback(() => sendToPlugin('clearSoundB'),           []),
+    browseParamPath:       useCallback((name) => sendToPlugin('browseParamPath', { name }), []),
   }
 
   return { state, actions }
@@ -130,6 +138,8 @@ const MOCK_STATE = {
   ...INITIAL_STATE,
   scriptFolders: [
     { name: 'BUNDLED',    scripts: ['pitch_analysis', 'formant_analysis', 'robot_voice'] },
+    { name: 'FILTER',     scripts: ['cross_synthesis', 'photo_sonification'],
+      badges: { cross_synthesis: '2 SOUNDS', photo_sonification: 'UNSUPPORTED' } },
     { name: 'PITCH',      scripts: ['pitch_shift', 'pitch_correction', 'vibrato', 'pitch_morphing'] },
     { name: 'REVERB',     scripts: ['shimmer_reverb', 'convolution_reverb', 'room_simulation'] },
     { name: 'DISTORTION', scripts: ['fuzz_distortion', 'soft_clip', 'tanh_saturation'] },

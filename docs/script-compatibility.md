@@ -11,47 +11,48 @@ Each script gets a 1.5 s mono 44.1 kHz harmonic tone and its **default** paramet
 | | Library (459) | Bundled (9) |
 |---|---|---|
 | Before (no `--FULL-TRUST`, old parser) | 11 work | 2 work |
-| `--FULL-TRUST` only | 345 work | 9 work |
-| **This branch** (`--FULL-TRUST` on Praat 7 + parser fixes) | **381 work** (369 audio + 12 text) | **9 work** |
+| + `--FULL-TRUST` on Praat 7 | 345 | 9 |
+| + form parser fixes | 381 | 9 |
+| **+ Sound B, folder pickers, headless defaults** (current) | **404** (393 audio + 11 text) | **9** |
+
+The test fills in what the plugin UI asks the user for: a second Sound for `2 SOUNDS`
+scripts (only if the run fails without one, since it's optional for some), and a folder
+of three clips for `FOLDER` fields.
 
 ### What was fixed
 
 - **Praat 7 needs `--FULL-TRUST`.** Praat 7 refuses file writes (`Save as WAV file`) from
-  `--run` scripts without it, so no script could return audio. `JobDispatcher` now passes it
-  when `Praat --version` reports 7 or newer (`PraatRunner::executableNeedsFullTrust`, cached
-  per path); Praat 6 rejects the flag, so it is not passed there. The user picks the
-  script, but downloaded community scripts do get full file access.
-- **Colon form syntax** (`real: "Delay (s)", "0.25"`, `optionMenu:` + `option: "…"`,
-  `form: "Title"`) is now parsed. ~110 scripts use it; their arguments were dropped or shifted.
-- **Numeric defaults with hints** (`integer Dots 5 (= top line)`) pass only the number.
-- **`endform` with trailing whitespace / CRLF** no longer runs the parser into later code.
-- **File-path detection** also requires a path-like or empty default, so `word Output_name
-  montage` / `sentence Sofa_file kemar` stay ordinary parameters.
-- `infile` / `outfile` / `folder` fields are recognised and quoted.
+  `--run` scripts without it. `JobDispatcher` passes it when `Praat --version` reports 7+
+  (`PraatRunner::executableNeedsFullTrust`); Praat 6 rejects the flag, so it isn't passed there.
+- **Form parser:** colon syntax (`real: "Delay (s)", "0.25"`, `optionMenu:` + `option: "…"`,
+  `form: "Title"`), numeric defaults with hints, padded `endform`, `infile`/`outfile`/`folder`,
+  and file-path detection that needs a path-like or empty default.
+- **Sound B** (`ScriptCapabilities::usesSecondSound`): the wrapper loads both Sounds and
+  selects A then B.
+- **Folder fields** get a BROWSE button; a run with a blank folder field that would open
+  `chooseFolder$` is refused up front instead of hanging for 30 s.
+- **Headless defaults:** `Play…` and `…editor` booleans start off.
+- **No-selection output:** when a script leaves nothing selected, the newest non-input Sound
+  is saved.
+- **Script tags** in the browser: `2 SOUNDS`, `FOLDER`, `DIALOG`, `WINDOW`, `UNSUPPORTED`.
 
-## What still fails (78), by cause
+## What still fails (55)
 
-Checked with the `[compat]` options `PRAAT_COMPAT_CHANNELS`, `PRAAT_COMPAT_TIMEOUT_S`, `PRAAT_COMPAT_ONLY`.
-
-| Group | # | Scripts (examples) | Possible fix |
+| Cause | # | Scripts | Plugin-side? |
 |---|---|---|---|
-| Need **two (or more) Sounds** | 23 | Cross_Synthesis, Spectral_Morph, Creative_Convolution (source + IR), Pitch_Contour_Transfer, Neural_Audio_Mosaic, Math_Operations, Kick_detector_and_bass_adder, Segment_Mixer, Stereo_Mosaic, Ambisonic_Bed_Mixer, Universal_Audio_Export… | **Add a second input ("Sound B") to the plugin**; wrapper loads both and selects A + B |
-| **Hidden file/folder dialog** (blank folder field → `chooseFolder$`, or `chooseWriteFile$`), so Praat hangs until timeout | 8 | OT_CORPUS_CONCATENATOR, Timbral_Similarity_Browser, Bayesian_Drone_Weaver, KL_Divergence_Corpus_Resynthesis, Sound_atom_composer, Recursive WAV opener, Scala_Scale_Auralizer, Formant_to_MusicXML | Show a folder/file picker for those fields; detect `choose…$` up front instead of waiting 30 s |
-| **Interactive**: Demo window (mouse drawing) or `pause` dialogs | 9 | UPIC_Draw_Synthesis, Draw_Intensity_Envelope, Spatial_Trajectory_Painter, Peephole_montage, Chladni_Resonance_Lab, Audiovisual_Sonification, Sidechain_Feedback_VCA, Polyphonic_Improviser, Universal Convolution Generator | Can't run headless. Label as "interactive, open in Praat" or hide |
-| **Upstream script bugs** | 14 | Vector Chain Live_*/chain_2/3/Composition_* (stale `runScript` args), Higher-Order_Ambisonic_Encoder/Decoder, Multi-channel Random Slice Time-Stretcher (formula errors), Rhythmic_Fractal_Granulator | Report to the library author |
-| **Input-dependent** (needs speech/notes/onsets/longer audio; pass on real material) | 10 | Audio_Quantizer, OT_Grammar_Learning, OM_Score_Transformer, Dramaturgical_Structure_Composer (>20 s), MDS_Space_Navigator, chain_1, 3D_Audio_Room_Simulator, Onset-Based_Oscillator_Bank, Gesture-Based_Hard_Quantization, SPEAR parser (needs a text file) | None needed; show Praat's error message clearly |
-| **Need an image (Photo)** | 4 | Photo_sonification, Spectral_Image_Sonification, Percussive_Image_Sonification, Photo_Brightness… | Optional image input |
-| **Need stereo input** | 4 | Mid-Side_Matrix, Mix_Multi-Channel_to_Stereo, Spatial trajectory tracker, Stereo Channel Similarity Meter | **None**: all pass with a stereo take (plugin passes the track's channels) |
-| TextGrid editor | 2 | Pitch Loop Finder (both copies) | Can't run headless |
-| External tool / OS / not a processor | 5 | Media_ffmpeg_tools (FFmpeg), Send_to_Ableton (Windows), Matrix_Chain (.py), Clean_Ableton_Bridge, setup.praat | Hide |
-| Just slow | 1 | chain_7 (44 s) | Raise timeout or scale it with clip length |
+| Upstream script bugs | 14 | Vector Chain Live_1–3(+Random), Composition_1/2, chain_2/3 (stale `runScript` args); Higher-Order Ambisonic Encoder/Decoder, Multi-channel Random Slice Time-Stretcher (formula errors); Rhythmic_Fractal_Granulator | No. Report upstream |
+| Interactive Demo windows / pause dialogs (tagged `WINDOW`) | 9 | UPIC_Draw_Synthesis, Draw_Intensity_Envelope, Spatial_Trajectory_Painter, Peephole_montage, Chladni_Resonance_Lab, Audiovisual_Sonification, Polyphonic_Improviser, Universal Convolution Generator, Creative_Convolution | No, needs the Praat app |
+| Input-dependent (too short, no notes/onsets, needs a score/text file) | 9 | Dramaturgical_Structure_Composer (>20 s), OT_Grammar_Learning, OM_Score_Transformer, MDS_Space_Navigator, chain_1, 3D_Audio_Room_Simulator, Onset-Based_Oscillator_Bank, Gesture-Based_Hard_Quantization, SPEAR parser | Mostly fine on real material |
+| Need stereo / mono-only / multi-Sound beds | 7 | Mid-Side_Matrix, Mix_Multi-Channel_to_Stereo, Spatial trajectory tracker, Stereo Channel Similarity Meter (all pass with stereo input); Audio_Quantizer, Sidechain_Feedback_VCA (want mono / exactly one); Ambisonic_Bed_Mixer (B-format) | Stereo ones work on stereo tracks |
+| Need an image (Photo), tagged `UNSUPPORTED` | 4 | Photo_sonification, Spectral_Image_Sonification, Percussive_Image_Sonification, Photo_Brightness… | Could add image input |
+| Unconditional file dialog (tagged `DIALOG`) | 3 | Formant_to_MusicXML, Scala_Scale_Auralizer, Recursive WAV opener | No |
+| External tool / OS / helper (tagged `UNSUPPORTED`) | 7 | Media_ffmpeg_tools, Batch_Channel_Format_Exporter (FFmpeg), Send_to_Ableton (Windows), Matrix_Chain (.py), Clean_Ableton_Bridge, Universal_Audio_Export / Universal_Audio_IO (batch exporters), setup.praat | No |
+| Slow (44 s) | 1 | chain_7 | Raise the timeout |
 
 ## Other issues found
 
 - **Case-colliding files** upstream (`Dynamic_Formant_Sweeper` vs `DYNAMIC_FORMANT_SWEEPER`,
   `Stereo_Shimmer` vs `stereo_shimmer`): on macOS only one survives.
-- **Audio playback**: many scripts default `Play_result 1`, and Praat plays through the
-  speakers during a plugin run. The plugin could force `Play…` booleans off.
 - Test suite did not link before this branch (`JobQueue.cpp` missing), and the locator test
   assumed Praat was *not* installed.
 

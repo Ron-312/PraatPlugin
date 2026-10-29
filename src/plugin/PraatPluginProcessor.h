@@ -196,6 +196,11 @@ public:
     // Pass {} to use the script's own declared defaults for all fields.
     void beginAnalysisOfSelectedRegion (const juce::StringPairArray& scriptParameters = {});
 
+    // Optional second input ("Sound B") for two-Sound scripts.  Passed to Praat
+    // as a file; an empty File clears it.
+    void       setSecondaryAudioFile (const juce::File& file) { secondaryAudioFile_ = file; }
+    juce::File secondaryAudioFile() const                     { return secondaryAudioFile_; }
+
     // Kills the currently running Praat process (if any).
     // No-op if no analysis is in progress.
     void cancelCurrentAnalysis();
@@ -322,6 +327,7 @@ private:
     // defaults are read on demand from the script's form block.
     //──────────────────────────────────────────────────────────────────────────
     std::map<juce::String, juce::StringPairArray> scriptParameterValues_;
+    juce::File secondaryAudioFile_;
 
     //──────────────────────────────────────────────────────────────────────────
     // Analysis state (message-thread only, except where noted)

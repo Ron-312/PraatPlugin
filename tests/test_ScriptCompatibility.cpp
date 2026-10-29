@@ -12,14 +12,15 @@
 //   PRAAT_COMPAT_ONLY=Stereo \      (optional, substring filter on the path)
 //   ./PraatPluginTests "[compat]"
 //
-// Default parameter values are used — what a user gets on first Run — except
-// boolean "Play…" fields, which are forced off so the run stays silent.
+// Parameters start where the plugin starts them (ScriptCapabilities::headlessDefault),
+// i.e. what a user gets on first Run.
 
 #include <catch2/catch_test_macros.hpp>
 #include <juce_audio_formats/juce_audio_formats.h>
 #include "praat/PraatFormParser.h"
 #include "praat/PraatRunner.h"
 #include "praat/ScriptInvocation.h"
+#include "scripts/ScriptCapabilities.h"
 
 namespace
 {
@@ -30,7 +31,7 @@ namespace
 
     // 1.5 s of a vibrato'd, harmonic-rich tone — gives pitch, formant and
     // onset analyses something to find.  Mono, 44.1 kHz, 16-bit, like a DAW take.
-    void writeTestWav (const juce::File& file, int channels)
+    void writeTestWav (const juce::File& file, int channels, double pitchScale = 1.0)
     {
         constexpr double sr = 44100.0;
         const int n = (int) (sr * 1.5);
@@ -39,7 +40,7 @@ namespace
         for (int i = 0; i < n; ++i)
         {
             const double t  = i / sr;
-            const double f0 = 150.0 + 10.0 * std::sin (2.0 * juce::MathConstants<double>::pi * 5.0 * t);
+            const double f0 = pitchScale * 150.0 + 10.0 * std::sin (2.0 * juce::MathConstants<double>::pi * 5.0 * t);
             phase += 2.0 * juce::MathConstants<double>::pi * f0 / sr;
             double s = 0.0;
             for (int h = 1; h <= 8; ++h)
@@ -130,28 +131,66 @@ TEST_CASE ("Every library script runs under the plugin's calling model", "[.][co
         const auto fields   = PraatFormParser::parseAllFields (script);
         juce::StringPairArray userValues;
         for (const auto& f : fields)
-            if (f.type == "boolean" && f.name.startsWithIgnoreCase ("play"))
-                userValues.set (f.name, "0");
+            userValues.set (f.name, ScriptCapabilities::headlessDefault (f));
 
         const bool wrapped  = ScriptInvocation::needsSoundObjectWrapper (fields);
-        juce::File toRun    = script;
-        juce::StringArray args;
-        if (wrapped)
+        const auto caps     = ScriptCapabilities::analyse (script);
+
+        // Fill what the plugin UI would ask the user for: a Sound B and a
+        // folder of clips for corpus scripts.
+        // Sound B is optional for some scripts: run without it first and only
+        // add it if that fails — what a user would do.
+        juce::File soundB;
+        const auto soundBFile = work.getChildFile ("input_b.wav");
+        if (caps.usesSecondSound)
+            writeTestWav (soundBFile, juce::jmax (1, env ("PRAAT_COMPAT_CHANNELS").getIntValue()), 0.6);
+        if (caps.pathFieldNames.size() > 0)
         {
-            toRun = work.getChildFile ("wrapper.praat");
-            toRun.replaceWithText (ScriptInvocation::buildWrapperScript (
-                inWav, outWav, script, PraatFormParser::parseExtraParams (script), userValues));
-        }
-        else
-        {
-            args = ScriptInvocation::buildScriptArgs (script, inWav, outWav, userValues);
+            const auto corpus = work.getChildFile ("corpus");
+            corpus.createDirectory();
+            for (int k = 0; k < 3; ++k)
+                writeTestWav (corpus.getChildFile ("clip" + juce::String (k) + ".wav"), 1, 1.0 + 0.25 * k);
+            for (const auto& name : caps.pathFieldNames)
+                userValues.set (name, corpus.getFullPathName());
         }
 
-        const auto t0 = juce::Time::getMillisecondCounter();
         PraatRunner runner (praat, PraatRunner::executableNeedsFullTrust (praat));
         if (env ("PRAAT_COMPAT_TIMEOUT_S").getIntValue() > 0)
             runner.setTimeoutMilliseconds (env ("PRAAT_COMPAT_TIMEOUT_S").getIntValue() * 1000);
-        const auto outcome = runner.launchPraatWithScript (toRun, args);
+
+        auto runOnce = [&] (const juce::File& b)
+        {
+            juce::File toRun = script;
+            juce::StringArray args;
+            if (wrapped)
+            {
+                toRun = work.getChildFile ("wrapper.praat");
+                toRun.replaceWithText (ScriptInvocation::buildWrapperScript (
+                    inWav, outWav, script, PraatFormParser::parseExtraParams (script), userValues, b));
+            }
+            else
+            {
+                args = ScriptInvocation::buildScriptArgs (script, inWav, outWav, userValues);
+            }
+            return runner.launchPraatWithScript (toRun, args);
+        };
+
+        if (const auto blocked = caps.checkBeforeRun (userValues); blocked.isNotEmpty())
+        {
+            tsv << script.getParentDirectory().getFileName() << "\t" << script.getFileName() << "\t"
+                << (wrapped ? "wrapper" : "file-args") << "\t" << fields.size() << "\t"
+                << "SKIPPED" << "\t0\t" << blocked << "\n";
+            work.deleteRecursively();
+            continue;
+        }
+
+        const auto t0 = juce::Time::getMillisecondCounter();
+        auto outcome = runOnce ({});
+        if (caps.usesSecondSound && ! outWav.existsAsFile())
+        {
+            soundB  = soundBFile;
+            outcome = runOnce (soundB);
+        }
         const auto ms = juce::Time::getMillisecondCounter() - t0;
 
         juce::String status, detail;

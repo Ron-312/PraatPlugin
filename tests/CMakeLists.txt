@@ -19,6 +19,7 @@ add_executable(PraatPluginTests
     test_PraatFormParser.cpp
     test_ScriptInvocation.cpp
     test_ScriptCompatibility.cpp
+    test_ScriptCapabilities.cpp
 )
 
 target_include_directories(PraatPluginTests PRIVATE
@@ -45,6 +46,7 @@ target_sources(PraatPluginTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/praat/PraatFormParser.cpp
     ${CMAKE_SOURCE_DIR}/src/praat/PraatRunner.cpp
     ${CMAKE_SOURCE_DIR}/src/praat/ScriptInvocation.cpp
+    ${CMAKE_SOURCE_DIR}/src/scripts/ScriptCapabilities.cpp
 )
 
 # ─── Register with CTest ──────────────────────────────────────────────────────

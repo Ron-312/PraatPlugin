@@ -24,6 +24,10 @@ export function AudioSection({
   onToggleRecord,
   onStartDragExport,
   isDragOver,
+  showSoundB,
+  soundBFileName,
+  onLoadSoundB,
+  onClearSoundB,
 }) {
   return (
     <section className="audio-section">
@@ -49,6 +53,22 @@ export function AudioSection({
           {fileName || 'no file loaded'}
         </span>
       </div>
+
+      {/* Second input for scripts that read two Sounds (cross-synthesis, morphing…).
+          Sound A is the main take above; B goes in as the second selected Sound. */}
+      {showSoundB && (
+        <div className="audio-section__controls audio-section__sound-b">
+          <button className="btn" onClick={onLoadSoundB} title="Second Sound for this script">
+            LOAD SOUND B
+          </button>
+          <span className="audio-section__file-name">
+            {soundBFileName || 'no Sound B (this script uses a second Sound)'}
+          </span>
+          {soundBFileName && (
+            <button className="btn" onClick={onClearSoundB} title="Remove Sound B">✕</button>
+          )}
+        </div>
+      )}
 
       <Waveform
         label="ORIGINAL"

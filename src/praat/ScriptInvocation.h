@@ -7,7 +7,8 @@
 //                          values are passed positionally to `Praat --run`.
 //   • Sound-object model — community scripts that act on the selected Sound;
 //                          a generated wrapper loads the WAV, calls runScript,
-//                          and saves the selected Sound to outputWav.
+//                          and saves the selected Sound to outputWav.  With a
+//                          secondInputWav, both Sounds are selected (A first).
 namespace ScriptInvocation
 {
     // True when no form field was tagged as the input file path.
@@ -22,7 +23,8 @@ namespace ScriptInvocation
                                      const juce::File&             outputWav,
                                      const juce::File&             communityScript,
                                      const juce::Array<FormParam>& params,
-                                     const juce::StringPairArray&  userValues);
+                                     const juce::StringPairArray&  userValues,
+                                     const juce::File&             secondInputWav = {});
 
     juce::String praatStringEscape (const juce::String& s);
 }

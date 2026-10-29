@@ -79,18 +79,28 @@ juce::String ScriptInvocation::praatStringEscape (const juce::String& s)
     return s.replace ("\\", "\\\\").replace ("\"", "\\\"");
 }
 
-juce::String ScriptInvocation::buildWrapperScript (const juce::File&            inputWav,
-                                                    const juce::File&            outputWav,
-                                         const juce::File&            communityScript,
-                                         const juce::Array<FormParam>& params,
-                                         const juce::StringPairArray& userValues)
+juce::String ScriptInvocation::buildWrapperScript (const juce::File&             inputWav,
+                                                  const juce::File&             outputWav,
+                                                  const juce::File&             communityScript,
+                                                  const juce::Array<FormParam>& params,
+                                                  const juce::StringPairArray&  userValues,
+                                                  const juce::File&             secondInputWav)
 {
     juce::String w;
 
     // Step 1 — load the plugin's captured audio as a Praat Sound object
     // and immediately select it so the community script finds it selected.
     w += "inputSound__ = Read from file: \"" + praatStringEscape (inputWav.getFullPathName()) + "\"\n";
-    w += "selectObject: inputSound__\n\n";
+    if (secondInputWav != juce::File())
+    {
+        // Praat lists selected objects in creation order, so A stays first.
+        w += "inputSoundB__ = Read from file: \"" + praatStringEscape (secondInputWav.getFullPathName()) + "\"\n";
+        w += "selectObject: inputSound__, inputSoundB__\n\n";
+    }
+    else
+    {
+        w += "selectObject: inputSound__\n\n";
+    }
 
     // Step 2 — call the community script with all its form params in order.
     // comment-type form fields are automatically skipped by Praat's runScript;
@@ -124,8 +134,22 @@ juce::String ScriptInvocation::buildWrapperScript (const juce::File&            
     w += "\n\n";
 
     // Step 3 — save the resulting Sound (if any) to the output path.
+    // Some scripts leave nothing selected; then take the newest Sound…
+    w += "result__ = 0\n";
     w += "if numberOfSelected (\"Sound\") > 0\n";
-    w += "    selectObject: selected (\"Sound\")\n";
+    w += "    result__ = selected (\"Sound\")\n";
+    w += "else\n";
+    w += "    nocheck select all\n";
+    w += "    if numberOfSelected (\"Sound\") > 0\n";
+    w += "        result__ = selected (\"Sound\", -1)\n";
+    w += "    endif\n";
+    // …but never an untouched input (analysis scripts only print text).
+    w += "    if result__ = inputSound__" + juce::String (secondInputWav != juce::File() ? " or result__ = inputSoundB__" : "") + "\n";
+    w += "        result__ = 0\n";
+    w += "    endif\n";
+    w += "endif\n";
+    w += "if result__ > 0\n";
+    w += "    selectObject: result__\n";
     w += "    Save as WAV file: \"" + praatStringEscape (outputWav.getFullPathName()) + "\"\n";
     w += "endif\n";
 

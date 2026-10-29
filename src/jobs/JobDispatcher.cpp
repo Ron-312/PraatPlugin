@@ -3,6 +3,7 @@
 #include "praat/PraatRunner.h"
 #include "praat/PraatFormParser.h"
 #include "praat/ScriptInvocation.h"
+#include "scripts/ScriptCapabilities.h"
 #include "results/ResultParser.h"
 #include "debug/DebugWatchdog.h"
 
@@ -118,6 +119,18 @@ void JobDispatcher::runPraatScript (AnalysisJob& job)
 
     PRAAT_LOG ("Running script: " + job.praatScriptFile.getFileName());
 
+    // Refuse up front what would fail or hang (unsupported script, a file
+    // dialog headless Praat can't show) instead of waiting for the timeout.
+    if (const auto problem = ScriptCapabilities::analyse (job.praatScriptFile)
+                                 .checkBeforeRun (job.scriptParameters);
+        problem.isNotEmpty())
+    {
+        job.currentState     = JobState::FailedWithError;
+        job.errorDescription = problem;
+        job.result           = ResultParser().buildFailureResult (problem, problem);
+        return;
+    }
+
     // Praat 7 blocks file writes from --run scripts without --FULL-TRUST, and
     // every script must save its result WAV.  The user chose the script.
     PraatRunner praatRunner (job.praatExecutableFile,
@@ -145,7 +158,8 @@ void JobDispatcher::runPraatScript (AnalysisJob& job)
             job.outputAudioWavFile,
             job.praatScriptFile,
             PraatFormParser::parseExtraParams (job.praatScriptFile),
-            job.scriptParameters);
+            job.scriptParameters,
+            job.secondaryAudioFile.existsAsFile() ? job.secondaryAudioFile : juce::File());
 
         const auto wrapperFile = job.capturedAudioWavFile.getParentDirectory()
                                      .getChildFile ("wrapper.praat");

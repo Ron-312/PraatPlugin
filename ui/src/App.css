@@ -52,3 +52,15 @@
   padding: 3px var(--space-3) 4px;
   opacity: 0.45;
 }
+
+/* Note under the script selector: why a script can't run, or what to expect */
+.app__script-note {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  padding: 0 var(--space-3);
+}
+
+.app__script-note--error {
+  color: var(--color-signal);
+}

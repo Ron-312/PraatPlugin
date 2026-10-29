@@ -564,6 +564,7 @@ void PraatPluginProcessor::beginAnalysisOfSelectedRegion (const juce::StringPair
     }
 
     job.scriptParameters = scriptParameters;
+    job.secondaryAudioFile = secondaryAudioFile_;
     job.currentState    = JobState::Pending;
 
     analysisIsInProgress_ = true;

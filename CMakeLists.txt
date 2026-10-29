@@ -117,6 +117,7 @@ target_sources(PraatPlugin PRIVATE
     src/scripts/ScriptManager.cpp
     src/scripts/ScriptDownloader.cpp
     src/scripts/ScriptParameterParser.cpp
+    src/scripts/ScriptCapabilities.cpp
     src/results/ResultParser.cpp
 )
 

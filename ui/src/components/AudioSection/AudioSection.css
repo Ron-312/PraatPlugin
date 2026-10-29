@@ -63,3 +63,8 @@
   text-overflow: ellipsis;
   min-width: 0;
 }
+
+/* Sound B row — only shown for scripts that read two Sounds */
+.audio-section__sound-b {
+  padding-top: var(--space-1);
+}

@@ -68,3 +68,13 @@ TEST_CASE ("needsSoundObjectWrapper follows the input-file flag", "[ScriptInvoca
     fields.add (in);
     REQUIRE_FALSE (ScriptInvocation::needsSoundObjectWrapper (fields));
 }
+
+TEST_CASE ("buildWrapperScript selects Sound A then Sound B", "[ScriptInvocation]")
+{
+    const auto w = ScriptInvocation::buildWrapperScript (
+        juce::File ("/tmp/a.wav"), juce::File ("/tmp/out.wav"), juce::File ("/tmp/s.praat"),
+        {}, {}, juce::File ("/tmp/b.wav"));
+
+    REQUIRE (w.indexOf ("/tmp/a.wav") < w.indexOf ("/tmp/b.wav"));
+    REQUIRE (w.contains ("selectObject: inputSound__, inputSoundB__"));
+}
