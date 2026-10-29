@@ -29,18 +29,22 @@ Each script gets a 1.5 s mono 44.1 kHz harmonic tone and its **default** paramet
   montage` / `sentence Sofa_file kemar` stay ordinary parameters.
 - `infile` / `outfile` / `folder` fields are recognised and quoted.
 
-## What still fails (78)
+## What still fails (78), by cause
 
-| Cause | Count | Plugin-side? |
-|---|---|---|
-| Input-dependent (no pitch/onsets, too short, needs a score/text file) | ~29 | Mostly no. Many pass on real speech/music |
-| Needs other objects (2 Sounds, TextGrid, Photo, TextGrid editor) | ~14 | No, single-input model. Could hide these |
-| Upstream bug: `Vector Chain` scripts call sub-scripts with stale argument lists | 10 | No. Report upstream |
-| Runs but leaves no Sound selected / no output | 10 | Maybe: wrapper could save the newest Sound |
-| Timeout (>30 s on a 1.5 s clip) | 9 | Raise timeout / scale with length |
-| Needs stereo input | 4 | Only with stereo input |
-| Formula errors in Ambisonic/multichannel scripts (`Unknown symbol «Point»`) | 3 | No. Upstream |
-| External tool / OS (FFmpeg, Windows-only Ableton bridge) | 2 | No. Hide |
+Checked with the `[compat]` options `PRAAT_COMPAT_CHANNELS`, `PRAAT_COMPAT_TIMEOUT_S`, `PRAAT_COMPAT_ONLY`.
+
+| Group | # | Scripts (examples) | Possible fix |
+|---|---|---|---|
+| Need **two (or more) Sounds** | 23 | Cross_Synthesis, Spectral_Morph, Creative_Convolution (source + IR), Pitch_Contour_Transfer, Neural_Audio_Mosaic, Math_Operations, Kick_detector_and_bass_adder, Segment_Mixer, Stereo_Mosaic, Ambisonic_Bed_Mixer, Universal_Audio_Export… | **Add a second input ("Sound B") to the plugin**; wrapper loads both and selects A + B |
+| **Hidden file/folder dialog** (blank folder field → `chooseFolder$`, or `chooseWriteFile$`), so Praat hangs until timeout | 8 | OT_CORPUS_CONCATENATOR, Timbral_Similarity_Browser, Bayesian_Drone_Weaver, KL_Divergence_Corpus_Resynthesis, Sound_atom_composer, Recursive WAV opener, Scala_Scale_Auralizer, Formant_to_MusicXML | Show a folder/file picker for those fields; detect `choose…$` up front instead of waiting 30 s |
+| **Interactive**: Demo window (mouse drawing) or `pause` dialogs | 9 | UPIC_Draw_Synthesis, Draw_Intensity_Envelope, Spatial_Trajectory_Painter, Peephole_montage, Chladni_Resonance_Lab, Audiovisual_Sonification, Sidechain_Feedback_VCA, Polyphonic_Improviser, Universal Convolution Generator | Can't run headless. Label as "interactive, open in Praat" or hide |
+| **Upstream script bugs** | 14 | Vector Chain Live_*/chain_2/3/Composition_* (stale `runScript` args), Higher-Order_Ambisonic_Encoder/Decoder, Multi-channel Random Slice Time-Stretcher (formula errors), Rhythmic_Fractal_Granulator | Report to the library author |
+| **Input-dependent** (needs speech/notes/onsets/longer audio; pass on real material) | 10 | Audio_Quantizer, OT_Grammar_Learning, OM_Score_Transformer, Dramaturgical_Structure_Composer (>20 s), MDS_Space_Navigator, chain_1, 3D_Audio_Room_Simulator, Onset-Based_Oscillator_Bank, Gesture-Based_Hard_Quantization, SPEAR parser (needs a text file) | None needed; show Praat's error message clearly |
+| **Need an image (Photo)** | 4 | Photo_sonification, Spectral_Image_Sonification, Percussive_Image_Sonification, Photo_Brightness… | Optional image input |
+| **Need stereo input** | 4 | Mid-Side_Matrix, Mix_Multi-Channel_to_Stereo, Spatial trajectory tracker, Stereo Channel Similarity Meter | **None**: all pass with a stereo take (plugin passes the track's channels) |
+| TextGrid editor | 2 | Pitch Loop Finder (both copies) | Can't run headless |
+| External tool / OS / not a processor | 5 | Media_ffmpeg_tools (FFmpeg), Send_to_Ableton (Windows), Matrix_Chain (.py), Clean_Ableton_Bridge, setup.praat | Hide |
+| Just slow | 1 | chain_7 (44 s) | Raise timeout or scale it with clip length |
 
 ## Other issues found
 

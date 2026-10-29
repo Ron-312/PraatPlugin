@@ -52,16 +52,16 @@ PraatRunner::RunOutcome PraatRunner::launchPraatWithScript (
             return { false, -2, {}, "Analysis cancelled." };
         }
 
-        if (totalWaitedMs >= processTimeoutMilliseconds)
+        if (totalWaitedMs >= timeoutMs_)
         {
             praatProcess.kill();
             PRAAT_LOG_ERR ("PraatRunner: script timed out after "
-                           + juce::String (processTimeoutMilliseconds / 1000) + " s — "
+                           + juce::String (timeoutMs_ / 1000) + " s — "
                            + scriptFile.getFileName());
             return { false, -1,
                      {},
                      "Praat timed out after " +
-                         juce::String (processTimeoutMilliseconds / 1000) + " seconds." };
+                         juce::String (timeoutMs_ / 1000) + " seconds." };
         }
     }
 

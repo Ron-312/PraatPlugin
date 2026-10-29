@@ -51,8 +51,10 @@ public:
 
     // How long we wait for Praat before killing the process and returning an error.
     static constexpr int processTimeoutMilliseconds { 30'000 };
+    void setTimeoutMilliseconds (int ms) noexcept { timeoutMs_ = ms; }
 
 private:
     juce::File praatExecutableFile_;
     bool       fullTrust_;
+    int        timeoutMs_ { processTimeoutMilliseconds };
 };

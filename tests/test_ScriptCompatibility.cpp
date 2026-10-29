@@ -7,6 +7,9 @@
 //   PRAAT_SCRIPTS_DIR=~/Library/Application\ Support/PraatPlugin/community_scripts/Praat-plugin_AudioTools-main \
 //   PRAAT_COMPAT_REPORT=/tmp/compat.tsv \
 //   PRAAT_COMPAT_SHARD=0/8 \
+//   PRAAT_COMPAT_CHANNELS=2 \       (optional, default 1)
+//   PRAAT_COMPAT_TIMEOUT_S=120 \    (optional, default PraatRunner's 30 s)
+//   PRAAT_COMPAT_ONLY=Stereo \      (optional, substring filter on the path)
 //   ./PraatPluginTests "[compat]"
 //
 // Default parameter values are used — what a user gets on first Run — except
@@ -27,11 +30,11 @@ namespace
 
     // 1.5 s of a vibrato'd, harmonic-rich tone — gives pitch, formant and
     // onset analyses something to find.  Mono, 44.1 kHz, 16-bit, like a DAW take.
-    void writeTestWav (const juce::File& file)
+    void writeTestWav (const juce::File& file, int channels)
     {
         constexpr double sr = 44100.0;
         const int n = (int) (sr * 1.5);
-        juce::AudioBuffer<float> buf (1, n);
+        juce::AudioBuffer<float> buf (channels, n);
         double phase = 0.0;
         for (int i = 0; i < n; ++i)
         {
@@ -42,14 +45,15 @@ namespace
             for (int h = 1; h <= 8; ++h)
                 s += std::sin (h * phase) / h;
             const double env = std::min (1.0, std::min (t, 1.5 - t) * 20.0);
-            buf.setSample (0, i, (float) (0.3 * s * env));
+            for (int c = 0; c < channels; ++c)   // channels differ slightly so stereo tools see width
+                buf.setSample (c, i, (float) (0.3 * s * env * (1.0 - 0.3 * c)));
         }
 
         file.deleteFile();
         juce::WavAudioFormat wav;
         std::unique_ptr<juce::OutputStream> out (file.createOutputStream().release());
         std::unique_ptr<juce::AudioFormatWriter> w (
-            wav.createWriterFor (out.get(), sr, 1, 16, {}, 0));
+            wav.createWriterFor (out.get(), sr, (unsigned int) channels, 16, {}, 0));
         REQUIRE (w != nullptr);
         out.release();
         w->writeFromAudioSampleBuffer (buf, 0, n);
@@ -103,7 +107,8 @@ TEST_CASE ("Every library script runs under the plugin's calling model", "[.][co
 
     juce::Array<juce::File> scripts;
     for (const auto& e : juce::RangedDirectoryIterator (root, true, "*.praat"))
-        if (! e.getFile().getFullPathName().contains ("/py/"))   // ScriptManager skips py/
+        if (! e.getFile().getFullPathName().contains ("/py/")   // ScriptManager skips py/
+            && e.getFile().getFullPathName().contains (env ("PRAAT_COMPAT_ONLY")))
             scripts.add (e.getFile());
     scripts.sort();
 
@@ -120,7 +125,7 @@ TEST_CASE ("Every library script runs under the plugin's calling model", "[.][co
         work.createDirectory();
         const auto inWav  = work.getChildFile ("input.wav");
         const auto outWav = work.getChildFile ("output.wav");
-        writeTestWav (inWav);
+        writeTestWav (inWav, juce::jmax (1, env ("PRAAT_COMPAT_CHANNELS").getIntValue()));
 
         const auto fields   = PraatFormParser::parseAllFields (script);
         juce::StringPairArray userValues;
@@ -143,7 +148,10 @@ TEST_CASE ("Every library script runs under the plugin's calling model", "[.][co
         }
 
         const auto t0 = juce::Time::getMillisecondCounter();
-        const auto outcome = PraatRunner (praat, PraatRunner::executableNeedsFullTrust (praat)).launchPraatWithScript (toRun, args);
+        PraatRunner runner (praat, PraatRunner::executableNeedsFullTrust (praat));
+        if (env ("PRAAT_COMPAT_TIMEOUT_S").getIntValue() > 0)
+            runner.setTimeoutMilliseconds (env ("PRAAT_COMPAT_TIMEOUT_S").getIntValue() * 1000);
+        const auto outcome = runner.launchPraatWithScript (toRun, args);
         const auto ms = juce::Time::getMillisecondCounter() - t0;
 
         juce::String status, detail;
